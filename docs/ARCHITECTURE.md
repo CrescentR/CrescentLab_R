@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-本仓库当前只完成整体框架、前端信息架构、基础工具选型与项目边界。HTTP API、数据库 schema、认证协议、文件上传协议暂不设计。
+本仓库当前已完成整体框架、前端信息架构、基础工具选型、项目边界和 PostgreSQL 首版数据库设计。HTTP API、认证协议、文件上传协议暂不设计。
 
 ## 技术选型
 
@@ -15,7 +15,8 @@
 | 客户端状态 | Zustand | 侧栏、弹窗、局部 UI 状态 |
 | 服务端状态 | TanStack Query | 后续 API 接入后的缓存、重试、失效控制 |
 | HTTP 客户端 | Axios | 后续集中拦截器、认证刷新、错误归一化 |
-| 后端入口 | Go | 当前仅保留 composition root，不注册业务 API |
+| 后端入口 | Go | 当前仅保留服务入口组装，不注册业务 API |
+| 数据库 | PostgreSQL | 手动创建数据库并导入 `database/postgres/schema.sql`，不做自动 migration |
 
 ## Figma 转译原则
 
@@ -49,19 +50,27 @@ frontend/src/
 
 ## 后端目录
 
-Go 侧按开发文档预留分层：
+Go 侧采用更直观的模块化目录：
 
-- `cmd/server`：应用 composition root
-- `internal/app`：启动、任务、监听、中间件
-- `internal/infra`：数据库、路由、存储等基础设施
-- `pkg/domain`：领域模型和仓储接口
-- `pkg/service`：业务逻辑
-- `pkg/handler`：HTTP handler，当前为空
+- `cmd/server`：服务入口组装
+- `internal/modules`：业务模块，如 users、content、media、comments、settings
+- `internal/platform`：技术平台能力，如 database、http、logger、storage、search、jobs
+- `internal/shared`：跨模块共享能力，如 auth、events、idgen、markdown、security、validate
+- `database/postgres/schema.sql`：手动导入的 PostgreSQL 建表 SQL
+
+完整说明见 `docs/PROJECT_STRUCTURE.md`。
+
+## 数据库边界
+
+- 不使用物理外键，跨表关系由 `*_id` 逻辑字段表达。
+- 不使用触发器、数据库函数、视图。
+- 不写 bootstrap 数据。
+- 不做启动时自动迁移；数据库由人工创建和导入 SQL。
 
 ## 后续接入顺序
 
 1. 配置系统与日志
 2. Gin 路由壳与健康检查
-3. Ent schema 与数据库连接工厂
+3. 基于 `database/postgres/schema.sql` 落数据库访问层，迁移 SQL 仍保持人工执行
 4. 认证与用户系统
 5. 文章编辑器接入 Tiptap 与文章 API

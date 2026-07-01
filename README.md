@@ -1,15 +1,15 @@
 # CrescentLab_R
 
-CrescentLab_R 是一个自托管博客 / CMS 的开发骨架。当前阶段参考了 Figma 原型和 `AGENTS/docs/DEVELOPMENT_PLAN.md`，优先完成前端框架、后台信息架构、基础工具选型和 Go 项目边界；业务接口暂不设计。
+CrescentLab_R 是一个自托管博客 / CMS 的开发骨架。当前阶段参考了 Figma 原型和 `AGENTS/docs/DEVELOPMENT_PLAN.md`，优先完成前端框架、后台信息架构、基础工具选型、Go 项目边界和 PostgreSQL 首版数据库设计；业务接口暂不设计。
 
 ## 已完成
 
-- Go 入口与后端目录分层，当前不注册业务 API
+- Go 入口与直观的模块化后端目录，当前不注册业务 API
 - Next.js App Router 前端工程
 - 公开首页框架与后台 Admin Shell
 - 文章编辑器、用户权限、站点设置三个 Figma 方向页面
 - Tailwind CSS 4 设计 token、基础 UI 组件、静态 mock 数据
-- README、架构文档、`.gitignore`、`Makefile`
+- README、架构文档、目录结构文档、数据库设计文档、独立 SQL、`.gitignore`、`Makefile`
 
 ## 技术栈
 
@@ -60,12 +60,15 @@ make frontend-build
 
 ```text
 .
-├── cmd/server/                 # Go 应用 composition root
-├── internal/                   # 后端内部应用与基础设施
-├── pkg/                        # 领域、服务、工具、handler 边界
-├── ent/schema/                 # Ent schema 预留
+├── cmd/server/                 # Go 服务入口组装
+├── internal/modules/           # 业务模块
+├── internal/platform/          # 数据库、HTTP、日志、存储、搜索、任务等平台能力
+├── internal/shared/            # 鉴权、事件、ID、Markdown、安全、校验等共享能力
 ├── frontend/                   # Next.js 前端
 ├── docs/ARCHITECTURE.md        # 当前架构说明
+├── docs/PROJECT_STRUCTURE.md   # 当前项目目录设计
+├── docs/DATABASE_SCHEMA.md     # PostgreSQL 首版库表设计
+├── database/postgres/schema.sql # 手动导入的 PostgreSQL 建表 SQL
 ├── AGENTS/docs/                # 原始开发计划文档
 ├── default_files/conf.ini      # 默认配置模板
 └── main.go
@@ -73,4 +76,4 @@ make frontend-build
 
 ## 当前边界
 
-本阶段只做框架与前端静态页面。`frontend/src/lib/api/` 仅作为未来 API 客户端边界；`pkg/handler/` 和 `internal/infra/router/` 也暂时为空，避免在业务模型未确认前提前锁死接口。
+本阶段只做框架、前端静态页面和数据库设计。`frontend/src/lib/api/` 仅作为未来 API 客户端边界；后端业务代码会按 `internal/modules/<module>/` 逐步补齐，避免在业务接口未确认前提前锁死协议。数据库只提供手动导入 SQL，不做启动时自动建表或自动迁移。

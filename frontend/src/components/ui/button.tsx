@@ -1,28 +1,28 @@
 import Link from "next/link";
-import { ReactNode } from "react";
+import { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type ButtonProps = {
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   children: ReactNode;
   icon?: ReactNode;
   variant?: "primary" | "secondary" | "ghost";
-  className?: string;
 };
 
 const variants = {
-  primary: "bg-[var(--purple)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] hover:bg-[#7417df]",
-  secondary: "border border-[var(--border)] text-[var(--text)] hover:border-[var(--muted-low)] hover:bg-white/5",
-  ghost: "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]",
+  primary: "bg-[var(--purple)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:brightness-110",
+  secondary: "border border-[var(--border)] bg-[var(--surface-glass)] text-[var(--text)] hover:border-[var(--muted-low)] hover:bg-[var(--surface-raised)]",
+  ghost: "text-[var(--muted)] hover:bg-[var(--surface-field)] hover:text-[var(--text)]",
 };
 
 const baseClass =
-  "inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium transition-colors";
+  "inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium transition-[background,border-color,color,filter,transform] disabled:cursor-not-allowed disabled:opacity-45";
 
-export function Button({ children, icon, variant = "secondary", className }: ButtonProps) {
+export function Button({ children, icon, variant = "secondary", className, type = "button", ...props }: ButtonProps) {
   return (
     <button
       className={cn(baseClass, variants[variant], className)}
-      type="button"
+      type={type}
+      {...props}
     >
       {icon}
       <span>{children}</span>
@@ -30,13 +30,16 @@ export function Button({ children, icon, variant = "secondary", className }: But
   );
 }
 
-type ButtonLinkProps = ButtonProps & {
+type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   href: string;
+  children: ReactNode;
+  icon?: ReactNode;
+  variant?: "primary" | "secondary" | "ghost";
 };
 
-export function ButtonLink({ children, href, icon, variant = "secondary", className }: ButtonLinkProps) {
+export function ButtonLink({ children, href, icon, variant = "secondary", className, ...props }: ButtonLinkProps) {
   return (
-    <Link className={cn(baseClass, variants[variant], className)} href={href}>
+    <Link className={cn(baseClass, variants[variant], className)} href={href} {...props}>
       {icon}
       <span>{children}</span>
     </Link>

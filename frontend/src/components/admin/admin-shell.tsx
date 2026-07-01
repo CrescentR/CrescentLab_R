@@ -3,53 +3,76 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  ArrowLeft,
   BookOpen,
   CircleHelp,
   FileText,
   Gauge,
+  Home,
   Image,
-  LogOut,
+  LayoutDashboard,
+  LockKeyhole,
   MessageSquare,
+  Moon,
   Palette,
   PenLine,
+  RadioTower,
   Settings,
+  ShieldAlert,
+  Sun,
   Users,
 } from "lucide-react";
 import { ReactNode } from "react";
+import { personas } from "@/lib/personas";
+import { useUiStore } from "@/store/ui-store";
+import { Badge } from "@/components/ui/badge";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
-import { ButtonLink } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", icon: Gauge },
-  { href: "/admin/post-management/new", label: "Content", icon: FileText },
-  { href: "/admin/media", label: "Media", icon: Image },
-  { href: "/admin/comments", label: "Comments", icon: MessageSquare },
-  { href: "/admin/users", label: "Users", icon: Users },
-  { href: "/admin/plugins", label: "Plugins", icon: BookOpen },
-  { href: "/admin/themes", label: "Themes", icon: Palette },
-  { href: "/admin/settings", label: "Settings", icon: Settings },
-];
+  { href: "/admin", label: "Dashboard", icon: Gauge, tone: "cyan" },
+  { href: "/admin/post-management/new", label: "Content", icon: FileText, tone: "purple" },
+  { href: "/admin/media", label: "Media", icon: Image, tone: "amber" },
+  { href: "/admin/comments", label: "Comments", icon: MessageSquare, tone: "green" },
+  { href: "/admin/users", label: "Users", icon: Users, tone: "rose" },
+  { href: "/admin/plugins", label: "Plugins", icon: BookOpen, tone: "cyan" },
+  { href: "/admin/themes", label: "Themes", icon: Palette, tone: "purple" },
+  { href: "/admin/settings", label: "Settings", icon: Settings, tone: "neutral" },
+] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const activePersona = useUiStore((state) => state.activePersona);
+  const persona = personas[activePersona];
+
+  if (!persona.canEnterAdmin) {
+    return <AdminAccessDenied />;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)]">
       <div className="flex min-h-screen">
-        <aside className="hidden w-64 shrink-0 border-r border-[var(--border-soft)] bg-[var(--surface)] lg:flex lg:flex-col">
-          <div className="px-5 py-7">
+        <aside className="hidden w-72 shrink-0 border-r border-[var(--border-soft)] bg-[var(--surface-glass)] lg:flex lg:flex-col">
+          <div className="px-5 py-6">
             <Link className="flex items-center gap-3" href="/admin">
-              <span className="grid size-10 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-raised)] text-[var(--cyan)]">
-                <PenLine size={18} strokeWidth={2} />
+              <span className="grid size-11 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-raised)] text-[var(--cyan)]">
+                <LayoutDashboard size={19} strokeWidth={2} />
               </span>
               <span>
                 <span className="block font-lab-display text-xl font-bold text-[var(--text-strong)]">CrescentLab</span>
-                <span className="block font-lab-mono text-xs text-[var(--muted)]">Admin Console</span>
+                <span className="block font-lab-mono text-xs text-[var(--muted)]">Admin Lab Console</span>
               </span>
             </Link>
-            <ButtonLink className="mt-6 w-full" href="/admin/post-management/new" icon={<PenLine size={15} />} variant="primary">
-              New Post
-            </ButtonLink>
+
+            <div className="mt-6 grid grid-cols-2 gap-2">
+              <ButtonLink href="/" icon={<ArrowLeft size={15} />} variant="secondary">
+                返回前台
+              </ButtonLink>
+              <ButtonLink href="/admin/post-management/new" icon={<PenLine size={15} />} variant="primary">
+                New Post
+              </ButtonLink>
+            </div>
           </div>
 
           <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4">
@@ -60,45 +83,138 @@ export function AdminShell({ children }: { children: ReactNode }) {
               return (
                 <Link
                   className={cn(
-                    "flex h-12 items-center gap-3 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium text-[var(--muted)] transition-colors",
-                    active && "border border-[rgba(96,1,209,0.45)] bg-[var(--purple)] text-[var(--lavender)]",
-                    !active && "hover:bg-white/5 hover:text-[var(--text)]",
+                    "group flex h-12 items-center gap-3 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium text-[var(--muted)] transition-colors",
+                    active && "border border-[var(--cyan)] bg-[var(--cyan-soft)] text-[var(--text-strong)]",
+                    !active && "hover:bg-[var(--surface-field)] hover:text-[var(--text)]",
                   )}
                   href={item.href}
                   key={item.href}
                 >
                   <Icon size={18} strokeWidth={2} />
-                  {item.label}
+                  <span className="min-w-0 flex-1">{item.label}</span>
+                  <span className="size-1.5 rounded-full bg-[var(--border)] group-hover:bg-[var(--cyan)]" />
                 </Link>
               );
             })}
           </nav>
 
-          <div className="border-t border-[var(--border-soft)] p-4">
-            <Link className="flex h-9 items-center gap-3 rounded-[var(--radius)] px-4 text-sm text-[var(--muted)] hover:bg-white/5" href="/docs">
+          <div className="space-y-3 border-t border-[var(--border-soft)] p-4">
+            <Panel className="p-4 shadow-none">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">signed in as</span>
+                  <strong className="mt-1 block text-sm text-[var(--text-strong)]">{persona.name}</strong>
+                </div>
+                <span className="grid size-9 place-items-center rounded-[var(--radius)] bg-[var(--surface-field)] font-lab-mono text-xs text-[var(--text-strong)]">
+                  {persona.initials}
+                </span>
+              </div>
+            </Panel>
+            <Link className="flex h-9 items-center gap-3 rounded-[var(--radius)] px-4 text-sm text-[var(--muted)] hover:bg-[var(--surface-field)]" href="/docs">
               <CircleHelp size={16} />
               Help
-            </Link>
-            <Link className="mt-1 flex h-9 items-center gap-3 rounded-[var(--radius)] px-4 text-sm text-[var(--muted)] hover:bg-white/5" href="/">
-              <LogOut size={16} />
-              Logout
             </Link>
           </div>
         </aside>
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="flex min-h-16 items-center justify-between border-b border-[var(--border-soft)] bg-[rgba(16,20,21,0.78)] px-4 backdrop-blur lg:hidden">
-            <Link className="flex items-center gap-2 font-lab-display font-bold" href="/admin">
-              <PenLine size={18} className="text-[var(--cyan)]" />
-              CrescentLab
-            </Link>
-            <Link className="font-lab-mono text-sm text-[var(--cyan)]" href="/admin/post-management/new">
-              New Post
-            </Link>
+          <header className="sticky top-0 z-20 flex min-h-16 items-center justify-between gap-3 border-b border-[var(--border-soft)] bg-[var(--surface-glass)] px-4 backdrop-blur-xl md:px-6">
+            <div className="flex min-w-0 items-center gap-3">
+              <Link className="grid size-9 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] text-[var(--cyan)] lg:hidden" href="/admin">
+                <LayoutDashboard size={18} />
+              </Link>
+              <div className="min-w-0">
+                <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">admin surface</span>
+                <strong className="block truncate text-sm text-[var(--text-strong)]">CrescentLab operating console</strong>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <ButtonLink className="hidden sm:inline-flex" href="/" icon={<Home size={15} />} variant="secondary">
+                返回前台
+              </ButtonLink>
+              <ThemeToggle />
+            </div>
           </header>
           {children}
         </div>
       </div>
     </div>
+  );
+}
+
+function AdminAccessDenied() {
+  const activePersona = useUiStore((state) => state.activePersona);
+  const setActivePersona = useUiStore((state) => state.setActivePersona);
+  const persona = personas[activePersona];
+
+  return (
+    <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--text)] md:px-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-6">
+        <header className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-glass)] px-4 py-3 backdrop-blur">
+          <Link className="flex items-center gap-3" href="/">
+            <span className="grid size-10 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-raised)] text-[var(--cyan)]">
+              <ArrowLeft size={18} />
+            </span>
+            <span>
+              <span className="block font-lab-display text-lg font-bold text-[var(--text-strong)]">返回前台</span>
+              <span className="block font-lab-mono text-xs text-[var(--muted)]">Admin requires elevated role</span>
+            </span>
+          </Link>
+          <ThemeToggle />
+        </header>
+
+        <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
+          <Panel className="lab-card p-6 md:p-8">
+            <Badge tone="rose">Access Gate</Badge>
+            <div className="mt-6 flex items-start gap-4">
+              <span className="grid size-12 shrink-0 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] text-[var(--rose)]">
+                <ShieldAlert size={22} />
+              </span>
+              <div>
+                <h1 className="font-lab-display text-3xl font-semibold text-[var(--text-strong)]">当前身份不能进入后台</h1>
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+                  你现在是 {persona.name}。普通用户可以阅读、评论、订阅和维护个人资料，但用户、插件、主题、存储、系统设置这些后台模块只开放给管理员。
+                </p>
+              </div>
+            </div>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Button icon={<LockKeyhole size={15} />} onClick={() => setActivePersona("admin")} variant="primary">
+                切换为管理员演示
+              </Button>
+              <ButtonLink href="/" icon={<Home size={15} />} variant="secondary">
+                回到前台
+              </ButtonLink>
+            </div>
+          </Panel>
+
+          <Panel className="lab-card p-5">
+            <div className="flex items-center gap-2 text-[var(--cyan)]">
+              <RadioTower size={18} />
+              <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">共享权限</h2>
+            </div>
+            <div className="mt-5 space-y-3">
+              {["阅读公开内容", "发表评论与回复", "维护个人资料", "订阅通知"].map((item) => (
+                <div className="flex items-center justify-between rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] px-3 py-2" key={item}>
+                  <span className="text-sm text-[var(--text)]">{item}</span>
+                  <Badge tone="green">shared</Badge>
+                </div>
+              ))}
+            </div>
+          </Panel>
+        </section>
+      </div>
+    </main>
+  );
+}
+
+function ThemeToggle() {
+  const theme = useUiStore((state) => state.theme);
+  const toggleTheme = useUiStore((state) => state.toggleTheme);
+  const Icon = theme === "dark" ? Sun : Moon;
+
+  return (
+    <Button aria-label="切换黑白主题" className="w-10 px-0" icon={<Icon size={16} />} onClick={toggleTheme} variant="secondary">
+      <span className="sr-only">切换主题</span>
+    </Button>
   );
 }

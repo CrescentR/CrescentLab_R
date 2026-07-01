@@ -1,11 +1,14 @@
-import { ReactNode } from "react";
+import { HTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-type PanelProps = {
+type PanelProps = HTMLAttributes<HTMLElement> & {
   children: ReactNode;
-  className?: string;
 };
 
-export function Panel({ children, className }: PanelProps) {
-  return <section className={cn("glass-panel rounded-[var(--radius)]", className)}>{children}</section>;
+export function Panel({ children, className, ...props }: PanelProps) {
+  return (
+    <section className={cn("glass-panel rounded-[var(--radius)]", className)} {...props}>
+      {children}
+    </section>
+  );
 }
