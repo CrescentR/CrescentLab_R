@@ -8,7 +8,6 @@ import {
   Boxes,
   ChevronDown,
   Compass,
-  FlaskConical,
   GalleryHorizontalEnd,
   LayoutDashboard,
   Lock,
@@ -36,6 +35,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
+import { backgroundImageStyle, imageUrlStyle, siteBranding } from "@/lib/site-settings";
 import type { LabModule } from "@/types/content";
 
 const roleOrder: PersonaRole[] = ["member", "admin"];
@@ -95,9 +95,12 @@ export function PublicHome() {
         data-lab-animate
       >
         <Link className="flex items-center gap-3" href="/">
-          <span className="grid size-10 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-raised)] text-[var(--cyan)]">
-            <FlaskConical size={18} />
-          </span>
+          <span
+            aria-label="CrescentLab logo"
+            className="block size-10 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[length:20px_20px] bg-center bg-no-repeat"
+            role="img"
+            style={backgroundImageStyle(siteBranding.siteLogoUrl)}
+          />
           <span>
             <span className="block font-lab-display text-xl font-bold text-[var(--text-strong)]">CrescentLab</span>
             <span className="block font-lab-mono text-xs text-[var(--muted)]">Content lab / CMS prototype</span>
@@ -145,7 +148,7 @@ export function PublicHome() {
 
         <div className="grid gap-5">
           <Panel className="lab-card overflow-hidden" data-lab-animate>
-            <div className="lab-media min-h-52 border-b border-[var(--border-soft)]" />
+            <div className="lab-media min-h-52 border-b border-[var(--border-soft)]" style={imageUrlStyle(siteBranding.heroImageUrl)} />
             <div className="p-5">
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -153,9 +156,12 @@ export function PublicHome() {
                   <h2 className="mt-3 font-lab-display text-2xl font-semibold text-[var(--text-strong)]">{persona.name}</h2>
                   <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{persona.description}</p>
                 </div>
-                <span className="grid size-12 shrink-0 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] font-lab-mono text-sm text-[var(--text-strong)]">
-                  {persona.initials}
-                </span>
+                <span
+                  aria-label={`${persona.name} avatar`}
+                  className="block size-12 shrink-0 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] bg-cover bg-center"
+                  role="img"
+                  style={backgroundImageStyle(siteBranding.defaultAvatarUrl)}
+                />
               </div>
 
               <div className="mt-5 flex flex-wrap gap-2">
@@ -361,9 +367,12 @@ function AccountSwitcher() {
                 onClick={() => setActivePersona(role)}
                 type="button"
               >
-                <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius)] bg-[var(--surface-raised)] font-lab-mono text-xs text-[var(--text-strong)]">
-                  {personas[role].initials}
-                </span>
+                <span
+                  aria-label={`${personas[role].name} avatar`}
+                  className="block size-9 shrink-0 rounded-[var(--radius)] bg-[var(--surface-raised)] bg-cover bg-center"
+                  role="img"
+                  style={backgroundImageStyle(siteBranding.defaultAvatarUrl)}
+                />
                 <span>
                   <span className="block text-sm font-medium text-[var(--text-strong)]">{personas[role].name}</span>
                   <span className="mt-1 block text-xs leading-5 text-[var(--muted)]">{personas[role].description}</span>

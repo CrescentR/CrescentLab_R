@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useEffect, useState } from "react";
 import { PersonaRole, ThemeMode, useUiStore } from "@/store/ui-store";
+import { siteBranding } from "@/lib/site-settings";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -52,6 +53,20 @@ function PrototypeStateSync() {
   useEffect(() => {
     window.localStorage.setItem("crescentlab-persona", activePersona);
   }, [activePersona]);
+
+  useEffect(() => {
+    const selector = 'link[rel="icon"][data-site-setting-key="faviconUrl"]';
+    let iconLink = document.head.querySelector<HTMLLinkElement>(selector);
+
+    if (!iconLink) {
+      iconLink = document.createElement("link");
+      iconLink.rel = "icon";
+      iconLink.dataset.siteSettingKey = "faviconUrl";
+      document.head.appendChild(iconLink);
+    }
+
+    iconLink.href = siteBranding.faviconUrl;
+  }, []);
 
   return null;
 }
