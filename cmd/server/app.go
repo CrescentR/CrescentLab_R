@@ -8,13 +8,16 @@ import (
 	"syscall"
 	"time"
 
+	settingsmodule "CrescentLab_R/internal/modules/settings"
 	"CrescentLab_R/internal/platform/config"
+	"CrescentLab_R/internal/platform/database"
 	platformhttp "CrescentLab_R/internal/platform/http"
 	"CrescentLab_R/internal/platform/logger"
 )
 
 type App struct {
 	cfg        config.Config
+	db         *database.DB
 	log        *slog.Logger
 	httpServer *platformhttp.Server
 }
@@ -30,9 +33,21 @@ func (a *App) Run() error {
 	}
 
 	a.cfg = cfg
-	a.httpServer = platformhttp.New(cfg.Server, a.log)
+	db, err := database.Open(context.Background(), cfg.Database)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if closeErr := db.Close(); closeErr != nil {
+			a.log.Error("close database failed", "error", closeErr)
+		}
+	}()
 
-	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source)
+	a.db = db
+	a.httpServer = platformhttp.New(cfg.Server, a.log)
+	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL())).RegisterAdminRoutes(a.httpServer.Engine().Group("/api/admin"))
+
+	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())
 
 	errCh := make(chan error, 1)
 	go func() {

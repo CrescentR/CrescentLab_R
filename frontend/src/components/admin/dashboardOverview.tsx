@@ -31,9 +31,9 @@ const quickActions = [
 ] as const;
 
 const insightCards = [
-  { title: "权限与审计", detail: "用户组、权限矩阵、操作审计会在用户模块落地。", icon: ShieldCheck, tone: "rose" },
-  { title: "任务与事件", detail: "定时发布、统计聚合、通知投递走 jobs + outbox。", icon: DatabaseZap, tone: "amber" },
-  { title: "插件与主题", detail: "插件进程、主题配置和搜索适配都预留独立模块。", icon: Boxes, tone: "cyan" },
+  { title: "权限与审计", detail: "用户组、权限矩阵和操作记录集中在用户模块维护。", icon: ShieldCheck, tone: "rose" },
+  { title: "任务与事件", detail: "定时发布、统计聚合和通知投递进入任务队列。", icon: DatabaseZap, tone: "amber" },
+  { title: "插件与主题", detail: "插件状态、主题配置和搜索适配按模块独立管理。", icon: Boxes, tone: "cyan" },
 ] as const;
 
 export function DashboardOverview() {
@@ -52,7 +52,7 @@ export function DashboardOverview() {
                   晚上好，{persona.name}。今天的 Lab 已准备好。
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-                  这里模拟未来后端接入后的工作台：内容发布、存储状态、评论审核、用户权限、插件主题和任务队列都会从同一块运营面板进入。
+                  内容发布、存储状态、评论审核、用户权限、插件主题和任务队列从这里进入。设置模块已经接入后端接口，其他模块按同样边界推进。
                 </p>
               </div>
               <ButtonLink href="/admin/postManagement/new" icon={<ArrowRight size={16} />} variant="primary">
@@ -71,7 +71,7 @@ export function DashboardOverview() {
                   >
                     <Icon className="text-[var(--cyan)]" size={18} />
                     <span className="mt-3 block text-sm font-medium text-[var(--text-strong)]">{action.label}</span>
-                    <span className="mt-1 block font-lab-mono text-[11px] text-[var(--muted-low)]">prototype route</span>
+                    <span className="mt-1 block font-lab-mono text-[11px] text-[var(--muted-low)]">{action.href}</span>
                   </Link>
                 );
               })}

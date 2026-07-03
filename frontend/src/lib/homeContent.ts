@@ -12,15 +12,15 @@ export function getHomeContent(): HomeContent {
     ],
     announcement: {
       label: "今日",
-      message: "正在把首页从“模板感展示页”改成更像自己的内容工作台。",
+      message: "新文章整理了一个本地知识库如何从草稿、项目记录和公开页面之间流动。",
       href: "#activity",
       actionLabel: "看记录",
     },
     hero: {
-      eyebrow: "Crescent 的公开工作台",
-      title: "把文章、项目和生活灵感，整理成一条能继续生长的线。",
+      eyebrow: "本周主线",
+      title: "本地优先的知识库，为什么仍然需要一套清晰的发布秩序。",
       description:
-        "CrescentLab 不是单纯的博客首页，而是一套个人内容系统：读者从文章进入，再顺着项目、实验记录和维护动态理解一个想法如何长出来。",
+        "从 Obsidian 草稿、Git 里的开发记录，到最终公开的长文和项目日志，最难的不是保存更多内容，而是让每一条记录知道自己下一步该去哪里。",
       primaryAction: { label: "开始阅读", href: "#articles" },
       secondaryAction: { label: "看项目", href: "#labs" },
       coverImage: "https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1200&q=84",
@@ -28,11 +28,11 @@ export function getHomeContent(): HomeContent {
       notes: ["写作入口", "项目子站", "实验记录"],
     },
     feature: {
-      label: "本周维护",
-      title: "先写清楚，再做漂亮。",
+      label: "本周笔记",
+      title: "把草稿整理到可以引用的程度。",
       description:
-        "新的首页会把个人判断、项目进度和日常输入放在同一张版面里。颜色可以活泼，但不靠发光渐变撑场面。",
-      meta: "Issue 03 / Summer",
+        "这一期记录聚焦三件事：命名要稳定，入口要少，旧结论要能被新证据替换。只有做到这些，笔记才不会在几个月后变成只剩标题的仓库。",
+      meta: "Issue 03 / 2026",
       stats: [
         { label: "文章", value: "24" },
         { label: "项目", value: "03" },
@@ -40,9 +40,9 @@ export function getHomeContent(): HomeContent {
       ],
     },
     categories: [
-      { label: "文库", detail: "主线文章与札记", href: "#articles", icon: "book", tone: "blue" },
-      { label: "项目", detail: "正在做的东西", href: "#labs", icon: "compass", tone: "green" },
-      { label: "灵感", detail: "生活与观察", href: "#activity", icon: "spark", tone: "amber" },
+      { label: "文库", detail: "长文、札记与专题", href: "#articles", icon: "book", tone: "blue" },
+      { label: "项目", detail: "路线图、版本与日志", href: "#labs", icon: "compass", tone: "green" },
+      { label: "灵感", detail: "阅读摘录与日常观察", href: "#activity", icon: "spark", tone: "amber" },
     ],
     articles: articleSummaries,
     projects: projectSites,

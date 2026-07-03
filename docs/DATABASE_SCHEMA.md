@@ -3,6 +3,7 @@
 本文档说明 PostgreSQL 首版数据库边界。完整 SQL 不写在 Markdown 中，位于：
 
 - `database/postgres/schema.sql`
+- `database/sqlite/schema.sql`（本地开发用，当前覆盖后台设置表）
 
 ## 执行方式
 
@@ -13,6 +14,12 @@
 ```bash
 createdb crescentlab
 psql -d crescentlab -f database/postgres/schema.sql
+```
+
+本地 SQLite 示例：
+
+```bash
+sqlite3 data/crescentlab.db < database/sqlite/schema.sql
 ```
 
 ## 硬性约束

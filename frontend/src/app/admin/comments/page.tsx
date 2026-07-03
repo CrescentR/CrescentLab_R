@@ -3,8 +3,8 @@ import { AdminModulePlaceholder } from "@/components/admin/adminModulePlaceholde
 export default function CommentsPage() {
   return (
     <AdminModulePlaceholder
-      description="Comment moderation, threaded replies, review status, and notification settings are reserved for the comments phase."
-      title="Comments"
+      description="评论模块负责审核状态、层级回复、点赞记录、通知投递和异常内容处理。"
+      title="评论"
     />
   );
 }

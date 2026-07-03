@@ -31,14 +31,14 @@ import { cn } from "@/lib/utils";
 import { backgroundImageStyle, siteBranding } from "@/lib/site-settings";
 
 const navItems = [
-  { href: "/admin", label: "Dashboard", icon: Gauge, tone: "cyan" },
-  { href: "/admin/postManagement/new", label: "Content", icon: FileText, tone: "purple" },
-  { href: "/admin/media", label: "Media", icon: Image, tone: "amber" },
-  { href: "/admin/comments", label: "Comments", icon: MessageSquare, tone: "green" },
-  { href: "/admin/users", label: "Users", icon: Users, tone: "rose" },
-  { href: "/admin/plugins", label: "Plugins", icon: BookOpen, tone: "cyan" },
-  { href: "/admin/themes", label: "Themes", icon: Palette, tone: "purple" },
-  { href: "/admin/settings", label: "Settings", icon: Settings, tone: "neutral" },
+  { href: "/admin", label: "仪表盘", icon: Gauge, tone: "cyan" },
+  { href: "/admin/postManagement/new", label: "内容", icon: FileText, tone: "purple" },
+  { href: "/admin/media", label: "媒体", icon: Image, tone: "amber" },
+  { href: "/admin/comments", label: "评论", icon: MessageSquare, tone: "green" },
+  { href: "/admin/users", label: "用户", icon: Users, tone: "rose" },
+  { href: "/admin/plugins", label: "插件", icon: BookOpen, tone: "cyan" },
+  { href: "/admin/themes", label: "主题", icon: Palette, tone: "purple" },
+  { href: "/admin/settings", label: "设置", icon: Settings, tone: "neutral" },
 ] as const;
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -64,7 +64,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               />
               <span>
                 <span className="block font-lab-display text-xl font-bold text-[var(--text-strong)]">CrescentLab</span>
-                <span className="block font-lab-mono text-xs text-[var(--muted)]">Admin Lab Console</span>
+                <span className="block font-lab-mono text-xs text-[var(--muted)]">后台控制台</span>
               </span>
             </Link>
 
@@ -73,7 +73,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 返回前台
               </ButtonLink>
               <ButtonLink href="/admin/postManagement/new" icon={<PenLine size={15} />} variant="primary">
-                New Post
+                新建
               </ButtonLink>
             </div>
           </div>
@@ -133,8 +133,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 style={backgroundImageStyle(siteBranding.adminLogoUrl)}
               />
               <div className="min-w-0">
-                <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">admin surface</span>
-                <strong className="block truncate text-sm text-[var(--text-strong)]">CrescentLab operating console</strong>
+                <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">admin</span>
+                <strong className="block truncate text-sm text-[var(--text-strong)]">CrescentLab 后台控制台</strong>
               </div>
             </div>
             <div className="flex items-center gap-2">

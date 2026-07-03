@@ -3,8 +3,8 @@ import { AdminModulePlaceholder } from "@/components/admin/adminModulePlaceholde
 export default function PluginsPage() {
   return (
     <AdminModulePlaceholder
-      description="Runtime plugin discovery, install flow, enable/disable controls, and search extensions will be added once backend plugin contracts exist."
-      title="Plugins"
+      description="插件模块负责安装包识别、运行状态、启停控制、配置项和扩展能力登记。"
+      title="插件"
     />
   );
 }

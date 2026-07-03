@@ -3,8 +3,8 @@ import { AdminModulePlaceholder } from "@/components/admin/adminModulePlaceholde
 export default function ThemesPage() {
   return (
     <AdminModulePlaceholder
-      description="Theme installation, switching, marketplace browsing, and theme configuration are intentionally parked for a later milestone."
-      title="Themes"
+      description="主题模块负责主题安装、启用状态、配置表单、预览图和版本信息。"
+      title="主题"
     />
   );
 }
