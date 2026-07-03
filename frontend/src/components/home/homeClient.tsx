@@ -64,7 +64,7 @@ export function HomeClient({ content }: { content: HomeContent }) {
       </section>
 
       <ProjectSection projects={content.projects} />
-      <ActivitySection activities={content.activities} />
+      <ActivitySection activities={content.activities} canEnterAdmin={persona.canEnterAdmin} />
     </main>
   );
 }

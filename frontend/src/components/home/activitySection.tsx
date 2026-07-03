@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 import { SectionHeading } from "./sectionHeading";
 import { toneDotClass } from "./homeTone";
 
-export function ActivitySection({ activities }: { activities: LabActivity[] }) {
+export function ActivitySection({ activities, canEnterAdmin }: { activities: LabActivity[]; canEnterAdmin: boolean }) {
   return (
     <section className="home-container grid gap-12 py-12 md:py-16 lg:grid-cols-[minmax(0,1fr)_340px]" id="activity">
       <div data-lab-animate>
@@ -30,11 +30,13 @@ export function ActivitySection({ activities }: { activities: LabActivity[] }) {
         <p className="mt-4 text-sm leading-7 text-[var(--muted)]">
           首页用于读者进入；后台用于持续维护。两个入口的边界要清楚，但视觉上仍然是一套系统。
         </p>
-        <div className="mt-6">
-          <ButtonLink href="/admin" icon={<LayoutDashboard size={15} />} variant="secondary">
-            打开后台
-          </ButtonLink>
-        </div>
+        {canEnterAdmin && (
+          <div className="mt-6">
+            <ButtonLink href="/admin" icon={<LayoutDashboard size={15} />} variant="secondary">
+              打开后台
+            </ButtonLink>
+          </div>
+        )}
       </aside>
     </section>
   );

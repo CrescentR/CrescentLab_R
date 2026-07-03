@@ -9,7 +9,6 @@ export function getHomeContent(): HomeContent {
       { label: "记录", href: "#activity" },
       { label: "友链", href: "#signals" },
       { label: "关于", href: "#about" },
-      { label: "后台", href: "/admin" },
     ],
     announcement: {
       label: "今日",
@@ -18,7 +17,7 @@ export function getHomeContent(): HomeContent {
       actionLabel: "看记录",
     },
     hero: {
-      eyebrow: "安和鱼的公开工作台",
+      eyebrow: "Crescent 的公开工作台",
       title: "把文章、项目和生活灵感，整理成一条能继续生长的线。",
       description:
         "CrescentLab 不是单纯的博客首页，而是一套个人内容系统：读者从文章进入，再顺着项目、实验记录和维护动态理解一个想法如何长出来。",
@@ -44,7 +43,6 @@ export function getHomeContent(): HomeContent {
       { label: "文库", detail: "主线文章与札记", href: "#articles", icon: "book", tone: "blue" },
       { label: "项目", detail: "正在做的东西", href: "#labs", icon: "compass", tone: "green" },
       { label: "灵感", detail: "生活与观察", href: "#activity", icon: "spark", tone: "amber" },
-      { label: "后台", detail: "内容维护入口", href: "/admin", icon: "pen", tone: "violet" },
     ],
     articles: articleSummaries,
     projects: projectSites,
