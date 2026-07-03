@@ -11,7 +11,7 @@ const toolbar = [
   { label: "Structure", icon: ListTree },
 ];
 
-export function EditorWorkspace() {
+export function ArticleEditorWorkspace() {
   return (
     <main className="flex h-screen min-h-[760px] flex-col overflow-hidden bg-[var(--background)]">
       <header className="flex min-h-16 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[rgba(25,28,30,0.78)] px-4 backdrop-blur md:px-6">

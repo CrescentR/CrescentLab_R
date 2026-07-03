@@ -9,13 +9,13 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 };
 
 const variants = {
-  primary: "bg-[var(--purple)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] hover:brightness-110",
-  secondary: "border border-[var(--border)] bg-[var(--surface-glass)] text-[var(--text)] hover:border-[var(--muted-low)] hover:bg-[var(--surface-raised)]",
-  ghost: "text-[var(--muted)] hover:bg-[var(--surface-field)] hover:text-[var(--text)]",
+  primary: "bg-[var(--blue)] text-white shadow-[var(--shadow-tight)] hover:bg-[var(--teal)]",
+  secondary: "border border-[var(--border)] bg-[var(--surface)] text-[var(--text-strong)] hover:border-[var(--text-strong)] hover:bg-[var(--surface-raised)]",
+  ghost: "text-[var(--muted)] hover:bg-[var(--surface-field)] hover:text-[var(--text-strong)]",
 };
 
 const baseClass =
-  "inline-flex h-9 items-center justify-center gap-2 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium transition-[background,border-color,color,filter,transform] disabled:cursor-not-allowed disabled:opacity-45";
+  "inline-flex h-9 items-center justify-center gap-2 rounded-[8px] px-4 font-lab-mono text-sm font-medium transition-[background,border-color,color,filter,transform] disabled:cursor-not-allowed disabled:opacity-45";
 
 export function Button({ children, icon, variant = "secondary", className, type = "button", ...props }: ButtonProps) {
   return (

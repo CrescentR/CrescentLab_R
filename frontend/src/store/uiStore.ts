@@ -17,7 +17,7 @@ type UiState = {
 
 export const useUiStore = create<UiState>((set) => ({
   sidebarCollapsed: false,
-  theme: "dark",
+  theme: "light",
   activePersona: "guest",
   loginPanelOpen: false,
   setSidebarCollapsed: (value) => set({ sidebarCollapsed: value }),

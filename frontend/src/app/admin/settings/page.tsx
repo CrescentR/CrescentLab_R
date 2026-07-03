@@ -1,5 +1,5 @@
-import { SettingsForm } from "@/components/admin/settings-form";
+import { SiteSettingsForm } from "@/components/admin/siteSettingsForm";
 
 export default function SettingsPage() {
-  return <SettingsForm />;
+  return <SiteSettingsForm />;
 }

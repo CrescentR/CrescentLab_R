@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 
-export function ModulePlaceholder({ title, description }: { title: string; description: string }) {
+export function AdminModulePlaceholder({ title, description }: { title: string; description: string }) {
   return (
     <main className="flex-1 overflow-auto px-4 py-6 md:px-8">
       <div className="mx-auto grid max-w-6xl gap-5 lg:grid-cols-[1fr_360px]">

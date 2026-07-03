@@ -1,5 +1,5 @@
-import { UserAccess } from "@/components/admin/user-access";
+import { UserAccessPanel } from "@/components/admin/userAccessPanel";
 
 export default function UsersPage() {
-  return <UserAccess />;
+  return <UserAccessPanel />;
 }

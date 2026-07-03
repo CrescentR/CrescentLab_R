@@ -1,5 +1,5 @@
-import { PublicHome } from "@/components/layout/public-home";
+import { HomeLayout } from "@/components/layout/homeLayout";
 
 export default function HomePage() {
-  return <PublicHome />;
+  return <HomeLayout />;
 }

@@ -44,3 +44,7 @@ logs/
 # Generated docs
 docs/swagger.json
 docs/swagger.yaml
+
+.nextvibe
+
+AGENTS.md

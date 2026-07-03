@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactNode, useEffect, useState } from "react";
-import { PersonaRole, ThemeMode, useUiStore } from "@/store/ui-store";
+import { PersonaRole, ThemeMode, useUiStore } from "@/store/uiStore";
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(

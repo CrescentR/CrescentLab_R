@@ -15,16 +15,16 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
-import { adminMetrics, articleSummaries, contentPipeline, labActivities } from "@/lib/mock-data";
+import { adminMetrics, articleSummaries, contentPipeline, labActivities } from "@/lib/mockData";
 import { personas } from "@/lib/personas";
-import { useUiStore } from "@/store/ui-store";
+import { useUiStore } from "@/store/uiStore";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 
 const quickActions = [
-  { label: "新建文章", href: "/admin/post-management/new", icon: FileText, tone: "cyan" },
+  { label: "新建文章", href: "/admin/postManagement/new", icon: FileText, tone: "cyan" },
   { label: "媒体库", href: "/admin/media", icon: Image, tone: "amber" },
   { label: "评论审核", href: "/admin/comments", icon: MessageSquare, tone: "green" },
   { label: "用户权限", href: "/admin/users", icon: Users, tone: "rose" },
@@ -55,7 +55,7 @@ export function DashboardOverview() {
                   这里模拟未来后端接入后的工作台：内容发布、存储状态、评论审核、用户权限、插件主题和任务队列都会从同一块运营面板进入。
                 </p>
               </div>
-              <ButtonLink href="/admin/post-management/new" icon={<ArrowRight size={16} />} variant="primary">
+              <ButtonLink href="/admin/postManagement/new" icon={<ArrowRight size={16} />} variant="primary">
                 Start Draft
               </ButtonLink>
             </div>
@@ -148,7 +148,7 @@ export function DashboardOverview() {
                 <Sparkles className="text-[var(--cyan)]" size={18} />
                 <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">最近内容</h2>
               </div>
-              <Link className="font-lab-mono text-xs text-[var(--cyan)]" href="/admin/post-management/new">
+              <Link className="font-lab-mono text-xs text-[var(--cyan)]" href="/admin/postManagement/new">
                 New Draft
               </Link>
             </div>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Panel } from "@/components/ui/panel";
 
-export function SettingsForm() {
+export function SiteSettingsForm() {
   return (
     <main className="flex-1 overflow-auto px-5 py-8 md:px-8">
       <div className="mx-auto flex max-w-5xl flex-col gap-8">

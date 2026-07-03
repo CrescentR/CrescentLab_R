@@ -42,7 +42,7 @@ frontend/src/
 │   └── ui/              # Button、Panel、Badge、Field 等基础组件
 ├── lib/
 │   ├── api/             # API 客户端边界，暂不设计接口
-│   ├── mock-data.ts     # 静态演示数据
+│   ├── mockData.ts      # 静态演示数据
 │   └── utils.ts
 ├── store/               # Zustand store
 └── types/               # 前端类型

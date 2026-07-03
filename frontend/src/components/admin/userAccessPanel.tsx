@@ -2,13 +2,13 @@
 
 import { Grid3X3, Lock, Search, ShieldCheck, UserCog, Users } from "lucide-react";
 import { useState } from "react";
-import { adminUsers } from "@/lib/mock-data";
+import { adminUsers } from "@/lib/mockData";
 import { personas } from "@/lib/personas";
-import { PersonaRole, useUiStore } from "@/store/ui-store";
+import { PersonaRole, useUiStore } from "@/store/uiStore";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
-import { StatusDot } from "@/components/ui/status-dot";
+import { StatusDot } from "@/components/ui/statusDot";
 import { cn } from "@/lib/utils";
 
 type AccessRole = Extract<PersonaRole, "member" | "admin">;
@@ -39,7 +39,7 @@ const matrixRows = [
   { name: "Plugins", member: [false, false, false], admin: [true, true, true] },
 ] as const;
 
-export function UserAccess() {
+export function UserAccessPanel() {
   const activePersona = useUiStore((state) => state.activePersona);
   const setActivePersona = useUiStore((state) => state.setActivePersona);
   const [selectedRole, setSelectedRole] = useState<AccessRole>(activePersona === "admin" ? "admin" : "member");

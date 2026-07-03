@@ -121,10 +121,10 @@ your-blog/
 │   │   │   ├── api/                 # API 客户端封装（每模块一个文件）
 │   │   │   └── utils.ts             # 工具函数
 │   │   ├── store/                   # Zustand 状态管理
-│   │   │   ├── auth-store.ts        # 认证状态（token、用户信息）
-│   │   │   ├── site-config-store.ts # 站点配置缓存
-│   │   │   ├── ui-store.ts          # UI 状态（侧边栏、弹窗）
-│   │   │   └── page-store.ts        # 页面状态
+│   │   │   ├── authStore.ts         # 认证状态（token、用户信息）
+│   │   │   ├── siteConfigStore.ts   # 站点配置缓存
+│   │   │   ├── uiStore.ts           # UI 状态（侧边栏、弹窗）
+│   │   │   └── pageStore.ts         # 页面状态
 │   │   ├── hooks/                   # 自定义 Hooks
 │   │   └── types/                   # TypeScript 类型定义
 │   ├── public/                      # 静态资源
@@ -355,10 +355,10 @@ your-blog/
 | 路由 | 页面 | 说明 |
 |---|---|---|
 | `/admin` | 仪表盘 | 概览卡片、访问趋势、最近评论、热门文章 |
-| `/admin/post-management` | 文章管理 | 文章列表、筛选、批量操作 |
-| `/admin/post-management/new` | 新建文章 | Tiptap 富文本编辑器、SEO 设置、发布设置 |
-| `/admin/post-management/[id]/edit` | 编辑文章 | 编辑已有文章 |
-| `/admin/post-management/[id]/history` | 文章历史 | 版本对比、版本恢复 |
+| `/admin/postManagement` | 文章管理 | 文章列表、筛选、批量操作 |
+| `/admin/postManagement/new` | 新建文章 | Tiptap 富文本编辑器、SEO 设置、发布设置 |
+| `/admin/postManagement/[id]/edit` | 编辑文章 | 编辑已有文章 |
+| `/admin/postManagement/[id]/history` | 文章历史 | 版本对比、版本恢复 |
 | `/admin/page-management` | 页面管理 | 自定义页面列表 |
 | `/admin/page-management/new` | 新建页面 | 页面编辑 |
 | `/admin/page-management/[id]/edit` | 编辑页面 | 编辑已有页面 |
@@ -448,7 +448,7 @@ your-blog/
    - 配置 `tsconfig.json`：路径别名 `@/*` → `./src/*`
 
 8. **前端基础架构**
-   - 创建 Zustand Store：`auth-store.ts`、`site-config-store.ts`、`ui-store.ts`
+   - 创建 Zustand Store：`authStore.ts`、`siteConfigStore.ts`、`uiStore.ts`
    - 创建 API 客户端：`lib/api/client.ts`（Axios 实例、拦截器、Token 刷新）
    - 创建根 Layout：`app/layout.tsx`（全局 Provider、字体、Tailwind）
    - 创建管理后台 Layout：`app/admin/layout.tsx`（Sidebar + 主内容区）
@@ -492,10 +492,10 @@ your-blog/
 5. **登录页面**（`app/(auth)/login/page.tsx`）
    - 用户名/邮箱 + 密码表单
    - 图形验证码集成
-   - 登录成功后存入 Zustand auth-store，重定向到 `/admin`
+   - 登录成功后存入 Zustand authStore，重定向到 `/admin`
 
 6. **管理后台认证守卫**
-   - AdminLayout 中检查 auth-store 状态
+   - AdminLayout 中检查 authStore 状态
    - 未登录重定向到 `/login`，非管理员重定向到 `/`
    - Token 过期自动刷新（Axios 拦截器）
 
@@ -543,10 +543,10 @@ your-blog/
    - Slash 命令：`slash-commands.tsx`
 
 6. **文章管理页面**
-   - 文章列表：`admin/post-management/page.tsx`（表格、筛选、批量操作）
-   - 新建文章：`admin/post-management/new/page.tsx`
-   - 编辑文章：`admin/post-management/[id]/edit/page.tsx`
-   - 历史版本：`admin/post-management/[id]/history/page.tsx`
+   - 文章列表：`admin/postManagement/page.tsx`（表格、筛选、批量操作）
+   - 新建文章：`admin/postManagement/new/page.tsx`
+   - 编辑文章：`admin/postManagement/[id]/edit/page.tsx`
+   - 历史版本：`admin/postManagement/[id]/history/page.tsx`
 
 7. **公开文章页面**
    - 首页：`app/(frontend)/page.tsx`（文章列表、分页、侧边栏）

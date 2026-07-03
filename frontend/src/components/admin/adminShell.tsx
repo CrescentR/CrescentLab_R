@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { ReactNode } from "react";
 import { personas } from "@/lib/personas";
-import { useUiStore } from "@/store/ui-store";
+import { useUiStore } from "@/store/uiStore";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
@@ -32,7 +32,7 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: Gauge, tone: "cyan" },
-  { href: "/admin/post-management/new", label: "Content", icon: FileText, tone: "purple" },
+  { href: "/admin/postManagement/new", label: "Content", icon: FileText, tone: "purple" },
   { href: "/admin/media", label: "Media", icon: Image, tone: "amber" },
   { href: "/admin/comments", label: "Comments", icon: MessageSquare, tone: "green" },
   { href: "/admin/users", label: "Users", icon: Users, tone: "rose" },
@@ -69,7 +69,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               <ButtonLink href="/" icon={<ArrowLeft size={15} />} variant="secondary">
                 返回前台
               </ButtonLink>
-              <ButtonLink href="/admin/post-management/new" icon={<PenLine size={15} />} variant="primary">
+              <ButtonLink href="/admin/postManagement/new" icon={<PenLine size={15} />} variant="primary">
                 New Post
               </ButtonLink>
             </div>
