@@ -2,6 +2,7 @@ import { Save, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Panel } from "@/components/ui/panel";
+import { BRANDING_SETTINGS_GROUP_KEY, SITE_SETTINGS_SCOPE, brandingSettingRows } from "@/lib/site-settings";
 
 export function SiteSettingsForm() {
   return (
@@ -36,6 +37,28 @@ export function SiteSettingsForm() {
               multiline
               value="A high-performance, developer-centric content management system built for speed and precision."
             />
+          </div>
+        </Panel>
+
+        <Panel className="p-6 md:p-8">
+          <div className="flex items-center gap-3 border-b border-[var(--border-soft)] pb-5">
+            <SlidersHorizontal className="text-[var(--cyan)]" size={20} />
+            <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">Branding Assets</h2>
+          </div>
+          <div className="mt-6 grid gap-6 md:grid-cols-2">
+            {brandingSettingRows.map((row) => (
+              <Field
+                className={row.key === "heroImageUrl" ? "md:col-span-2" : undefined}
+                key={row.key}
+                label={row.key}
+                meta={
+                  <span>
+                    {SITE_SETTINGS_SCOPE}/{BRANDING_SETTINGS_GROUP_KEY}
+                  </span>
+                }
+                value={row.value}
+              />
+            ))}
           </div>
         </Panel>
       </div>

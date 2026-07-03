@@ -10,7 +10,6 @@ import {
   Gauge,
   Home,
   Image,
-  LayoutDashboard,
   LockKeyhole,
   MessageSquare,
   Moon,
@@ -29,6 +28,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
+import { backgroundImageStyle, siteBranding } from "@/lib/site-settings";
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: Gauge, tone: "cyan" },
@@ -56,9 +56,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <aside className="hidden w-72 shrink-0 border-r border-[var(--border-soft)] bg-[var(--surface-glass)] lg:flex lg:flex-col">
           <div className="px-5 py-6">
             <Link className="flex items-center gap-3" href="/admin">
-              <span className="grid size-11 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-raised)] text-[var(--cyan)]">
-                <LayoutDashboard size={19} strokeWidth={2} />
-              </span>
+              <span
+                aria-label="CrescentLab admin logo"
+                className="block size-11 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[length:20px_20px] bg-center bg-no-repeat"
+                role="img"
+                style={backgroundImageStyle(siteBranding.adminLogoUrl)}
+              />
               <span>
                 <span className="block font-lab-display text-xl font-bold text-[var(--text-strong)]">CrescentLab</span>
                 <span className="block font-lab-mono text-xs text-[var(--muted)]">Admin Lab Console</span>
@@ -105,9 +108,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">signed in as</span>
                   <strong className="mt-1 block text-sm text-[var(--text-strong)]">{persona.name}</strong>
                 </div>
-                <span className="grid size-9 place-items-center rounded-[var(--radius)] bg-[var(--surface-field)] font-lab-mono text-xs text-[var(--text-strong)]">
-                  {persona.initials}
-                </span>
+                <span
+                  aria-label={`${persona.name} avatar`}
+                  className="block size-9 rounded-[var(--radius)] bg-[var(--surface-field)] bg-cover bg-center"
+                  role="img"
+                  style={backgroundImageStyle(siteBranding.defaultAvatarUrl)}
+                />
               </div>
             </Panel>
             <Link className="flex h-9 items-center gap-3 rounded-[var(--radius)] px-4 text-sm text-[var(--muted)] hover:bg-[var(--surface-field)]" href="/docs">
@@ -120,9 +126,12 @@ export function AdminShell({ children }: { children: ReactNode }) {
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="sticky top-0 z-20 flex min-h-16 items-center justify-between gap-3 border-b border-[var(--border-soft)] bg-[var(--surface-glass)] px-4 backdrop-blur-xl md:px-6">
             <div className="flex min-w-0 items-center gap-3">
-              <Link className="grid size-9 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] text-[var(--cyan)] lg:hidden" href="/admin">
-                <LayoutDashboard size={18} />
-              </Link>
+              <Link
+                aria-label="CrescentLab admin logo"
+                className="block size-9 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[length:16px_16px] bg-center bg-no-repeat text-[var(--cyan)] lg:hidden"
+                href="/admin"
+                style={backgroundImageStyle(siteBranding.adminLogoUrl)}
+              />
               <div className="min-w-0">
                 <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">admin surface</span>
                 <strong className="block truncate text-sm text-[var(--text-strong)]">CrescentLab operating console</strong>
