@@ -1,0 +1,12 @@
+.git
+.idea
+.nextvibe
+data/*
+!data/.gitkeep
+frontend/.next
+frontend/node_modules
+node_modules
+bin
+dist
+coverage.out
+*.log

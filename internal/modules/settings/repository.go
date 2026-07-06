@@ -21,7 +21,8 @@ type Setting struct {
 }
 
 type Repository struct {
-	db *sql.DB
+	db     *sql.DB
+	driver string
 }
 
 type ListFilter struct {
@@ -29,8 +30,13 @@ type ListFilter struct {
 	GroupKey string
 }
 
-func NewRepository(db *sql.DB) *Repository {
-	return &Repository{db: db}
+func NewRepository(db *sql.DB, drivers ...string) *Repository {
+	driver := "sqlite"
+	if len(drivers) > 0 {
+		driver = drivers[0]
+	}
+
+	return &Repository{db: db, driver: driver}
 }
 
 func (r *Repository) Get(ctx context.Context, scope string, key string) (Setting, error) {
@@ -38,11 +44,20 @@ func (r *Repository) Get(ctx context.Context, scope string, key string) (Setting
 		return Setting{}, errors.New("settings repository database is nil")
 	}
 
-	row := r.db.QueryRowContext(ctx, `
+	query := `
 SELECT id, scope, group_key, key, value, value_type, is_public, is_encrypted, description
 FROM settings
 WHERE scope = ? AND key = ?
-`, scope, key)
+`
+	if r.driver == "postgres" {
+		query = `
+SELECT id, scope, group_key, key, value, value_type, is_public, is_encrypted, description
+FROM settings
+WHERE scope = $1 AND key = $2
+`
+	}
+
+	row := r.db.QueryRowContext(ctx, query, scope, key)
 
 	setting, err := scanSetting(row)
 	if err != nil {
@@ -91,12 +106,22 @@ func (r *Repository) List(ctx context.Context, filter ListFilter) ([]Setting, er
 		return nil, errors.New("settings repository database is nil")
 	}
 
-	rows, err := r.db.QueryContext(ctx, `
+	query := `
 SELECT id, scope, group_key, key, value, value_type, is_public, is_encrypted, description
 FROM settings
 WHERE (? = '' OR scope = ?) AND (? = '' OR group_key = ?)
 ORDER BY group_key ASC, key ASC
-`, filter.Scope, filter.Scope, filter.GroupKey, filter.GroupKey)
+`
+	if r.driver == "postgres" {
+		query = `
+SELECT id, scope, group_key, key, value, value_type, is_public, is_encrypted, description
+FROM settings
+WHERE ($1 = '' OR scope = $2) AND ($3 = '' OR group_key = $4)
+ORDER BY group_key ASC, key ASC
+`
+	}
+
+	rows, err := r.db.QueryContext(ctx, query, filter.Scope, filter.Scope, filter.GroupKey, filter.GroupKey)
 	if err != nil {
 		return nil, fmt.Errorf("list settings: %w", err)
 	}
@@ -125,7 +150,7 @@ func (r *Repository) Upsert(ctx context.Context, setting Setting) (Setting, erro
 		return Setting{}, err
 	}
 
-	if err := execUpsertSetting(ctx, r.db, setting); err != nil {
+	if err := execUpsertSetting(ctx, r.db, r.driver, setting); err != nil {
 		return Setting{}, fmt.Errorf("upsert setting: %w", err)
 	}
 
@@ -152,7 +177,7 @@ func (r *Repository) UpsertMany(ctx context.Context, settings []Setting) ([]Sett
 	defer tx.Rollback()
 
 	for _, setting := range settings {
-		if err := execUpsertSetting(ctx, tx, setting); err != nil {
+		if err := execUpsertSetting(ctx, tx, r.driver, setting); err != nil {
 			return nil, fmt.Errorf("upsert setting: %w", err)
 		}
 	}
@@ -177,8 +202,8 @@ type settingExecer interface {
 	ExecContext(ctx context.Context, query string, args ...any) (sql.Result, error)
 }
 
-func execUpsertSetting(ctx context.Context, execer settingExecer, setting Setting) error {
-	_, err := execer.ExecContext(ctx, `
+func execUpsertSetting(ctx context.Context, execer settingExecer, driver string, setting Setting) error {
+	query := `
 INSERT INTO settings (scope, group_key, key, value, value_type, is_public, is_encrypted, description)
 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 ON CONFLICT (scope, key) DO UPDATE SET
@@ -189,7 +214,23 @@ ON CONFLICT (scope, key) DO UPDATE SET
   is_encrypted = excluded.is_encrypted,
   description = excluded.description,
   updated_at = CURRENT_TIMESTAMP
-`, setting.Scope, setting.GroupKey, setting.Key, string(setting.Value), setting.ValueType, setting.IsPublic, setting.IsEncrypted, setting.Description)
+`
+	if driver == "postgres" {
+		query = `
+INSERT INTO settings (scope, group_key, key, value, value_type, is_public, is_encrypted, description)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+ON CONFLICT (scope, key) DO UPDATE SET
+  group_key = excluded.group_key,
+  value = excluded.value,
+  value_type = excluded.value_type,
+  is_public = excluded.is_public,
+  is_encrypted = excluded.is_encrypted,
+  description = excluded.description,
+  updated_at = CURRENT_TIMESTAMP
+`
+	}
+
+	_, err := execer.ExecContext(ctx, query, setting.Scope, setting.GroupKey, setting.Key, string(setting.Value), setting.ValueType, setting.IsPublic, setting.IsEncrypted, setting.Description)
 	return err
 }
 

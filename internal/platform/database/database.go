@@ -9,6 +9,7 @@ import (
 
 	"CrescentLab_R/internal/platform/config"
 
+	_ "github.com/lib/pq"
 	_ "modernc.org/sqlite"
 )
 
@@ -18,8 +19,10 @@ type DB struct {
 }
 
 func Open(ctx context.Context, cfg config.DatabaseConfig) (*DB, error) {
-	if cfg.Driver != "sqlite" {
-		return nil, fmt.Errorf("unsupported database.driver %q; supported: sqlite", cfg.Driver)
+	switch cfg.Driver {
+	case "postgres", "sqlite":
+	default:
+		return nil, fmt.Errorf("unsupported database.driver %q; supported: postgres, sqlite", cfg.Driver)
 	}
 
 	sqlDB, err := sql.Open(cfg.Driver, cfg.DSN)

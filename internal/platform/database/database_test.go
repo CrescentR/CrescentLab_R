@@ -32,7 +32,7 @@ func TestOpenSQLite(t *testing.T) {
 
 func TestOpenRejectsUnsupportedDriver(t *testing.T) {
 	_, err := Open(context.Background(), config.DatabaseConfig{
-		Driver: "postgres",
+		Driver: "mysql",
 		DSN:    "host=localhost dbname=crescentlab",
 	})
 	if err == nil {

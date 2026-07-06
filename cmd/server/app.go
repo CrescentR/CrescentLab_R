@@ -45,7 +45,7 @@ func (a *App) Run() error {
 
 	a.db = db
 	a.httpServer = platformhttp.New(cfg.Server, a.log)
-	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL())).RegisterAdminRoutes(a.httpServer.Engine().Group("/api/admin"))
+	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(a.httpServer.Engine().Group("/api/admin"))
 
 	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())
 
