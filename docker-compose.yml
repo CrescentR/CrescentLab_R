@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: ${POSTGRES_IMAGE:-m.daocloud.io/docker.io/library/postgres:16-alpine}
     environment:
       POSTGRES_DB: crescentlab
       POSTGRES_USER: crescentlab
@@ -20,6 +20,11 @@ services:
     build:
       context: .
       target: backend
+      provenance: false
+      sbom: false
+      args:
+        GO_IMAGE: ${GO_IMAGE:-m.daocloud.io/docker.io/library/golang:1.26-alpine}
+        ALPINE_IMAGE: ${ALPINE_IMAGE:-m.daocloud.io/docker.io/library/alpine:3.22}
     depends_on:
       postgres:
         condition: service_healthy
@@ -32,7 +37,11 @@ services:
     build:
       context: .
       target: frontend
+      provenance: false
+      sbom: false
       args:
+        NODE_IMAGE: ${NODE_IMAGE:-m.daocloud.io/docker.io/library/node:24-slim}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
         BACKEND_URL: http://backend:8091
     environment:
       BACKEND_URL: http://backend:8091

@@ -1,16 +1,17 @@
 # syntax=docker/dockerfile:1
 
-ARG GO_VERSION=1.26
-ARG NODE_VERSION=24
+ARG GO_IMAGE=m.daocloud.io/docker.io/library/golang:1.26-alpine
+ARG ALPINE_IMAGE=m.daocloud.io/docker.io/library/alpine:3.22
+ARG NODE_IMAGE=m.daocloud.io/docker.io/library/node:24-slim
 
-FROM golang:${GO_VERSION}-alpine AS backend-build
+FROM ${GO_IMAGE} AS backend-build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -o /out/crescentlab ./main.go
 
-FROM alpine:3.22 AS backend
+FROM ${ALPINE_IMAGE} AS backend
 WORKDIR /app
 RUN apk add --no-cache ca-certificates \
   && addgroup -S crescentlab \
@@ -23,25 +24,26 @@ USER crescentlab
 EXPOSE 8091
 CMD ["/app/crescentlab"]
 
-FROM node:${NODE_VERSION}-alpine AS frontend-build
+FROM ${NODE_IMAGE} AS frontend-build
 WORKDIR /src/frontend
 ARG BACKEND_URL=http://backend:8091
+ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV BACKEND_URL=${BACKEND_URL}
 COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
+RUN npm config set registry "${NPM_REGISTRY}" \
+  && npm config set replace-registry-host "always" \
+  && npm ci --no-audit --no-fund
 COPY frontend ./
 RUN npm run build
 
-FROM node:${NODE_VERSION}-alpine AS frontend
+FROM ${NODE_IMAGE} AS frontend
 WORKDIR /app
 ENV NODE_ENV=production
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
-RUN addgroup -S crescentlab \
-  && adduser -S crescentlab -G crescentlab \
-  && chown -R crescentlab:crescentlab /app
-COPY --from=frontend-build --chown=crescentlab:crescentlab /src/frontend/.next/standalone ./
-COPY --from=frontend-build --chown=crescentlab:crescentlab /src/frontend/.next/static ./.next/static
-USER crescentlab
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=frontend-build --chown=node:node /src/frontend/.next/standalone ./
+COPY --from=frontend-build --chown=node:node /src/frontend/.next/static ./.next/static
+USER node
 EXPOSE 3000
 CMD ["node", "server.js"]
