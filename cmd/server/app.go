@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	contentmodule "CrescentLab_R/internal/modules/content"
 	settingsmodule "CrescentLab_R/internal/modules/settings"
 	"CrescentLab_R/internal/platform/config"
 	"CrescentLab_R/internal/platform/database"
@@ -45,7 +46,11 @@ func (a *App) Run() error {
 
 	a.db = db
 	a.httpServer = platformhttp.New(cfg.Server, a.log)
-	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(a.httpServer.Engine().Group("/api/admin"))
+
+	engine := a.httpServer.Engine()
+	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(engine.Group("/api/admin"))
+	contentmodule.NewHandler(contentmodule.NewRepository(db.SQL(), db.Driver())).RegisterPublicRoutes(engine.Group("/api"))
+	contentmodule.NewHandler(contentmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(engine.Group("/api/admin"))
 
 	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())
 

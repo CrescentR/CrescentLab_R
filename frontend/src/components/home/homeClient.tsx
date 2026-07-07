@@ -58,7 +58,7 @@ export function HomeClient({ content }: { content: HomeContent }) {
       <AnnouncementBar announcement={content.announcement} />
       <HeroSection categories={content.categories} feature={content.feature} hero={content.hero} />
 
-      <section className="home-container grid gap-4 pb-14 lg:grid-cols-[minmax(0,1fr)_310px]">
+      <section className="home-container grid gap-6 pb-20 lg:grid-cols-[minmax(0,1fr)_310px]">
         <ArticleSection articles={content.articles} />
         <ContentObjectsPanel modules={content.modules} />
       </section>

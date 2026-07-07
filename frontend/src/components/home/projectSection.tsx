@@ -8,7 +8,7 @@ import { projectStatusLabel, toneBorderClass, toneDotClass, toneTextClass } from
 export function ProjectSection({ projects }: { projects: ProjectSite[] }) {
   return (
     <section className="home-project-band" id="labs">
-      <div className="home-container py-12 md:py-16">
+      <div className="home-container py-16 md:py-24">
         <div className="grid gap-6 lg:grid-cols-[minmax(0,0.78fr)_1fr]" data-lab-animate>
           <div>
             <Badge tone="purple">Labs as pages</Badge>
@@ -34,7 +34,7 @@ export function ProjectSection({ projects }: { projects: ProjectSite[] }) {
 function ProjectSiteRow({ index, site }: { index: number; site: ProjectSite }) {
   return (
     <Link
-      className="group grid gap-5 border-b border-[var(--border-soft)] py-7 md:grid-cols-[72px_minmax(0,1fr)_260px]"
+      className="group grid gap-5 border-b border-[var(--border-soft)] py-10 md:grid-cols-[72px_minmax(0,1fr)_260px]"
       href={site.href}
       data-lab-animate
     >

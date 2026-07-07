@@ -53,23 +53,23 @@ export function HomeHeader({
           </nav>
 
           <div className="home-header-actions">
-            <Button aria-label="搜索" className="hidden size-9 rounded-[12px] px-0 md:inline-flex" icon={<Search size={16} />} variant="ghost">
+            <Button aria-label="搜索" className="hidden size-11 rounded-[8px] px-0 md:inline-flex" icon={<Search size={16} />} variant="ghost">
               <span className="sr-only">搜索</span>
             </Button>
-            <Button aria-label="切换主题" className="size-9 rounded-[12px] px-0" icon={<ThemeIcon size={16} />} onClick={onToggleTheme} variant="secondary">
+            <Button aria-label="切换主题" className="size-11 rounded-[8px] px-0" icon={<ThemeIcon size={16} />} onClick={onToggleTheme} variant="secondary">
               <span className="sr-only">切换主题</span>
             </Button>
 
             <div className="home-permission-cluster">
               {persona.canEnterAdmin && (
-                <ButtonLink className="h-8 rounded-[10px] px-3 text-xs" href="/admin" icon={<LayoutDashboard size={14} />} variant="primary">
+                <ButtonLink className="h-11 rounded-[8px] px-3 text-xs" href="/admin" icon={<LayoutDashboard size={14} />} variant="primary">
                   后台
                 </ButtonLink>
               )}
 
               <div className="relative">
                 <Button
-                  className="h-8 rounded-[10px] px-3 text-xs"
+                  className="h-11 rounded-[8px] px-3 text-xs"
                   icon={activePersona === "guest" ? <UserRound size={15} /> : <ChevronDown size={15} />}
                   onClick={onToggleLogin}
                   variant={activePersona === "guest" ? "primary" : "secondary"}
@@ -86,7 +86,7 @@ export function HomeHeader({
                     <div className="grid gap-2">
                       {personaOptions.map((option) => (
                         <button className="home-account-option" key={option.id} onClick={() => onSelectPersona(option.id)} type="button">
-                          <span className="grid size-9 shrink-0 place-items-center rounded-[10px] bg-[var(--surface-raised)] font-lab-mono text-xs text-[var(--text-strong)]">
+                          <span className="grid size-9 shrink-0 place-items-center rounded-[8px] bg-[var(--surface-raised)] font-lab-mono text-xs text-[var(--text-strong)]">
                             {option.initials}
                           </span>
                           <span>

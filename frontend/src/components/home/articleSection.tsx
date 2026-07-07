@@ -24,7 +24,7 @@ function FeaturedArticleCard({ article }: { article: ArticleSummary }) {
     <article className="home-featured-article group">
       {article.coverImage && (
         <div className="home-featured-article-media">
-          <Image alt={article.coverAlt ?? article.title} className="object-cover" fill sizes="(min-width: 768px) 280px, 100vw" src={article.coverImage} unoptimized />
+          <Image alt={article.coverAlt ?? article.title} className="object-cover" fill sizes="(min-width: 768px) 340px, 100vw" src={article.coverImage} unoptimized />
         </div>
       )}
       <div className="p-5 md:p-6">
@@ -35,7 +35,7 @@ function FeaturedArticleCard({ article }: { article: ArticleSummary }) {
           <span className="font-lab-mono text-xs text-[var(--muted-low)]">{article.category}</span>
           {article.linkedProject && <Badge tone="purple">{article.linkedProject}</Badge>}
         </div>
-        <h3 className="mt-4 max-w-2xl font-lab-display text-3xl font-semibold leading-tight text-[var(--text-strong)] transition-colors group-hover:text-[var(--blue)]">
+        <h3 className="mt-4 max-w-2xl font-lab-display text-4xl font-semibold leading-tight text-[var(--text-strong)] transition-colors group-hover:text-[var(--blue)]">
           {article.title}
         </h3>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">{article.excerpt}</p>
@@ -50,7 +50,7 @@ function FeaturedArticleCard({ article }: { article: ArticleSummary }) {
 
 function ArticleRow({ article, index }: { article: ArticleSummary; index: number }) {
   return (
-    <article className="group grid gap-4 border-b border-[var(--border-soft)] py-6 md:grid-cols-[72px_minmax(0,1fr)_130px]">
+    <article className="group grid gap-4 border-b border-[var(--border-soft)] py-8 md:grid-cols-[72px_minmax(0,1fr)_130px]">
       <span className="font-lab-mono text-xs text-[var(--muted-low)]">0{index}</span>
       <div>
         <div className="flex flex-wrap items-center gap-2">

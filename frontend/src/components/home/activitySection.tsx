@@ -7,7 +7,7 @@ import { toneDotClass } from "./homeTone";
 
 export function ActivitySection({ activities, canEnterAdmin }: { activities: LabActivity[]; canEnterAdmin: boolean }) {
   return (
-    <section className="home-container grid gap-12 py-12 md:py-16 lg:grid-cols-[minmax(0,1fr)_340px]" id="activity">
+    <section className="home-container grid gap-16 py-16 md:py-24 lg:grid-cols-[minmax(0,1fr)_340px]" id="activity">
       <div data-lab-animate>
         <SectionHeading
           eyebrow="Lab log"
@@ -44,7 +44,7 @@ export function ActivitySection({ activities, canEnterAdmin }: { activities: Lab
 
 function ActivityRow({ activity }: { activity: LabActivity }) {
   return (
-    <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 border-b border-[var(--border-soft)] py-5">
+    <div className="grid grid-cols-[72px_minmax(0,1fr)] gap-4 border-b border-[var(--border-soft)] py-7">
       <span className="font-lab-mono text-xs text-[var(--muted-low)]">{activity.time}</span>
       <div className="border-l border-[var(--border-soft)] pl-5">
         <div className="flex items-center gap-3">

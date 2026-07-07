@@ -15,7 +15,7 @@ const variants = {
 };
 
 const baseClass =
-  "inline-flex h-9 items-center justify-center gap-2 rounded-[8px] px-4 font-lab-mono text-sm font-medium transition-[background,border-color,color,filter,transform] disabled:cursor-not-allowed disabled:opacity-45";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-[8px] px-4 font-lab-mono text-sm font-medium transition-[background,border-color,color,filter,transform] duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45";
 
 export function Button({ children, icon, variant = "secondary", className, type = "button", ...props }: ButtonProps) {
   return (

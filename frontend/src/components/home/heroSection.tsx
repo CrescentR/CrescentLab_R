@@ -25,12 +25,12 @@ export function HeroSection({
   hero: HomeHero;
 }) {
   return (
-    <section className="home-container pb-10 pt-5 md:pb-14" id="home">
+    <section className="home-container pb-16 pt-8 md:pb-20" id="home">
       <div className="home-hero-grid">
         <article className="home-hero-card" data-lab-animate>
           <div className="home-hero-copy">
             <p className="home-eyebrow">{hero.eyebrow}</p>
-            <h1 className="mt-4 max-w-3xl font-lab-display text-4xl font-semibold leading-[1.08] text-[var(--text-strong)] md:text-6xl">
+            <h1 className="mt-4 max-w-3xl font-lab-display text-4xl font-semibold leading-[1.06] text-[var(--text-strong)] md:text-7xl">
               {hero.title}
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)]">{hero.description}</p>
@@ -45,7 +45,7 @@ export function HeroSection({
           </div>
 
           <figure className="home-hero-figure">
-            <Image alt={hero.coverAlt} className="object-cover" fill priority sizes="(min-width: 1024px) 310px, 100vw" src={hero.coverImage} unoptimized />
+            <Image alt={hero.coverAlt} className="object-cover" fill priority sizes="(min-width: 1024px) 380px, 100vw" src={hero.coverImage} unoptimized />
             <figcaption className="home-hero-caption">
               {hero.notes.map((note) => (
                 <span key={note}>{note}</span>
@@ -74,7 +74,7 @@ export function HeroSection({
         </aside>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+      <div className="mt-6 grid gap-4 sm:grid-cols-3">
         {categories.map((category) => {
           const Icon = categoryIcons[category.icon];
 
