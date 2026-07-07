@@ -74,6 +74,7 @@ PostgreSQL schema 完整定义了 50+ 张表，分 12 个区域。SQLite schema 
 ## 四、Checklist
 
 - [x] 第一步：content 模块 — 文章列表 API ✅ 2026-07-07
+- [x] 第二步：content 模块 — 文章详情 + 创建 API ✅ 2026-07-07
 
 ### 第一步完成记录
 
@@ -96,15 +97,52 @@ PostgreSQL schema 完整定义了 50+ 张表，分 12 个区域。SQLite schema 
 
 ---
 
-## 下一步规划
-
-### 第二步：content 模块 — 文章详情 + 创建 API
+### 第二步完成记录
 
 **目标**：
 - `GET /api/articles/:slug` — 公开文章详情（含 markdown 正文）
 - `POST /api/admin/articles` — 创建文章
 
+**修改文件**：
+- `internal/modules/content/model.go` — 新增 `ArticleDetail` 结构体、`Article.Detail()` 投影方法、`CreateInput` 输入类型及 `Validate()` 校验
+- `internal/modules/content/repository.go` — 新增 `Create` 方法（含默认值填充、published_at 条件写入）；提取 `scanArticleRow` helper 消除 `GetBySlug`/`GetByID` 重复扫描逻辑；`GetBySlug` 和 `GetByID` 共用 helper
+- `internal/modules/content/handler.go` — 新增 `detail` handler（公开，仅返回已发布文章）、`create` handler（管理，创建文章）；注册 `GET /api/articles/:slug` 和 `POST /api/admin/articles` 路由
+- `database/sqlite/schema.sql` — `articles.slug` 增加 `UNIQUE` 约束（与 PostgreSQL 的 `ux_articles_slug_active` 部分唯一索引对齐）
+
+**新增测试**：
+- `repository_test.go` — 6 个新测试：GetBySlug 正常/不存在/软删除排除、Create 默认值/published_at 写入/校验失败/重复 slug
+- `handler_test.go` — 5 个新测试：detail 返回已发布/detail 不存在/detail 隐藏草稿、create 创建成功/校验失败/重复 slug
+
+**API 端点**：
+- `GET /api/articles/:slug` — 公开，返回已发布文章详情（含 `content_md`、`content_html` 正文字段）；草稿/归档文章返回 404
+- `POST /api/admin/articles` — 管理，创建文章；自动填充默认值（status=draft、source_format=markdown）；published 状态自动写入 `published_at`
+
+**测试结果**：19/19 通过（含第一步原有 8 个测试，无回归）
+
+---
+
+## 下一步规划
+
+### 第三步：content 模块 — 文章编辑 + 删除 API
+
+**目标**：
+- `PUT /api/admin/articles/:id` — 编辑文章
+- `DELETE /api/admin/articles/:id` — 软删除文章
+
 **涉及**：
-- `repository.go` 补充 Create 方法
-- `handler.go` 补充 detail / create handler
+- `repository.go` 补充 `Update` + `SoftDelete` 方法
+- `handler.go` 补充 `update` / `delete` handler
 - 测试补充
+
+### 第四步：auth 模块 — 用户注册/登录
+
+**目标**：
+- `POST /api/auth/register` — 用户注册
+- `POST /api/auth/login` — 用户登录
+- 实现 JWT 签发与验证
+
+### 第五步：为已有 API 补充认证中间件
+
+**目标**：
+- `/api/admin/*` 路由组增加 JWT 认证中间件
+- 未认证请求返回 401

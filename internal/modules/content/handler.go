@@ -1,6 +1,9 @@
 package content
 
 import (
+	"database/sql"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -17,10 +20,12 @@ func NewHandler(repo *Repository) *Handler {
 
 func (h *Handler) RegisterPublicRoutes(group *gin.RouterGroup) {
 	group.GET("/articles", h.list)
+	group.GET("/articles/:slug", h.detail)
 }
 
 func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/articles", h.adminList)
+	group.POST("/articles", h.create)
 }
 
 func (h *Handler) list(c *gin.Context) {
@@ -46,6 +51,47 @@ func (h *Handler) adminList(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, result)
+}
+
+func (h *Handler) detail(c *gin.Context) {
+	slug := c.Param("slug")
+	if slug == "" {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: "slug is required"})
+		return
+	}
+
+	article, err := h.repo.GetBySlug(c.Request.Context(), slug)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, errorResponse{Error: "article not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	if article.Status != StatusPublished {
+		c.JSON(http.StatusNotFound, errorResponse{Error: "article not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, article.Detail())
+}
+
+func (h *Handler) create(c *gin.Context) {
+	var input CreateInput
+	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: "invalid request body"})
+		return
+	}
+
+	article, err := h.repo.Create(c.Request.Context(), input)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, article.Detail())
 }
 
 func parseListFilter(c *gin.Context) ListFilter {

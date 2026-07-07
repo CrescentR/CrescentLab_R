@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS articles (
   owner_id INTEGER,
   category_id INTEGER,
   title TEXT NOT NULL,
-  slug TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
   excerpt TEXT,
   content_md TEXT NOT NULL DEFAULT '',
   content_html TEXT NOT NULL DEFAULT '',

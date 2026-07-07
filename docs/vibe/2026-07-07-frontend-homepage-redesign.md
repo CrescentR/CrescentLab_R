@@ -117,8 +117,9 @@
 - [x] 整体风格从"小而精致"变为"大气舒展"
 - [x] 交互元素有清晰 hover / active / focus-visible 状态
 - [x] 暗色主题使用独立 token，不再沿用浅色表面
-- [ ] lint / typecheck 通过
-- [ ] 浏览器截图验证 375px 与桌面视口
+- [x] lint / typecheck 通过
+- [x] 生产构建通过
+- [ ] 浏览器截图验证 375px 与桌面视口（已用 Chrome headless 生成截图；375px headless 视口疑似未按移动布局模拟，最终仍需真实浏览器复核）
 
 ## 七、Checklist
 
@@ -131,4 +132,5 @@
 - [x] 3.6 活动流区域
 - [x] 3.7 全局调整
 - [x] changelog 记录
-- [ ] lint / typecheck 验证
+- [x] lint / typecheck 验证
+- [x] next build 验证

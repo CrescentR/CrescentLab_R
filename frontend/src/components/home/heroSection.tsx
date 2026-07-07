@@ -30,7 +30,7 @@ export function HeroSection({
         <article className="home-hero-card" data-lab-animate>
           <div className="home-hero-copy">
             <p className="home-eyebrow">{hero.eyebrow}</p>
-            <h1 className="mt-4 max-w-3xl font-lab-display text-4xl font-semibold leading-[1.06] text-[var(--text-strong)] md:text-7xl">
+            <h1 className="mt-4 max-w-3xl font-lab-display text-3xl font-semibold leading-[1.08] text-[var(--text-strong)] sm:text-4xl md:text-7xl md:leading-[1.06]">
               {hero.title}
             </h1>
             <p className="mt-5 max-w-2xl text-base leading-8 text-[var(--muted)]">{hero.description}</p>
@@ -55,10 +55,10 @@ export function HeroSection({
         </article>
 
         <aside className="home-feature-card" data-lab-animate>
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="font-lab-mono text-xs font-semibold text-[var(--muted)]">{feature.label}</p>
-              <h2 className="mt-3 font-lab-display text-3xl font-semibold leading-tight text-[var(--text-strong)]">{feature.title}</h2>
+              <h2 className="mt-3 font-lab-display text-2xl font-semibold leading-tight text-[var(--text-strong)] sm:text-3xl">{feature.title}</h2>
             </div>
             <span className="home-feature-meta">{feature.meta}</span>
           </div>

@@ -92,6 +92,119 @@ func TestHandlerListEmptyResult(t *testing.T) {
 	}
 }
 
+func TestHandlerDetailReturnsPublishedArticle(t *testing.T) {
+	db := openContentTestDB(t)
+	seedArticle(t, db, "my-post", "My Post", "published")
+
+	router := newContentTestRouterWithDB(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/articles/my-post", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET status = %d, body = %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "My Post") {
+		t.Fatalf("body should contain article title: %s", rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"content_md"`) {
+		t.Fatalf("body should contain content_md field: %s", rec.Body.String())
+	}
+}
+
+func TestHandlerDetailNotFound(t *testing.T) {
+	db := openContentTestDB(t)
+	router := newContentTestRouterWithDB(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/articles/nonexistent", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("GET status = %d, want 404, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHandlerDetailHidesDraftFromPublic(t *testing.T) {
+	db := openContentTestDB(t)
+	seedArticle(t, db, "draft-post", "Draft Post", "draft")
+
+	router := newContentTestRouterWithDB(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/articles/draft-post", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("GET status = %d, want 404 (draft hidden), body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHandlerCreateArticle(t *testing.T) {
+	db := openContentTestDB(t)
+	router := newContentTestRouterWithDB(t, db)
+
+	body := `{"title":"New Post","slug":"new-post","content_md":"# Hello"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("POST status = %d, want 201, body = %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), "New Post") {
+		t.Fatalf("body should contain article title: %s", rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"draft"`) {
+		t.Fatalf("body should contain default status draft: %s", rec.Body.String())
+	}
+}
+
+func TestHandlerCreateValidationFails(t *testing.T) {
+	db := openContentTestDB(t)
+	router := newContentTestRouterWithDB(t, db)
+
+	tests := []struct {
+		name string
+		body string
+	}{
+		{"empty title", `{"slug":"test"}`},
+		{"empty slug", `{"title":"Test"}`},
+		{"invalid json", `not json`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/admin/articles", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("POST status = %d, want 400 for %s, body = %s", rec.Code, tt.name, rec.Body.String())
+			}
+		})
+	}
+}
+
+func TestHandlerCreateDuplicateSlug(t *testing.T) {
+	db := openContentTestDB(t)
+	seedArticle(t, db, "duplicate-slug", "First", "published")
+	router := newContentTestRouterWithDB(t, db)
+
+	body := `{"title":"Second","slug":"duplicate-slug"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("POST status = %d, want 400 for duplicate slug, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
 func newContentTestRouterWithDB(t *testing.T, db *sql.DB) *gin.Engine {
 	t.Helper()
 

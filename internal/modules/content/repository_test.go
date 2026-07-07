@@ -3,6 +3,7 @@ package content
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"path/filepath"
 	"testing"
 
@@ -96,6 +97,135 @@ func TestRepositoryListExcludesDeleted(t *testing.T) {
 	}
 }
 
+func TestRepositoryGetBySlug(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	seedArticle(t, db, "my-post", "My Post", "published")
+	seedArticle(t, db, "deleted-post", "Deleted Post", "published")
+
+	article, err := repo.GetBySlug(context.Background(), "my-post")
+	if err != nil {
+		t.Fatalf("GetBySlug error: %v", err)
+	}
+	if article.Title != "My Post" {
+		t.Fatalf("Title = %q, want %q", article.Title, "My Post")
+	}
+	if article.Status != StatusPublished {
+		t.Fatalf("Status = %q, want %q", article.Status, StatusPublished)
+	}
+}
+
+func TestRepositoryGetBySlugNotFound(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	_, err := repo.GetBySlug(context.Background(), "nonexistent")
+	if err == nil {
+		t.Fatal("expected error for nonexistent slug, got nil")
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("expected sql.ErrNoRows, got %v", err)
+	}
+}
+
+func TestRepositoryGetBySlugExcludesDeleted(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	seedDeletedArticle(t, db, "deleted-one", "Deleted Article", "published")
+
+	_, err := repo.GetBySlug(context.Background(), "deleted-one")
+	if err == nil {
+		t.Fatal("expected error for deleted slug, got nil")
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("expected sql.ErrNoRows, got %v", err)
+	}
+}
+
+func TestRepositoryCreateDefaults(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	article, err := repo.Create(context.Background(), CreateInput{
+		Title:     "New Post",
+		Slug:      "new-post",
+		ContentMD: "# Hello",
+	})
+	if err != nil {
+		t.Fatalf("Create error: %v", err)
+	}
+	if article.Title != "New Post" {
+		t.Fatalf("Title = %q, want %q", article.Title, "New Post")
+	}
+	if article.Status != StatusDraft {
+		t.Fatalf("Status = %q, want %q (default draft)", article.Status, StatusDraft)
+	}
+	if article.SourceFormat != "markdown" {
+		t.Fatalf("SourceFormat = %q, want markdown", article.SourceFormat)
+	}
+}
+
+func TestRepositoryCreatePublishedSetsPublishedAt(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	article, err := repo.Create(context.Background(), CreateInput{
+		Title:   "Published Post",
+		Slug:    "published-post",
+		Status:  string(StatusPublished),
+	})
+	if err != nil {
+		t.Fatalf("Create error: %v", err)
+	}
+	if article.Status != StatusPublished {
+		t.Fatalf("Status = %q, want %q", article.Status, StatusPublished)
+	}
+	if !article.PublishedAt.Valid {
+		t.Fatal("PublishedAt should be valid for published article")
+	}
+}
+
+func TestRepositoryCreateValidationFails(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	tests := []struct {
+		name  string
+		input CreateInput
+	}{
+		{"empty title", CreateInput{Slug: "test"}},
+		{"empty slug", CreateInput{Title: "Test"}},
+		{"invalid status", CreateInput{Title: "Test", Slug: "test", Status: "invalid"}},
+		{"invalid source_format", CreateInput{Title: "Test", Slug: "test", SourceFormat: "invalid"}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := repo.Create(context.Background(), tt.input)
+			if err == nil {
+				t.Fatalf("expected validation error for %s, got nil", tt.name)
+			}
+		})
+	}
+}
+
+func TestRepositoryCreateDuplicateSlug(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	seedArticle(t, db, "duplicate-slug", "First", "published")
+
+	_, err := repo.Create(context.Background(), CreateInput{
+		Title: "Second",
+		Slug:  "duplicate-slug",
+	})
+	if err == nil {
+		t.Fatal("expected error for duplicate slug, got nil")
+	}
+}
+
 func seedArticle(t *testing.T, db *sql.DB, slug, title, status string) {
 	t.Helper()
 	_, err := db.ExecContext(context.Background(),
@@ -153,7 +283,7 @@ CREATE TABLE articles (
   owner_id INTEGER,
   category_id INTEGER,
   title TEXT NOT NULL,
-  slug TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
   excerpt TEXT,
   content_md TEXT NOT NULL DEFAULT '',
   content_html TEXT NOT NULL DEFAULT '',

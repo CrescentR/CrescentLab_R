@@ -113,12 +113,29 @@ func (r *Repository) GetBySlug(ctx context.Context, slug string) (Article, error
 		query = convertPlaceholders(query)
 	}
 
-	row := r.db.QueryRowContext(ctx, query, slug)
+	return scanArticleRow(r.db.QueryRowContext(ctx, query, slug), "get article by slug")
+}
 
+func (r *Repository) GetByID(ctx context.Context, id int64) (Article, error) {
+	if r == nil || r.db == nil {
+		return Article{}, errors.New("content repository database is nil")
+	}
+
+	query := "SELECT id, public_id, owner_id, category_id, title, slug, excerpt, content_md, content_html, cover_url, status, visibility, source_format, allow_comment, is_pinned, pin_sort, home_sort, view_count, comment_count, word_count, reading_time_minutes, published_at, created_at, updated_at, deleted_at FROM articles WHERE id = ? AND deleted_at IS NULL"
+
+	if r.driver == "postgres" {
+		query = convertPlaceholders(query)
+	}
+
+	return scanArticleRow(r.db.QueryRowContext(ctx, query, id), "get article by id")
+}
+
+func scanArticleRow(row *sql.Row, op string) (Article, error) {
 	var article Article
 	var status string
+	var publicID sql.NullString
 	if err := row.Scan(
-		&article.ID, &article.PublicID, &article.OwnerID, &article.CategoryID,
+		&article.ID, &publicID, &article.OwnerID, &article.CategoryID,
 		&article.Title, &article.Slug, &article.Excerpt, &article.ContentMD, &article.ContentHTML,
 		&article.CoverURL, &status, &article.Visibility, &article.SourceFormat,
 		&article.AllowComment, &article.IsPinned, &article.PinSort, &article.HomeSort,
@@ -128,10 +145,60 @@ func (r *Repository) GetBySlug(ctx context.Context, slug string) (Article, error
 		if errors.Is(err, sql.ErrNoRows) {
 			return Article{}, err
 		}
-		return Article{}, fmt.Errorf("get article by slug: %w", err)
+		return Article{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	article.PublicID = publicID.String
 	article.Status = ArticleStatus(status)
+	return article, nil
+}
+
+func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, error) {
+	if r == nil || r.db == nil {
+		return Article{}, errors.New("content repository database is nil")
+	}
+	if err := input.Validate(); err != nil {
+		return Article{}, err
+	}
+
+	status := input.Status
+	if status == "" {
+		status = string(StatusDraft)
+	}
+	sourceFormat := input.SourceFormat
+	if sourceFormat == "" {
+		sourceFormat = "markdown"
+	}
+
+	var publishedAtExpr string
+	if ArticleStatus(status) == StatusPublished {
+		publishedAtExpr = "CURRENT_TIMESTAMP"
+	} else {
+		publishedAtExpr = "NULL"
+	}
+
+	query := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
+	if r.driver == "postgres" {
+		query = convertPlaceholders(query)
+	}
+
+	result, err := r.db.ExecContext(ctx, query,
+		input.Title, input.Slug, input.Excerpt, input.ContentMD,
+		input.CoverURL, status, sourceFormat)
+	if err != nil {
+		return Article{}, fmt.Errorf("create article: %w", err)
+	}
+
+	id, err := result.LastInsertId()
+	if err != nil {
+		return Article{}, fmt.Errorf("create article last insert id: %w", err)
+	}
+
+	article, err := r.GetByID(ctx, id)
+	if err != nil {
+		return Article{}, fmt.Errorf("fetch created article: %w", err)
+	}
+
 	return article, nil
 }
 
