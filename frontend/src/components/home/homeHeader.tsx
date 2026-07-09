@@ -45,8 +45,8 @@ export function HomeHeader({
           </Link>
 
           <nav className="home-nav" aria-label="主导航">
-            {navItems.map((item) => (
-              <Link className="home-nav-link" href={item.href} key={item.label}>
+            {navItems.map((item, index) => (
+              <Link className={index === 0 ? "home-nav-link home-nav-link--active" : "home-nav-link"} href={item.href} key={item.label}>
                 {item.label}
               </Link>
             ))}
@@ -56,7 +56,7 @@ export function HomeHeader({
             <Button aria-label="搜索" className="hidden size-11 rounded-[8px] px-0 md:inline-flex" icon={<Search size={16} />} variant="ghost">
               <span className="sr-only">搜索</span>
             </Button>
-            <Button aria-label="切换主题" className="size-11 rounded-[8px] px-0" icon={<ThemeIcon size={16} />} onClick={onToggleTheme} variant="secondary">
+            <Button aria-label="切换主题" className="size-11 rounded-[8px] px-0" icon={<ThemeIcon size={16} />} onClick={onToggleTheme} variant="ghost">
               <span className="sr-only">切换主题</span>
             </Button>
 

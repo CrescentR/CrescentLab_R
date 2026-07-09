@@ -56,15 +56,28 @@ export function HomeClient({ content }: { content: HomeContent }) {
         theme={theme}
       />
       <AnnouncementBar announcement={content.announcement} />
-      <HeroSection categories={content.categories} feature={content.feature} hero={content.hero} />
+      <HeroSection categories={content.categories} hero={content.hero} />
 
-      <section className="home-container grid gap-6 pb-20 lg:grid-cols-[minmax(0,1fr)_310px]">
+      <section className="home-container home-content-grid">
         <ArticleSection articles={content.articles} />
         <ContentObjectsPanel modules={content.modules} />
       </section>
 
       <ProjectSection projects={content.projects} />
       <ActivitySection activities={content.activities} canEnterAdmin={persona.canEnterAdmin} />
+      <footer className="home-footer">
+        <div className="home-container home-footer-shell">
+          <span className="home-footer-brand">CrescentLab</span>
+          <nav aria-label="页脚导航" className="home-footer-nav">
+            {content.navItems.map((item) => (
+              <a href={item.href} key={item.label}>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+          <span className="home-footer-copy">© 2024 CrescentLab. Self-hosted.</span>
+        </div>
+      </footer>
     </main>
   );
 }
