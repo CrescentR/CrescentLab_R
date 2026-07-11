@@ -4,6 +4,36 @@
 -- Example:
 --   sqlite3 data/crescentlab.db < database/sqlite/schema.sql
 
+-- =========================================================
+-- 1. Users, groups, permissions, auth
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  group_id INTEGER,
+  username TEXT NOT NULL,
+  username_key TEXT NOT NULL UNIQUE,
+  email TEXT,
+  email_key TEXT UNIQUE,
+  password_hash TEXT NOT NULL,
+  nickname TEXT NOT NULL,
+  avatar_file_id INTEGER,
+  avatar_url TEXT,
+  website TEXT,
+  bio TEXT,
+  status TEXT NOT NULL DEFAULT 'pending',
+  is_system BOOLEAN NOT NULL DEFAULT false,
+  email_verified_at DATETIME,
+  activated_at DATETIME,
+  last_login_at DATETIME,
+  last_login_ip TEXT,
+  password_changed_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME,
+  CHECK (status IN ('pending', 'active', 'disabled', 'locked', 'deleted'))
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   scope TEXT NOT NULL DEFAULT 'site',

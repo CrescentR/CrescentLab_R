@@ -75,6 +75,9 @@ PostgreSQL schema 完整定义了 50+ 张表，分 12 个区域。SQLite schema 
 
 - [x] 第一步：content 模块 — 文章列表 API ✅ 2026-07-07
 - [x] 第二步：content 模块 — 文章详情 + 创建 API ✅ 2026-07-07
+- [x] 第三步：content 模块 — 文章编辑 + 删除 API ✅ 2026-07-11
+- [x] 认证前置：密码哈希 + JWT 核心 ✅ 2026-07-11
+- [x] 用户前置：SQLite users 表 + Repository ✅ 2026-07-11
 
 ### 第一步完成记录
 
@@ -121,25 +124,43 @@ PostgreSQL schema 完整定义了 50+ 张表，分 12 个区域。SQLite schema 
 
 ---
 
-## 下一步规划
+## 2026-07-11 并行施工完成记录
 
 ### 第三步：content 模块 — 文章编辑 + 删除 API
 
-**目标**：
+**已完成**：
 - `PUT /api/admin/articles/:id` — 编辑文章
 - `DELETE /api/admin/articles/:id` — 软删除文章
+- 更新发布状态时维护 `published_at`
+- 更新或删除不存在、已软删除文章时返回 404
+- PostgreSQL 创建使用 `RETURNING id`，不再调用驱动不支持的 `LastInsertId`
+- PostgreSQL 列表查询在完整 SQL 拼接后一次性转换占位符，保证筛选参数与 `LIMIT/OFFSET` 编号连续
 
-**涉及**：
-- `repository.go` 补充 `Update` + `SoftDelete` 方法
-- `handler.go` 补充 `update` / `delete` handler
-- 测试补充
+### 认证核心
+
+**已完成**：
+- bcrypt 密码哈希与校验
+- HS256 access / refresh JWT 的签发、解析、过期校验和类型隔离
+- 统一的 `ErrInvalidToken`、`ErrUnexpectedTokenType` 错误契约
+- secret 与两个 TTL 由构造器显式注入，不新增隐式配置或默认密钥
+
+### 用户仓储
+
+**已完成**：
+- SQLite `users` 表字段、状态与唯一约束对齐 PostgreSQL
+- 创建用户、按 `username_key` / `email_key` / ID 查询
+- 更新最后登录时间和 IP
+- 查询与更新统一排除软删除用户
+
+## 下一步规划
 
 ### 第四步：auth 模块 — 用户注册/登录
 
 **目标**：
 - `POST /api/auth/register` — 用户注册
 - `POST /api/auth/login` — 用户登录
-- 实现 JWT 签发与验证
+- 组合现有 users Repository、密码哈希和 JWT Service
+- 在编码前明确注册/登录请求字段、用户名与邮箱规范化规则、JWT secret 配置来源
 
 ### 第五步：为已有 API 补充认证中间件
 

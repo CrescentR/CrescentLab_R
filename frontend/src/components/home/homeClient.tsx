@@ -1,83 +1,50 @@
 "use client";
 
-import gsap from "gsap";
-import { useEffect, useMemo, useRef } from "react";
-import { ActivitySection } from "@/components/home/activitySection";
-import { AnnouncementBar } from "@/components/home/announcementBar";
-import { ArticleSection } from "@/components/home/articleSection";
-import { ContentObjectsPanel } from "@/components/home/contentObjectsPanel";
-import { HeroSection } from "@/components/home/heroSection";
-import { HomeHeader } from "@/components/home/homeHeader";
-import { ProjectSection } from "@/components/home/projectSection";
-import { personas } from "@/lib/personas";
-import { useUiStore } from "@/store/uiStore";
-import type { HomeContent } from "@/types/home";
+import { MotionConfig } from "motion/react";
+import { useEffect } from "react";
+import Lenis from "lenis";
+import { LabFooter } from "@/components/home/labFooter";
+import { LabHeader } from "@/components/home/labHeader";
+import { LabHero } from "@/components/home/labHero";
+import { LabNotes } from "@/components/home/labNotes";
+import { LabProjects } from "@/components/home/labProjects";
+import { ExperimentsSection } from "@/components/home/experimentsSection";
+import { NowBuildingSection } from "@/components/home/nowBuildingSection";
 
-export function HomeClient({ content }: { content: HomeContent }) {
-  const rootRef = useRef<HTMLElement>(null);
-  const activePersona = useUiStore((state) => state.activePersona);
-  const loginPanelOpen = useUiStore((state) => state.loginPanelOpen);
-  const setActivePersona = useUiStore((state) => state.setActivePersona);
-  const setLoginPanelOpen = useUiStore((state) => state.setLoginPanelOpen);
-  const theme = useUiStore((state) => state.theme);
-  const toggleTheme = useUiStore((state) => state.toggleTheme);
-  const persona = personas[activePersona];
-  const personaOptions = useMemo(() => [personas.member, personas.admin], []);
-
+export function HomeClient() {
   useEffect(() => {
-    if (!rootRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
 
-    const ctx = gsap.context(() => {
-      gsap.from("[data-lab-animate]", {
-        autoAlpha: 0,
-        duration: 0.42,
-        ease: "power3.out",
-        stagger: 0.025,
-        y: 10,
-      });
-    }, rootRef);
+    const lenis = new Lenis({
+      anchors: true,
+      duration: 1.05,
+      smoothWheel: true,
+      wheelMultiplier: 0.9,
+    });
+    let frame = 0;
+    const update = (time: number) => {
+      lenis.raf(time);
+      frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
 
-    return () => ctx.revert();
-  }, [activePersona]);
+    return () => {
+      cancelAnimationFrame(frame);
+      lenis.destroy();
+    };
+  }, []);
 
   return (
-    <main ref={rootRef} className="home-page min-h-screen">
-      <HomeHeader
-        activePersona={activePersona}
-        loginPanelOpen={loginPanelOpen}
-        navItems={content.navItems}
-        onSelectPersona={setActivePersona}
-        onToggleLogin={() => setLoginPanelOpen(!loginPanelOpen)}
-        onToggleTheme={toggleTheme}
-        persona={persona}
-        personaOptions={personaOptions}
-        theme={theme}
-      />
-      <AnnouncementBar announcement={content.announcement} />
-      <HeroSection categories={content.categories} hero={content.hero} />
-
-      <section className="home-container home-content-grid">
-        <ArticleSection articles={content.articles} />
-        <ContentObjectsPanel modules={content.modules} />
-      </section>
-
-      <ProjectSection projects={content.projects} />
-      <ActivitySection activities={content.activities} canEnterAdmin={persona.canEnterAdmin} />
-      <footer className="home-footer">
-        <div className="home-container home-footer-shell">
-          <span className="home-footer-brand">CrescentLab</span>
-          <nav aria-label="页脚导航" className="home-footer-nav">
-            {content.navItems.map((item) => (
-              <a href={item.href} key={item.label}>
-                {item.label}
-              </a>
-            ))}
-          </nav>
-          <span className="home-footer-copy">© 2024 CrescentLab. Self-hosted.</span>
-        </div>
-      </footer>
-    </main>
+    <MotionConfig reducedMotion="user">
+      <main className="lab-home">
+        <LabHeader />
+        <LabHero />
+        <NowBuildingSection />
+        <ExperimentsSection />
+        <LabProjects />
+        <LabNotes />
+        <LabFooter />
+      </main>
+    </MotionConfig>
   );
 }

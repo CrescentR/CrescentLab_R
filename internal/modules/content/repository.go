@@ -28,48 +28,15 @@ func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, e
 
 	page := filter.normalizedPage()
 	pageSize := filter.normalizedPageSize()
-	offset := (page - 1) * pageSize
-
-	where := []string{"a.deleted_at IS NULL"}
-	args := []any{}
-
-	if filter.Status != "" {
-		where = append(where, "a.status = ?")
-		args = append(args, string(filter.Status))
-	}
-	if strings.TrimSpace(filter.Category) != "" {
-		where = append(where, "c.slug = ?")
-		args = append(args, filter.Category)
-	}
-	if strings.TrimSpace(filter.Search) != "" {
-		where = append(where, "(a.title LIKE ? OR a.excerpt LIKE ?)")
-		pattern := "%" + filter.Search + "%"
-		args = append(args, pattern, pattern)
-	}
-
-	whereClause := strings.Join(where, " AND ")
-	joinClause := "LEFT JOIN post_categories c ON a.category_id = c.id"
-	orderBy := "a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC"
-
-	if r.driver == "postgres" {
-		whereClause = convertPlaceholders(whereClause)
-	}
+	countQuery, countArgs, listQuery, listArgs := buildArticleListQueries(r.driver, filter, page, pageSize)
 
 	// count
-	countQuery := "SELECT COUNT(*) FROM articles a " + joinClause + " WHERE " + whereClause
 	var total int64
-	if err := r.db.QueryRowContext(ctx, countQuery, args...).Scan(&total); err != nil {
+	if err := r.db.QueryRowContext(ctx, countQuery, countArgs...).Scan(&total); err != nil {
 		return ListResult{}, fmt.Errorf("count articles: %w", err)
 	}
 
 	// list
-	listQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at FROM articles a " + joinClause + " WHERE " + whereClause + " ORDER BY " + orderBy + " LIMIT ? OFFSET ?"
-
-	if r.driver == "postgres" {
-		listQuery = convertPlaceholders(listQuery)
-	}
-
-	listArgs := append(args, pageSize, offset)
 	rows, err := r.db.QueryContext(ctx, listQuery, listArgs...)
 	if err != nil {
 		return ListResult{}, fmt.Errorf("list articles: %w", err)
@@ -100,6 +67,37 @@ func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, e
 		PageSize:   pageSize,
 		TotalPages: totalPages,
 	}, nil
+}
+
+func buildArticleListQueries(driver string, filter ListFilter, page, pageSize int) (string, []any, string, []any) {
+	where := []string{"a.deleted_at IS NULL"}
+	args := []any{}
+
+	if filter.Status != "" {
+		where = append(where, "a.status = ?")
+		args = append(args, string(filter.Status))
+	}
+	if strings.TrimSpace(filter.Category) != "" {
+		where = append(where, "c.slug = ?")
+		args = append(args, filter.Category)
+	}
+	if strings.TrimSpace(filter.Search) != "" {
+		where = append(where, "(a.title LIKE ? OR a.excerpt LIKE ?)")
+		pattern := "%" + filter.Search + "%"
+		args = append(args, pattern, pattern)
+	}
+
+	joinClause := "LEFT JOIN post_categories c ON a.category_id = c.id"
+	whereClause := strings.Join(where, " AND ")
+	countQuery := "SELECT COUNT(*) FROM articles a " + joinClause + " WHERE " + whereClause
+	listQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at FROM articles a " + joinClause + " WHERE " + whereClause + " ORDER BY a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC LIMIT ? OFFSET ?"
+
+	if driver == "postgres" {
+		countQuery = convertPlaceholders(countQuery)
+		listQuery = convertPlaceholders(listQuery)
+	}
+	listArgs := append(append([]any{}, args...), pageSize, (page-1)*pageSize)
+	return countQuery, args, listQuery, listArgs
 }
 
 func (r *Repository) GetBySlug(ctx context.Context, slug string) (Article, error) {
@@ -170,28 +168,26 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, er
 		sourceFormat = "markdown"
 	}
 
-	var publishedAtExpr string
-	if ArticleStatus(status) == StatusPublished {
-		publishedAtExpr = "CURRENT_TIMESTAMP"
-	} else {
-		publishedAtExpr = "NULL"
-	}
-
-	query := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
-	if r.driver == "postgres" {
-		query = convertPlaceholders(query)
-	}
-
-	result, err := r.db.ExecContext(ctx, query,
+	query, returnsID := createArticleQuery(r.driver, ArticleStatus(status))
+	args := []any{
 		input.Title, input.Slug, input.Excerpt, input.ContentMD,
-		input.CoverURL, status, sourceFormat)
-	if err != nil {
-		return Article{}, fmt.Errorf("create article: %w", err)
+		input.CoverURL, status, sourceFormat,
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return Article{}, fmt.Errorf("create article last insert id: %w", err)
+	var id int64
+	if returnsID {
+		if err := r.db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
+			return Article{}, fmt.Errorf("create article: %w", err)
+		}
+	} else {
+		result, err := r.db.ExecContext(ctx, query, args...)
+		if err != nil {
+			return Article{}, fmt.Errorf("create article: %w", err)
+		}
+		id, err = result.LastInsertId()
+		if err != nil {
+			return Article{}, fmt.Errorf("create article last insert id: %w", err)
+		}
 	}
 
 	article, err := r.GetByID(ctx, id)
@@ -200,6 +196,93 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, er
 	}
 
 	return article, nil
+}
+
+func createArticleQuery(driver string, status ArticleStatus) (string, bool) {
+	publishedAtExpr := "NULL"
+	if status == StatusPublished {
+		publishedAtExpr = "CURRENT_TIMESTAMP"
+	}
+
+	query := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
+	if driver == "postgres" {
+		return convertPlaceholders(query) + " RETURNING id", true
+	}
+	return query, false
+}
+
+func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (Article, error) {
+	if r == nil || r.db == nil {
+		return Article{}, errors.New("content repository database is nil")
+	}
+	if err := input.Validate(); err != nil {
+		return Article{}, err
+	}
+
+	status := input.Status
+	if status == "" {
+		status = string(StatusDraft)
+	}
+	sourceFormat := input.SourceFormat
+	if sourceFormat == "" {
+		sourceFormat = "markdown"
+	}
+
+	query := `UPDATE articles
+SET title = ?, slug = ?, excerpt = ?, content_md = ?, cover_url = ?, status = ?, source_format = ?,
+    published_at = CASE
+        WHEN ? = 'published' THEN COALESCE(published_at, CURRENT_TIMESTAMP)
+        ELSE NULL
+    END,
+    updated_at = CURRENT_TIMESTAMP
+WHERE id = ? AND deleted_at IS NULL`
+	if r.driver == "postgres" {
+		query = convertPlaceholders(query)
+	}
+
+	result, err := r.db.ExecContext(ctx, query,
+		input.Title, input.Slug, input.Excerpt, input.ContentMD,
+		input.CoverURL, status, sourceFormat, status, id)
+	if err != nil {
+		return Article{}, fmt.Errorf("update article: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return Article{}, fmt.Errorf("update article rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return Article{}, sql.ErrNoRows
+	}
+
+	article, err := r.GetByID(ctx, id)
+	if err != nil {
+		return Article{}, fmt.Errorf("fetch updated article: %w", err)
+	}
+	return article, nil
+}
+
+func (r *Repository) SoftDelete(ctx context.Context, id int64) error {
+	if r == nil || r.db == nil {
+		return errors.New("content repository database is nil")
+	}
+
+	query := "UPDATE articles SET deleted_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL"
+	if r.driver == "postgres" {
+		query = convertPlaceholders(query)
+	}
+
+	result, err := r.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return fmt.Errorf("soft delete article: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("soft delete article rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
 }
 
 type articleScanner interface {

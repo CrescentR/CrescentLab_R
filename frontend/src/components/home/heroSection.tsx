@@ -42,9 +42,22 @@ export function HeroSection({
           </div>
         </article>
 
-        <figure className="home-hero-figure" data-lab-animate>
-          <Image alt={hero.coverAlt} className="object-cover" fill priority sizes="(min-width: 1024px) 540px, 100vw" src={hero.coverImage} unoptimized />
-          <figcaption className="home-hero-caption">
+        <figure className="home-hero-figure" data-hero-motion data-lab-animate>
+          <div className="home-hero-media">
+            <Image
+              alt={hero.coverAlt}
+              className="object-cover"
+              data-hero-motion-layer
+              fill
+              priority
+              sizes="(min-width: 1024px) 540px, 100vw"
+              src={hero.coverImage}
+              unoptimized
+            />
+          </div>
+          <span aria-hidden="true" className="home-hero-portal-frame" data-hero-portal-frame />
+          <span aria-hidden="true" className="home-hero-glint" />
+          <figcaption className="home-hero-caption" data-hero-motion-content>
             {hero.notes.map((note) => (
               <span key={note}>{note}</span>
             ))}

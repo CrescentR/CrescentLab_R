@@ -26,6 +26,8 @@ func (h *Handler) RegisterPublicRoutes(group *gin.RouterGroup) {
 func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/articles", h.adminList)
 	group.POST("/articles", h.create)
+	group.PUT("/articles/:id", h.update)
+	group.DELETE("/articles/:id", h.delete)
 }
 
 func (h *Handler) list(c *gin.Context) {
@@ -92,6 +94,51 @@ func (h *Handler) create(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, article.Detail())
+}
+
+func (h *Handler) update(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id < 1 {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: "invalid article id"})
+		return
+	}
+
+	var input CreateInput
+	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: "invalid request body"})
+		return
+	}
+
+	article, err := h.repo.Update(c.Request.Context(), id, input)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, errorResponse{Error: "article not found"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, errorResponse{Error: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, article.Detail())
+}
+
+func (h *Handler) delete(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil || id < 1 {
+		c.JSON(http.StatusBadRequest, errorResponse{Error: "invalid article id"})
+		return
+	}
+
+	if err := h.repo.SoftDelete(c.Request.Context(), id); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			c.JSON(http.StatusNotFound, errorResponse{Error: "article not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, errorResponse{Error: err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
 }
 
 func parseListFilter(c *gin.Context) ListFilter {

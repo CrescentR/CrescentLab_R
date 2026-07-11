@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"path/filepath"
+	"reflect"
 	"testing"
 
 	"CrescentLab_R/internal/platform/config"
@@ -47,6 +48,28 @@ func TestRepositoryListWithSearch(t *testing.T) {
 	}
 	if result.Items[0].Title != "Go Basics Tutorial" {
 		t.Fatalf("Title = %q", result.Items[0].Title)
+	}
+}
+
+func TestBuildArticleListQueriesPostgresSearchUsesContinuousPlaceholders(t *testing.T) {
+	countQuery, countArgs, listQuery, listArgs := buildArticleListQueries("postgres", ListFilter{Search: "post"}, 2, 5)
+
+	wantCountQuery := "SELECT COUNT(*) FROM articles a LEFT JOIN post_categories c ON a.category_id = c.id WHERE a.deleted_at IS NULL AND (a.title LIKE $1 OR a.excerpt LIKE $2)"
+	if countQuery != wantCountQuery {
+		t.Fatalf("count query = %q, want %q", countQuery, wantCountQuery)
+	}
+	wantCountArgs := []any{"%post%", "%post%"}
+	if !reflect.DeepEqual(countArgs, wantCountArgs) {
+		t.Fatalf("count args = %#v, want %#v", countArgs, wantCountArgs)
+	}
+
+	wantListQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at FROM articles a LEFT JOIN post_categories c ON a.category_id = c.id WHERE a.deleted_at IS NULL AND (a.title LIKE $1 OR a.excerpt LIKE $2) ORDER BY a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC LIMIT $3 OFFSET $4"
+	if listQuery != wantListQuery {
+		t.Fatalf("list query = %q, want %q", listQuery, wantListQuery)
+	}
+	wantListArgs := []any{"%post%", "%post%", 5, 5}
+	if !reflect.DeepEqual(listArgs, wantListArgs) {
+		t.Fatalf("list args = %#v, want %#v", listArgs, wantListArgs)
 	}
 }
 
@@ -172,9 +195,9 @@ func TestRepositoryCreatePublishedSetsPublishedAt(t *testing.T) {
 	repo := NewRepository(db)
 
 	article, err := repo.Create(context.Background(), CreateInput{
-		Title:   "Published Post",
-		Slug:    "published-post",
-		Status:  string(StatusPublished),
+		Title:  "Published Post",
+		Slug:   "published-post",
+		Status: string(StatusPublished),
 	})
 	if err != nil {
 		t.Fatalf("Create error: %v", err)
@@ -223,6 +246,149 @@ func TestRepositoryCreateDuplicateSlug(t *testing.T) {
 	})
 	if err == nil {
 		t.Fatal("expected error for duplicate slug, got nil")
+	}
+}
+
+func TestCreateArticleQueryUsesPostgresReturningID(t *testing.T) {
+	query, returnsID := createArticleQuery("postgres", StatusPublished)
+	if !returnsID {
+		t.Fatal("PostgreSQL create query should return the inserted id")
+	}
+	want := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) RETURNING id"
+	if query != want {
+		t.Fatalf("PostgreSQL create query = %q, want %q", query, want)
+	}
+}
+
+func TestCreateArticleQueryKeepsSQLiteLastInsertIDPath(t *testing.T) {
+	query, returnsID := createArticleQuery("sqlite", StatusDraft)
+	if returnsID {
+		t.Fatal("SQLite create query should use LastInsertId")
+	}
+	want := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)"
+	if query != want {
+		t.Fatalf("SQLite create query = %q, want %q", query, want)
+	}
+}
+
+func TestRepositoryUpdateReplacesArticle(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+	seedArticle(t, db, "old-slug", "Old Title", "draft")
+
+	article, err := repo.Update(context.Background(), 1, CreateInput{
+		Title:        "Updated Title",
+		Slug:         "updated-slug",
+		Excerpt:      "Updated excerpt",
+		ContentMD:    "# Updated",
+		CoverURL:     "/updated.webp",
+		Status:       string(StatusPublished),
+		SourceFormat: "markdown",
+	})
+	if err != nil {
+		t.Fatalf("Update error: %v", err)
+	}
+	if article.Title != "Updated Title" || article.Slug != "updated-slug" {
+		t.Fatalf("updated article = %#v", article)
+	}
+	if article.Excerpt.String != "Updated excerpt" || article.ContentMD != "# Updated" || article.CoverURL.String != "/updated.webp" {
+		t.Fatalf("updated content = %#v", article)
+	}
+	if article.Status != StatusPublished || !article.PublishedAt.Valid {
+		t.Fatalf("status = %q, published_at = %#v", article.Status, article.PublishedAt)
+	}
+}
+
+func TestRepositoryUpdateMaintainsPublishedAtForStatusChanges(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+	seedArticle(t, db, "post", "Post", "draft")
+
+	published, err := repo.Update(context.Background(), 1, CreateInput{
+		Title: "Post", Slug: "post", Status: string(StatusPublished),
+	})
+	if err != nil {
+		t.Fatalf("publish article: %v", err)
+	}
+	if !published.PublishedAt.Valid {
+		t.Fatal("PublishedAt should be set when status changes to published")
+	}
+
+	stillPublished, err := repo.Update(context.Background(), 1, CreateInput{
+		Title: "Post Updated", Slug: "post", Status: string(StatusPublished),
+	})
+	if err != nil {
+		t.Fatalf("update published article: %v", err)
+	}
+	if !stillPublished.PublishedAt.Valid || !stillPublished.PublishedAt.Time.Equal(published.PublishedAt.Time) {
+		t.Fatalf("PublishedAt = %v, want original %v", stillPublished.PublishedAt, published.PublishedAt)
+	}
+
+	draft, err := repo.Update(context.Background(), 1, CreateInput{
+		Title: "Post Updated", Slug: "post", Status: string(StatusDraft),
+	})
+	if err != nil {
+		t.Fatalf("unpublish article: %v", err)
+	}
+	if draft.PublishedAt.Valid {
+		t.Fatalf("PublishedAt should be cleared outside published status, got %v", draft.PublishedAt.Time)
+	}
+}
+
+func TestRepositoryUpdateRejectsInvalidInput(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+	seedArticle(t, db, "post", "Post", "draft")
+
+	_, err := repo.Update(context.Background(), 1, CreateInput{Slug: "post"})
+	if err == nil {
+		t.Fatal("expected validation error, got nil")
+	}
+}
+
+func TestRepositoryUpdateNotFound(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+	seedDeletedArticle(t, db, "deleted", "Deleted", "draft")
+
+	for _, id := range []int64{1, 999} {
+		_, err := repo.Update(context.Background(), id, CreateInput{Title: "Updated", Slug: "updated"})
+		if !errors.Is(err, sql.ErrNoRows) {
+			t.Fatalf("Update id %d error = %v, want sql.ErrNoRows", id, err)
+		}
+	}
+}
+
+func TestRepositorySoftDelete(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+	seedArticle(t, db, "post", "Post", "published")
+
+	if err := repo.SoftDelete(context.Background(), 1); err != nil {
+		t.Fatalf("SoftDelete error: %v", err)
+	}
+
+	var deletedAt sql.NullTime
+	if err := db.QueryRow("SELECT deleted_at FROM articles WHERE id = 1").Scan(&deletedAt); err != nil {
+		t.Fatalf("query deleted article: %v", err)
+	}
+	if !deletedAt.Valid {
+		t.Fatal("deleted_at should be set")
+	}
+	if _, err := repo.GetByID(context.Background(), 1); !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("GetByID after delete error = %v, want sql.ErrNoRows", err)
+	}
+}
+
+func TestRepositorySoftDeleteNotFound(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+	seedDeletedArticle(t, db, "deleted", "Deleted", "draft")
+
+	for _, id := range []int64{1, 999} {
+		if err := repo.SoftDelete(context.Background(), id); !errors.Is(err, sql.ErrNoRows) {
+			t.Fatalf("SoftDelete id %d error = %v, want sql.ErrNoRows", id, err)
+		}
 	}
 }
 
