@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-13
+
+- 调亮前台首页暗色实验室界面：提高页面、卡片、实验区与弹窗的背景明度，区分正文与元信息的文字层级，并增强内容摘要和分隔线的可读性。
+
 ## 2026-07-11
 
 - 前台首页重构为“Moonlit Research Console”：完成暗色实验室设计 Tokens、响应式 Bento/实验档案/错位项目/日志时间线，接入 Motion、Lenis 与仅限 Hero 的 R3F 月牙核心，并提供手机端和 `prefers-reduced-motion` 静态降级。

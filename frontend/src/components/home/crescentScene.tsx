@@ -63,7 +63,7 @@ function CrescentAssembly({ scrollProgress }: { scrollProgress: MotionValue<numb
         </mesh>
         <mesh position={[0.52, 0.12, 0.035]}>
           <circleGeometry args={[1.3, 96]} />
-          <meshBasicMaterial color="#07070a" side={DoubleSide} />
+          <meshBasicMaterial color="#20242f" side={DoubleSide} />
         </mesh>
         <mesh rotation={[0.2, 0.1, 0.35]}>
           <torusGeometry args={[1.82, 0.012, 8, 180]} />
