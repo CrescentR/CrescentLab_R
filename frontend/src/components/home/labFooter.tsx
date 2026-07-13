@@ -13,13 +13,13 @@ export function LabFooter() {
           <span aria-hidden="true" className="lab-crescent-mark" />
           <div>
             <strong>CRESCENT LAB</strong>
-            <p>Independent digital research practice.</p>
+            <p>独立的数字研究实践。</p>
           </div>
         </div>
-        <p className="lab-footer-note">Built after dark. Documented before it disappears.</p>
+        <p className="lab-footer-note">深夜构建。在消失之前记录。</p>
         <div aria-label="External contacts" className="lab-footer-links">
           <span><Code2 size={16} /> GitHub</span>
-          <span><Mail size={16} /> Contact</span>
+          <span><Mail size={16} /> 联系方式</span>
         </div>
       </motion.div>
     </footer>

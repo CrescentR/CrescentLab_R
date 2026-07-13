@@ -47,7 +47,7 @@ export function DashboardOverview() {
           <Panel className="lab-card p-6 md:p-8">
             <div className="flex flex-wrap items-start justify-between gap-5">
               <div>
-                <Badge tone="cyan">Admin Console</Badge>
+                <Badge tone="cyan">管理控制台</Badge>
                 <h1 className="mt-4 font-lab-display text-3xl font-semibold leading-tight text-[var(--text-strong)] md:text-4xl">
                   晚上好，{persona.name}。今天的 Lab 已准备好。
                 </h1>
@@ -56,7 +56,7 @@ export function DashboardOverview() {
                 </p>
               </div>
               <ButtonLink href="/admin/postManagement/new" icon={<ArrowRight size={16} />} variant="primary">
-                Start Draft
+                开始写作
               </ButtonLink>
             </div>
 
@@ -81,16 +81,16 @@ export function DashboardOverview() {
           <Panel className="lab-card p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">system posture</span>
+                <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">系统状态</span>
                 <h2 className="mt-2 font-lab-display text-xl font-semibold text-[var(--text-strong)]">控制台健康度</h2>
               </div>
               <Gauge className="text-[var(--amber)]" size={24} />
             </div>
             <div className="mt-6 space-y-4">
               {[
-                { label: "Storage sync", value: "96%", tone: "cyan" },
-                { label: "Search freshness", value: "88%", tone: "green" },
-                { label: "Notification queue", value: "72%", tone: "amber" },
+                { label: "存储同步", value: "96%", tone: "cyan" },
+                { label: "搜索新鲜度", value: "88%", tone: "green" },
+                { label: "通知队列", value: "72%", tone: "amber" },
               ].map((item) => (
                 <div key={item.label}>
                   <div className="flex items-center justify-between font-lab-mono text-xs text-[var(--muted)]">
@@ -125,7 +125,7 @@ export function DashboardOverview() {
                 <CalendarClock className="text-[var(--purple)]" size={18} />
                 <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">发布管线</h2>
               </div>
-              <Badge tone="purple">workflow</Badge>
+              <Badge tone="purple">工作流</Badge>
             </div>
             <div className="grid gap-3 p-5 sm:grid-cols-2">
               {contentPipeline.map((item) => (
@@ -194,7 +194,7 @@ export function DashboardOverview() {
               <Bell className="text-[var(--rose)]" size={18} />
               <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">活动流</h2>
             </div>
-            <Badge tone="rose">ops log</Badge>
+            <Badge tone="rose">操作日志</Badge>
           </div>
           <div className="grid gap-0 divide-y divide-[var(--border-soft)] md:grid-cols-2 md:divide-x md:divide-y-0">
             {labActivities.slice(0, 4).map((activity) => (

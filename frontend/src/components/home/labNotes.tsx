@@ -10,9 +10,9 @@ export function LabNotes() {
   return (
     <motion.section className="lab-section lab-notes lab-shell" id="notes" initial="hidden" variants={revealGroup} viewport={viewportOnce} whileInView="visible">
       <SectionIntro
-        description="Field notes from building systems in public and revising them in private."
-        index="04 / LOG"
-        title="Notes"
+        description="在公开构建系统和私下修订过程中的田野笔记。"
+        index="04 / 日志"
+        title="笔记"
       />
       <div className="lab-note-timeline">
         {labNotes.map((note) => (

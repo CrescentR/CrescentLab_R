@@ -19,9 +19,9 @@ export function NowBuildingSection() {
       whileInView="visible"
     >
       <SectionIntro
-        description="Four active builds, observed while they are still changing."
-        index="01 / NOW"
-        title="Now Building"
+        description="四个活跃的构建，在变化时进行观察。"
+        index="01 / 正在构建"
+        title="正在构建"
       />
       <div className="lab-bento-grid">
         {nowBuilding.map((project, index) => {
@@ -43,7 +43,7 @@ export function NowBuildingSection() {
                 <span>{project.mark}</span>
               </div>
               <div>
-                <p className="lab-build-status lab-mono"><i /> IN PROGRESS</p>
+                <p className="lab-build-status lab-mono"><i /> 进行中</p>
                 <h3>{project.name}</h3>
               </div>
             </motion.article>

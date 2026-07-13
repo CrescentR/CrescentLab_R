@@ -27,9 +27,9 @@ export function LabProjects() {
   return (
     <motion.section className="lab-section lab-shell" id="projects" initial="hidden" variants={revealGroup} viewport={viewportOnce} whileInView="visible">
       <SectionIntro
-        description="Systems that survived long enough to become real projects."
-        index="03 / SELECTED"
-        title="Projects"
+        description="存活足够久、成为真实项目的系统。"
+        index="03 / 精选"
+        title="项目"
       />
       <div className="lab-project-grid">
         {labProjects.map((project, index) => (

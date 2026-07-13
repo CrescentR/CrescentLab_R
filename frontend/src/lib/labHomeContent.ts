@@ -1,11 +1,11 @@
 import { articleSummaries, projectSites, sharedLabModules } from "@/lib/mockData";
 
 export const labNavigation = [
-  { label: "Home", href: "#home" },
-  { label: "Projects", href: "#projects" },
-  { label: "Experiments", href: "#experiments" },
-  { label: "Notes", href: "#notes" },
-  { label: "About", href: "#about" },
+  { label: "首页", href: "#home" },
+  { label: "项目", href: "#projects" },
+  { label: "实验", href: "#experiments" },
+  { label: "笔记", href: "#notes" },
+  { label: "关于", href: "#about" },
 ] as const;
 
 export const nowBuilding = [

@@ -10,9 +10,9 @@ export function ExperimentsSection() {
     <motion.section className="lab-section lab-experiments" id="experiments" initial="hidden" variants={revealGroup} viewport={viewportOnce} whileInView="visible">
       <div className="lab-shell">
         <SectionIntro
-          description="Notes from controlled failures, unfinished tools and technical questions."
-          index="02 / ARCHIVE"
-          title="Experiments"
+          description="来自受控失败、未完成工具和技术问题的笔记。"
+          index="02 / 归档"
+          title="实验"
         />
         <div className="lab-experiment-list">
           {labExperiments.map((experiment) => (

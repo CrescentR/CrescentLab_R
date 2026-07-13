@@ -105,7 +105,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Panel className="p-4 shadow-none">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">signed in as</span>
+                  <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">当前登录为</span>
                   <strong className="mt-1 block text-sm text-[var(--text-strong)]">{persona.name}</strong>
                 </div>
                 <span
@@ -133,7 +133,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 style={backgroundImageStyle(siteBranding.adminLogoUrl)}
               />
               <div className="min-w-0">
-                <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">admin</span>
+                <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">管理</span>
                 <strong className="block truncate text-sm text-[var(--text-strong)]">CrescentLab 后台控制台</strong>
               </div>
             </div>
@@ -166,7 +166,7 @@ function AdminAccessDenied() {
             </span>
             <span>
               <span className="block font-lab-display text-lg font-bold text-[var(--text-strong)]">返回前台</span>
-              <span className="block font-lab-mono text-xs text-[var(--muted)]">Admin requires elevated role</span>
+              <span className="block font-lab-mono text-xs text-[var(--muted)]">管理需要提升权限</span>
             </span>
           </Link>
           <ThemeToggle />
@@ -174,7 +174,7 @@ function AdminAccessDenied() {
 
         <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
           <Panel className="lab-card p-6 md:p-8">
-            <Badge tone="rose">Access Gate</Badge>
+            <Badge tone="rose">访问控制</Badge>
             <div className="mt-6 flex items-start gap-4">
               <span className="grid size-12 shrink-0 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] text-[var(--rose)]">
                 <ShieldAlert size={22} />
@@ -205,7 +205,7 @@ function AdminAccessDenied() {
               {["阅读公开内容", "发表评论与回复", "维护个人资料", "订阅通知"].map((item) => (
                 <div className="flex items-center justify-between rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] px-3 py-2" key={item}>
                   <span className="text-sm text-[var(--text)]">{item}</span>
-                  <Badge tone="green">shared</Badge>
+                  <Badge tone="green">共享</Badge>
                 </div>
               ))}
             </div>
