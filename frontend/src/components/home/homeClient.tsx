@@ -10,6 +10,7 @@ import { LabNotes } from "@/components/home/labNotes";
 import { LabProjects } from "@/components/home/labProjects";
 import { ExperimentsSection } from "@/components/home/experimentsSection";
 import { NowBuildingSection } from "@/components/home/nowBuildingSection";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
 
 export function HomeClient() {
   useEffect(() => {
@@ -21,15 +22,16 @@ export function HomeClient() {
       smoothWheel: true,
       wheelMultiplier: 0.9,
     });
-    let frame = 0;
     const update = (time: number) => {
-      lenis.raf(time);
-      frame = requestAnimationFrame(update);
+      lenis.raf(time * 1000);
     };
-    frame = requestAnimationFrame(update);
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add(update);
+    gsap.ticker.lagSmoothing(0);
 
     return () => {
-      cancelAnimationFrame(frame);
+      gsap.ticker.remove(update);
+      lenis.off("scroll", ScrollTrigger.update);
       lenis.destroy();
     };
   }, []);

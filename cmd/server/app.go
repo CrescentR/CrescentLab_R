@@ -2,18 +2,26 @@ package server
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
+	"errors"
 	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
+	authmodule "CrescentLab_R/internal/modules/auth"
 	contentmodule "CrescentLab_R/internal/modules/content"
 	settingsmodule "CrescentLab_R/internal/modules/settings"
+	usersmodule "CrescentLab_R/internal/modules/users"
 	"CrescentLab_R/internal/platform/config"
 	"CrescentLab_R/internal/platform/database"
 	platformhttp "CrescentLab_R/internal/platform/http"
+	"CrescentLab_R/internal/platform/http/handler"
+	"CrescentLab_R/internal/platform/http/middleware"
 	"CrescentLab_R/internal/platform/logger"
+	"CrescentLab_R/internal/shared/auth"
 )
 
 type App struct {
@@ -46,11 +54,47 @@ func (a *App) Run() error {
 
 	a.db = db
 	a.httpServer = platformhttp.New(cfg.Server, a.log)
-
 	engine := a.httpServer.Engine()
-	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(engine.Group("/api/admin"))
-	contentmodule.NewHandler(contentmodule.NewRepository(db.SQL(), db.Driver())).RegisterPublicRoutes(engine.Group("/api"))
-	contentmodule.NewHandler(contentmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(engine.Group("/api/admin"))
+
+	// JWT auth service
+	jwtSecret := []byte(cfg.Auth.JWTSecret)
+	if len(jwtSecret) == 0 {
+		// 开发环境自动生成随机 secret
+		jwtSecret = generateDevSecret()
+		a.log.Warn("auth.jwt_secret is empty, using generated dev secret; set a fixed secret for production")
+	}
+	accessTTL, _ := time.ParseDuration(cfg.Auth.AccessTTL)
+	if accessTTL == 0 {
+		accessTTL = 2 * time.Hour
+	}
+	refreshTTL, _ := time.ParseDuration(cfg.Auth.RefreshTTL)
+	if refreshTTL == 0 {
+		refreshTTL = 168 * time.Hour
+	}
+	authService, err := auth.NewService(jwtSecret, accessTTL, refreshTTL)
+	if err != nil {
+		return err
+	}
+
+	// 健康检查（公开）
+	healthHandler := handler.NewHealthHandler(db)
+	healthHandler.RegisterRoutes(engine.Group(""))
+
+	// 认证接口（公开）
+	userRepo := usersmodule.NewRepository(db.SQL(), db.Driver())
+	tokenRepo := authmodule.NewRepository(db.SQL(), db.Driver())
+	authHandler := authmodule.NewHandler(authService, userRepo, tokenRepo)
+	authHandler.RegisterRoutes(engine.Group("/api"))
+
+	// 公开文章接口（不需认证）
+	contentRepo := contentmodule.NewRepository(db.SQL(), db.Driver())
+	contentmodule.NewHandler(contentRepo).RegisterPublicRoutes(engine.Group("/api"))
+
+	// 管理接口（需认证 + 管理员）
+	adminGroup := engine.Group("/api/admin")
+	adminGroup.Use(middleware.RequireAuth(authHandler), middleware.RequireAdmin())
+	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
+	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
 
 	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())
 

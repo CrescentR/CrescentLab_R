@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS users (
   CHECK (status IN ('pending', 'active', 'disabled', 'locked', 'deleted'))
 );
 
+CREATE TABLE IF NOT EXISTS auth_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  purpose TEXT NOT NULL DEFAULT 'refresh',
+  revoked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS settings (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   scope TEXT NOT NULL DEFAULT 'site',

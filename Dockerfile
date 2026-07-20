@@ -29,12 +29,12 @@ WORKDIR /src/frontend
 ARG BACKEND_URL=http://backend:8091
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV BACKEND_URL=${BACKEND_URL}
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm config set registry "${NPM_REGISTRY}" \
-  && npm config set replace-registry-host "always" \
-  && npm ci --no-audit --no-fund
+RUN corepack enable && corepack prepare pnpm@latest --activate
+COPY frontend/package.json frontend/pnpm-lock.yaml ./
+RUN pnpm config set registry "${NPM_REGISTRY}" \
+  && pnpm install --frozen-lockfile
 COPY frontend ./
-RUN npm run build
+RUN pnpm run build
 
 FROM ${NODE_IMAGE} AS frontend
 WORKDIR /app
