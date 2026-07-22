@@ -13,8 +13,8 @@ const toolbar = [
 
 export function ArticleEditorWorkspace() {
   return (
-    <main className="flex h-screen min-h-[760px] flex-col overflow-hidden bg-[var(--background)]">
-      <header className="flex min-h-16 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[rgba(25,28,30,0.78)] px-4 backdrop-blur md:px-6">
+    <main className="flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--background-soft)] lg:h-[calc(100dvh-4rem)] lg:min-h-[700px] lg:overflow-hidden">
+      <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 shadow-[0_1px_0_var(--border-soft)] md:px-6">
         <div className="flex min-w-0 items-center gap-4">
           <Button className="hidden md:inline-flex" icon={<ChevronDown size={15} />} variant="ghost">
             Back
@@ -25,7 +25,7 @@ export function ArticleEditorWorkspace() {
             <strong className="block truncate font-lab-mono text-sm text-[var(--text-strong)]">Architecting the Moonlit Lab</strong>
           </div>
         </div>
-        <div className="hidden items-center gap-2 rounded-full border border-[var(--border-soft)] bg-white/5 px-3 py-1.5 font-lab-mono text-xs text-[var(--muted)] md:flex">
+        <div className="hidden items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-raised)] px-3 py-1.5 font-lab-mono text-xs text-[var(--muted)] md:flex">
           <span className="size-2 rounded-full bg-[var(--cyan)]" />
           Saved to cloud just now
         </div>
@@ -39,15 +39,15 @@ export function ArticleEditorWorkspace() {
         </div>
       </header>
 
-      <section className="grid min-h-0 flex-1 lg:grid-cols-[288px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-[var(--border-soft)] bg-[rgba(25,28,30,0.72)] lg:block">
-          <div className="border-b border-[var(--border-soft)] px-4 py-4">
+      <section className="grid min-h-0 flex-1 bg-[var(--background-soft)] lg:grid-cols-[304px_minmax(0,1fr)]">
+        <aside className="hidden overflow-y-auto border-r border-[var(--border-soft)] bg-[var(--surface)] lg:block">
+          <div className="border-b border-[var(--border-soft)] px-5 py-4">
             <div className="flex items-center gap-2 text-[var(--cyan)]">
               <Sparkles size={16} />
               <h2 className="font-lab-mono text-sm font-medium uppercase text-[var(--text)]">Metadata</h2>
             </div>
           </div>
-          <div className="space-y-5 p-4">
+          <div className="space-y-5 p-5">
             <Field label="URL Slug" value="architecting-the-moonlit-lab" />
             <Field label="Category" value="Design Systems" />
             <div>
@@ -67,15 +67,15 @@ export function ArticleEditorWorkspace() {
           </div>
         </aside>
 
-        <div className="min-w-0 overflow-auto bg-[rgba(16,20,21,0.58)]">
-          <div className="sticky top-0 z-10 flex justify-center border-b border-[var(--border-soft)] bg-[rgba(16,20,21,0.72)] py-3 backdrop-blur">
-            <div className="glass-panel flex items-center gap-1 rounded-[var(--radius)] px-2 py-2">
+        <div className="min-w-0 overflow-auto bg-[var(--background-soft)]">
+          <div className="sticky top-0 z-10 flex justify-center border-b border-[var(--border-soft)] bg-[var(--surface-glass)] px-4 py-3 backdrop-blur-xl">
+            <div className="flex items-center gap-1 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface)] px-2 py-2 shadow-[var(--shadow-tight)]">
               {toolbar.map((item) => {
                 const Icon = item.icon;
                 return (
                   <button
                     aria-label={item.label}
-                    className="grid size-8 place-items-center rounded text-[var(--muted)] transition-colors hover:bg-white/5 hover:text-[var(--text)]"
+                    className="grid size-8 place-items-center rounded text-[var(--muted)] transition-colors hover:bg-[var(--surface-field)] hover:text-[var(--text-strong)]"
                     key={item.label}
                     type="button"
                   >
@@ -86,7 +86,7 @@ export function ArticleEditorWorkspace() {
             </div>
           </div>
 
-          <article className="mx-auto max-w-3xl px-5 py-10 font-lab-mono text-sm leading-7 text-[rgba(224,227,229,0.9)] md:py-14">
+          <article className="mx-auto my-4 min-h-[calc(100%-6rem)] w-[calc(100%-2rem)] max-w-4xl rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface)] px-6 py-10 font-lab-mono text-sm leading-7 text-[var(--text)] shadow-[var(--shadow-tight)] md:my-6 md:px-12 md:py-14">
             <p className="text-[var(--text-strong)]"># Architecting the Moonlit Lab</p>
             <p className="mt-6">
               The design system embodies a &quot;Moonlit Lab&quot; aesthetic, a fusion of a high-performance developer

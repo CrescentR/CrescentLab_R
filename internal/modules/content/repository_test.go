@@ -6,6 +6,7 @@ import (
 	"errors"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"CrescentLab_R/internal/platform/config"
@@ -220,6 +221,10 @@ func TestRepositoryCreateValidationFails(t *testing.T) {
 	}{
 		{"empty title", CreateInput{Slug: "test"}},
 		{"empty slug", CreateInput{Title: "Test"}},
+		{"title too long", CreateInput{Title: strings.Repeat("字", 201), Slug: "test"}},
+		{"invalid slug", CreateInput{Title: "Test", Slug: "Invalid Slug"}},
+		{"excerpt too long", CreateInput{Title: "Test", Slug: "test", Excerpt: strings.Repeat("字", 501)}},
+		{"invalid cover URL", CreateInput{Title: "Test", Slug: "test", CoverURL: "not-a-url"}},
 		{"invalid status", CreateInput{Title: "Test", Slug: "test", Status: "invalid"}},
 		{"invalid source_format", CreateInput{Title: "Test", Slug: "test", SourceFormat: "invalid"}},
 	}
@@ -247,6 +252,9 @@ func TestRepositoryCreateDuplicateSlug(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for duplicate slug, got nil")
 	}
+	if !errors.Is(err, ErrSlugConflict) {
+		t.Fatalf("error = %v, want ErrSlugConflict", err)
+	}
 }
 
 func TestCreateArticleQueryUsesPostgresReturningID(t *testing.T) {
@@ -254,7 +262,7 @@ func TestCreateArticleQueryUsesPostgresReturningID(t *testing.T) {
 	if !returnsID {
 		t.Fatal("PostgreSQL create query should return the inserted id")
 	}
-	want := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_TIMESTAMP) RETURNING id"
+	want := "INSERT INTO articles (title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP) RETURNING id"
 	if query != want {
 		t.Fatalf("PostgreSQL create query = %q, want %q", query, want)
 	}
@@ -265,7 +273,7 @@ func TestCreateArticleQueryKeepsSQLiteLastInsertIDPath(t *testing.T) {
 	if returnsID {
 		t.Fatal("SQLite create query should use LastInsertId")
 	}
-	want := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, NULL)"
+	want := "INSERT INTO articles (title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)"
 	if query != want {
 		t.Fatalf("SQLite create query = %q, want %q", query, want)
 	}
@@ -343,6 +351,38 @@ func TestRepositoryUpdateRejectsInvalidInput(t *testing.T) {
 	_, err := repo.Update(context.Background(), 1, CreateInput{Slug: "post"})
 	if err == nil {
 		t.Fatal("expected validation error, got nil")
+	}
+}
+
+func TestRepositoryPersistsRenderedContentMetadata(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+
+	article, err := repo.Create(context.Background(), CreateInput{
+		Title:              "Rendered",
+		Slug:               "rendered",
+		ContentMD:          "# Hello",
+		ContentHTML:        "<h1>Hello</h1>",
+		WordCount:          1,
+		ReadingTimeMinutes: 1,
+	})
+	if err != nil {
+		t.Fatalf("Create error: %v", err)
+	}
+	if article.ContentHTML != "<h1>Hello</h1>" || article.WordCount != 1 || article.ReadingTimeMinutes != 1 {
+		t.Fatalf("rendered fields = %#v", article)
+	}
+}
+
+func TestRepositoryUpdateDuplicateSlug(t *testing.T) {
+	db := openContentTestDB(t)
+	repo := NewRepository(db)
+	seedArticle(t, db, "first", "First", "draft")
+	seedArticle(t, db, "second", "Second", "draft")
+
+	_, err := repo.Update(context.Background(), 2, CreateInput{Title: "Second", Slug: "first"})
+	if !errors.Is(err, ErrSlugConflict) {
+		t.Fatalf("Update error = %v, want ErrSlugConflict", err)
 	}
 }
 

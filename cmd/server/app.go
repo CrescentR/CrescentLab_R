@@ -2,9 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
-	"errors"
 	"log/slog"
 	"os"
 	"os/signal"
@@ -60,7 +57,7 @@ func (a *App) Run() error {
 	jwtSecret := []byte(cfg.Auth.JWTSecret)
 	if len(jwtSecret) == 0 {
 		// 开发环境自动生成随机 secret
-		jwtSecret = generateDevSecret()
+		jwtSecret = []byte(generateDevSecret())
 		a.log.Warn("auth.jwt_secret is empty, using generated dev secret; set a fixed secret for production")
 	}
 	accessTTL, _ := time.ParseDuration(cfg.Auth.AccessTTL)
@@ -92,7 +89,7 @@ func (a *App) Run() error {
 
 	// 管理接口（需认证 + 管理员）
 	adminGroup := engine.Group("/api/admin")
-	adminGroup.Use(middleware.RequireAuth(authHandler), middleware.RequireAdmin())
+	adminGroup.Use(middleware.RequireAuth(authService), middleware.RequireAdmin())
 	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
 	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
 

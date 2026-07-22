@@ -38,9 +38,9 @@ type loginRequest struct {
 }
 
 type tokenResponse struct {
-	AccessToken  string      `json:"access_token"`
-	RefreshToken string      `json:"refresh_token"`
-	User         userInfo    `json:"user"`
+	AccessToken  string   `json:"access_token"`
+	RefreshToken string   `json:"refresh_token"`
+	User         userInfo `json:"user"`
 }
 
 type userInfo struct {
@@ -203,7 +203,10 @@ func (h *Handler) logout(c *gin.Context) {
 	}
 
 	tokenHash := HashToken(req.RefreshToken)
-	_ = h.tokenRepo.RevokeToken(c.Request.Context(), claims.UserID, tokenHash)
+	if err := h.tokenRepo.RevokeToken(c.Request.Context(), claims.UserID, tokenHash, claims.ExpiresAt.Time); err != nil {
+		platformhttp.WriteError(c, err)
+		return
+	}
 
 	c.Status(http.StatusNoContent)
 }

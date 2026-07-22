@@ -6,7 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/lib/pq"
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
+
+var ErrSlugConflict = errors.New("article slug already exists")
 
 type Repository struct {
 	db     *sql.DB
@@ -170,19 +176,19 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, er
 
 	query, returnsID := createArticleQuery(r.driver, ArticleStatus(status))
 	args := []any{
-		input.Title, input.Slug, input.Excerpt, input.ContentMD,
-		input.CoverURL, status, sourceFormat,
+		input.Title, input.Slug, input.Excerpt, input.ContentMD, input.ContentHTML,
+		input.CoverURL, status, sourceFormat, input.WordCount, input.ReadingTimeMinutes,
 	}
 
 	var id int64
 	if returnsID {
 		if err := r.db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
-			return Article{}, fmt.Errorf("create article: %w", err)
+			return Article{}, normalizeArticleWriteError("create article", err)
 		}
 	} else {
 		result, err := r.db.ExecContext(ctx, query, args...)
 		if err != nil {
-			return Article{}, fmt.Errorf("create article: %w", err)
+			return Article{}, normalizeArticleWriteError("create article", err)
 		}
 		id, err = result.LastInsertId()
 		if err != nil {
@@ -204,7 +210,7 @@ func createArticleQuery(driver string, status ArticleStatus) (string, bool) {
 		publishedAtExpr = "CURRENT_TIMESTAMP"
 	}
 
-	query := "INSERT INTO articles (title, slug, excerpt, content_md, cover_url, status, source_format, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
+	query := "INSERT INTO articles (title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
 	if driver == "postgres" {
 		return convertPlaceholders(query) + " RETURNING id", true
 	}
@@ -230,6 +236,7 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (A
 
 	query := `UPDATE articles
 SET title = ?, slug = ?, excerpt = ?, content_md = ?, cover_url = ?, status = ?, source_format = ?,
+	content_html = ?, word_count = ?, reading_time_minutes = ?,
     published_at = CASE
         WHEN ? = 'published' THEN COALESCE(published_at, CURRENT_TIMESTAMP)
         ELSE NULL
@@ -242,9 +249,11 @@ WHERE id = ? AND deleted_at IS NULL`
 
 	result, err := r.db.ExecContext(ctx, query,
 		input.Title, input.Slug, input.Excerpt, input.ContentMD,
-		input.CoverURL, status, sourceFormat, status, id)
+		input.CoverURL, status, sourceFormat,
+		input.ContentHTML, input.WordCount, input.ReadingTimeMinutes,
+		status, id)
 	if err != nil {
-		return Article{}, fmt.Errorf("update article: %w", err)
+		return Article{}, normalizeArticleWriteError("update article", err)
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
@@ -259,6 +268,20 @@ WHERE id = ? AND deleted_at IS NULL`
 		return Article{}, fmt.Errorf("fetch updated article: %w", err)
 	}
 	return article, nil
+}
+
+func normalizeArticleWriteError(operation string, err error) error {
+	var postgresError *pq.Error
+	if errors.As(err, &postgresError) && postgresError.Code == "23505" {
+		return fmt.Errorf("%s: %w", operation, ErrSlugConflict)
+	}
+
+	var sqliteError *sqlite.Error
+	if errors.As(err, &sqliteError) && sqliteError.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
+		return fmt.Errorf("%s: %w", operation, ErrSlugConflict)
+	}
+
+	return fmt.Errorf("%s: %w", operation, err)
 }
 
 func (r *Repository) SoftDelete(ctx context.Context, id int64) error {

@@ -22,17 +22,26 @@ func NewRepository(db *sql.DB, driver string) *Repository {
 
 // RevokeToken 将一个 refresh token 标记为已撤销。
 // tokenHash 是 token 的 SHA256 哈希，不存储原始 token。
-func (r *Repository) RevokeToken(ctx context.Context, userID int64, tokenHash string) error {
+func (r *Repository) RevokeToken(ctx context.Context, userID int64, tokenHash string, expiresAt time.Time) error {
 	if r == nil || r.db == nil {
 		return errors.New("auth repository database is nil")
 	}
 
-	query := `INSERT INTO auth_tokens (user_id, token_hash, purpose, revoked_at) VALUES (?, ?, 'refresh', ?)`
+	now := time.Now()
 	if r.driver == "postgres" {
-		query = `INSERT INTO auth_tokens (user_id, token_hash, purpose, revoked_at) VALUES ($1, $2, 'refresh', $3)`
+		_, err := r.db.ExecContext(ctx, `INSERT INTO auth_tokens
+(user_id, token_hash, purpose, expires_at, revoked_at)
+VALUES ($1, $2, 'refresh', $3, $4)
+ON CONFLICT (token_hash) DO NOTHING`, userID, tokenHash, expiresAt, now)
+		if err != nil {
+			return fmt.Errorf("revoke token: %w", err)
+		}
+		return nil
 	}
 
-	_, err := r.db.ExecContext(ctx, query, userID, tokenHash, time.Now())
+	_, err := r.db.ExecContext(ctx, `INSERT OR IGNORE INTO auth_tokens
+(user_id, token_hash, purpose, revoked_at)
+VALUES (?, ?, 'refresh', ?)`, userID, tokenHash, now)
 	if err != nil {
 		return fmt.Errorf("revoke token: %w", err)
 	}

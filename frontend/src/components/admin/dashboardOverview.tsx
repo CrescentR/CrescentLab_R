@@ -16,8 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { adminMetrics, articleSummaries, contentPipeline, labActivities } from "@/lib/mockData";
-import { personas } from "@/lib/personas";
-import { useUiStore } from "@/store/uiStore";
+import { getAuthUser } from "@/lib/api/client";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
@@ -37,8 +36,8 @@ const insightCards = [
 ] as const;
 
 export function DashboardOverview() {
-  const activePersona = useUiStore((state) => state.activePersona);
-  const persona = personas[activePersona];
+  const user = getAuthUser();
+  const displayName = user?.nickname || user?.username || "管理员";
 
   return (
     <main className="flex-1 overflow-auto px-4 py-6 md:px-8">
@@ -49,7 +48,7 @@ export function DashboardOverview() {
               <div>
                 <Badge tone="cyan">管理控制台</Badge>
                 <h1 className="mt-4 font-lab-display text-3xl font-semibold leading-tight text-[var(--text-strong)] md:text-4xl">
-                  晚上好，{persona.name}。今天的 Lab 已准备好。
+                  晚上好，{displayName}。今天的 Lab 已准备好。
                 </h1>
                 <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
                   内容发布、存储状态、评论审核、用户权限、插件主题和任务队列从这里进入。设置模块已经接入后端接口，其他模块按同样边界推进。

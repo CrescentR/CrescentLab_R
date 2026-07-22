@@ -2,6 +2,7 @@ package content
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -154,11 +155,15 @@ func TestHandlerCreateArticle(t *testing.T) {
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("POST status = %d, want 201, body = %s", rec.Code, rec.Body.String())
 	}
-	if !strings.Contains(rec.Body.String(), "New Post") {
-		t.Fatalf("body should contain article title: %s", rec.Body.String())
+	var article ArticleDetail
+	if err := json.Unmarshal(rec.Body.Bytes(), &article); err != nil {
+		t.Fatalf("decode response: %v", err)
 	}
-	if !strings.Contains(rec.Body.String(), `"draft"`) {
-		t.Fatalf("body should contain default status draft: %s", rec.Body.String())
+	if article.Title != "New Post" || article.Status != string(StatusDraft) {
+		t.Fatalf("created article = %#v", article)
+	}
+	if article.ContentHTML != "<h1>Hello</h1>\n" || article.WordCount != 1 || article.ReadingTimeMinutes != 1 {
+		t.Fatalf("rendered article fields = %#v", article)
 	}
 }
 
@@ -172,6 +177,7 @@ func TestHandlerCreateValidationFails(t *testing.T) {
 	}{
 		{"empty title", `{"slug":"test"}`},
 		{"empty slug", `{"title":"Test"}`},
+		{"invalid slug", `{"title":"Test","slug":"Invalid Slug"}`},
 		{"invalid json", `not json`},
 	}
 
@@ -200,8 +206,51 @@ func TestHandlerCreateDuplicateSlug(t *testing.T) {
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadRequest {
-		t.Fatalf("POST status = %d, want 400 for duplicate slug, body = %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("POST status = %d, want 409 for duplicate slug, body = %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"code":"CONFLICT"`) {
+		t.Fatalf("POST body should use unified CONFLICT error: %s", rec.Body.String())
+	}
+}
+
+func TestHandlerAdminDetailReturnsDraftByID(t *testing.T) {
+	db := openContentTestDB(t)
+	seedArticle(t, db, "draft-post", "Draft Post", "draft")
+	router := newContentTestRouterWithDB(t, db)
+
+	req := httptest.NewRequest(http.MethodGet, "/api/admin/articles/1", nil)
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("GET status = %d, want 200, body = %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"title":"Draft Post"`) || !strings.Contains(rec.Body.String(), `"status":"draft"`) {
+		t.Fatalf("GET body should contain draft detail: %s", rec.Body.String())
+	}
+}
+
+func TestHandlerAdminDetailRejectsInvalidOrMissingID(t *testing.T) {
+	db := openContentTestDB(t)
+	seedDeletedArticle(t, db, "deleted-post", "Deleted Post", "draft")
+	router := newContentTestRouterWithDB(t, db)
+
+	tests := []struct {
+		path string
+		want int
+	}{
+		{path: "/api/admin/articles/not-an-id", want: http.StatusBadRequest},
+		{path: "/api/admin/articles/1", want: http.StatusNotFound},
+		{path: "/api/admin/articles/999", want: http.StatusNotFound},
+	}
+	for _, tt := range tests {
+		req := httptest.NewRequest(http.MethodGet, tt.path, nil)
+		rec := httptest.NewRecorder()
+		router.ServeHTTP(rec, req)
+		if rec.Code != tt.want {
+			t.Fatalf("GET %s status = %d, want %d, body = %s", tt.path, rec.Code, tt.want, rec.Body.String())
+		}
 	}
 }
 

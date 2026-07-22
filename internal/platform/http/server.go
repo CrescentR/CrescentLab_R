@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"CrescentLab_R/internal/platform/config"
-	"CrescentLab_R/internal/platform/http/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +21,7 @@ func New(cfg config.ServerConfig, log *slog.Logger) *Server {
 	gin.SetMode(gin.ReleaseMode)
 
 	engine := gin.New()
-	engine.Use(middleware.RequestID(), requestLogger(log), gin.Recovery())
+	engine.Use(RequestID(), requestLogger(log), gin.Recovery())
 
 	return &Server{
 		engine: engine,
@@ -68,7 +67,7 @@ func requestLogger(log *slog.Logger) gin.HandlerFunc {
 
 		log.Info(
 			"http request",
-			"request_id", middleware.GetRequestID(c),
+			"request_id", GetRequestID(c),
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
 			"status", c.Writer.Status(),

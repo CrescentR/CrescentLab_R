@@ -4,9 +4,14 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/url"
+	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
+
+var slugPattern = regexp.MustCompile(`^[a-z0-9-]+$`)
 
 type ArticleStatus string
 
@@ -145,21 +150,42 @@ func (a Article) Detail() ArticleDetail {
 }
 
 type CreateInput struct {
-	Title       string `json:"title"`
-	Slug        string `json:"slug"`
-	Excerpt     string `json:"excerpt"`
-	ContentMD   string `json:"content_md"`
-	CoverURL    string `json:"cover_url"`
-	Status      string `json:"status"`
-	SourceFormat string `json:"source_format"`
+	Title              string `json:"title"`
+	Slug               string `json:"slug"`
+	Excerpt            string `json:"excerpt"`
+	ContentMD          string `json:"content_md"`
+	CoverURL           string `json:"cover_url"`
+	Status             string `json:"status"`
+	SourceFormat       string `json:"source_format"`
+	ContentHTML        string `json:"-"`
+	WordCount          int    `json:"-"`
+	ReadingTimeMinutes int    `json:"-"`
 }
 
 func (i CreateInput) Validate() error {
-	if strings.TrimSpace(i.Title) == "" {
+	title := strings.TrimSpace(i.Title)
+	if title == "" {
 		return errors.New("title is required")
 	}
-	if strings.TrimSpace(i.Slug) == "" {
+	if utf8.RuneCountInString(title) > 200 {
+		return errors.New("title must not exceed 200 characters")
+	}
+	if i.Slug == "" {
 		return errors.New("slug is required")
+	}
+	if !slugPattern.MatchString(i.Slug) {
+		return errors.New("slug must contain only lowercase letters, numbers, and hyphens")
+	}
+	if utf8.RuneCountInString(i.Excerpt) > 500 {
+		return errors.New("excerpt must not exceed 500 characters")
+	}
+	if i.CoverURL != "" {
+		parsedURL, err := url.ParseRequestURI(i.CoverURL)
+		isAbsoluteHTTP := err == nil && parsedURL.Host != "" && (parsedURL.Scheme == "http" || parsedURL.Scheme == "https")
+		isRootRelative := err == nil && parsedURL.Host == "" && parsedURL.Scheme == "" && strings.HasPrefix(parsedURL.Path, "/")
+		if !isAbsoluteHTTP && !isRootRelative {
+			return errors.New("cover_url must be an HTTP, HTTPS, or root-relative URL")
+		}
 	}
 	if i.Status != "" {
 		switch ArticleStatus(i.Status) {
@@ -176,8 +202,4 @@ func (i CreateInput) Validate() error {
 		}
 	}
 	return nil
-}
-
-type errorResponse struct {
-	Error string `json:"error"`
 }

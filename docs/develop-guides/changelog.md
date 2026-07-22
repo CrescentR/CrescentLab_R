@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-21
+
+- 完成阶段 02 文章后端第一批：新增 Goldmark + Bluemonday 安全 Markdown 渲染，保存时同步生成 `content_html`、字数和阅读时间；补充后台按 ID 查询文章、slug 冲突 409、统一文章错误响应及前端文章 API 封装。
+- 修复 PostgreSQL 退出登录未写入 `auth_tokens.expires_at` 且忽略数据库错误的问题，重复退出保持幂等。
+- 修复 Motion 按钮缺少 Client Component 边界导致服务端调用 `createMotionComponent()` 的运行时错误，并对齐 Motion 按钮属性类型。
+- 修复后台内容编辑器在浅色主题下混用深色半透明背景造成的低对比灰屏，统一元数据、工具栏和正文画布的主题表面，并消除后台登录态首屏的 hydration mismatch。
+
+## 2026-07-20
+
+- 完成阶段 01 安全门禁收尾：新增认证集成测试（登录→访问→退出全链路）、GitHub Actions CI 工作流（Go test/vet/build + 前端 lint/typecheck/build），更新 README 快速开始、ARCHITECTURE 架构说明和测试规范文档。
+- 前台首页接入 React Bits BlurText，并参考 Uiverse Galaxy 的渐变玻璃卡片与悬浮层级，新增 GSAP 指针追光和导航滚动进度动效；保留移动端与 `prefers-reduced-motion` 降级行为。
+
 ## 2026-07-19
 
 - 将首页“实验”区升级为 GSAP 驱动的实验观测台：桌面端通过滚动固定时间线同步实验索引、观测图形与三条记录，移动端及减少动态效果场景保持静态顺序阅读，并完成 Lenis 与 ScrollTrigger 的滚动同步。

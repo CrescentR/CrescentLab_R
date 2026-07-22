@@ -5,8 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-
-	"CrescentLab_R/internal/platform/http/middleware"
 )
 
 // ErrorCode 是稳定的错误码字符串。
@@ -113,7 +111,7 @@ func WriteError(c *gin.Context, err error) {
 		c.JSON(appErr.Status, errorBody{
 			Code:      appErr.Code,
 			Message:   appErr.Message,
-			RequestID: middleware.GetRequestID(c),
+			RequestID: GetRequestID(c),
 		})
 		return
 	}
@@ -122,7 +120,7 @@ func WriteError(c *gin.Context, err error) {
 	c.JSON(http.StatusInternalServerError, errorBody{
 		Code:      CodeInternalError,
 		Message:   "服务暂时不可用",
-		RequestID: middleware.GetRequestID(c),
+		RequestID: GetRequestID(c),
 	})
 }
 
@@ -131,6 +129,6 @@ func WriteErrorCode(c *gin.Context, code ErrorCode, status int, msg string) {
 	c.JSON(status, errorBody{
 		Code:      code,
 		Message:   msg,
-		RequestID: middleware.GetRequestID(c),
+		RequestID: GetRequestID(c),
 	})
 }

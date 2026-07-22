@@ -4,11 +4,11 @@ import { ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
 import { labNotes } from "@/lib/labHomeContent";
 import { SectionIntro } from "@/components/home/sectionIntro";
-import { revealGroup, revealItem, viewportOnce } from "@/components/home/motionConfig";
+import { fadeUp, stagger, viewport } from "@/components/home/motionConfig";
 
 export function LabNotes() {
   return (
-    <motion.section className="lab-section lab-notes lab-shell" id="notes" initial="hidden" variants={revealGroup} viewport={viewportOnce} whileInView="visible">
+    <motion.section className="lab-section lab-notes lab-shell" id="notes" initial="hidden" variants={stagger} viewport={viewport} whileInView="visible">
       <SectionIntro
         description="在公开构建系统和私下修订过程中的田野笔记。"
         index="04 / 日志"
@@ -16,7 +16,7 @@ export function LabNotes() {
       />
       <div className="lab-note-timeline">
         {labNotes.map((note) => (
-          <motion.article className="lab-note-row" key={note.id} variants={revealItem}>
+          <motion.article className="lab-note-row" key={note.id} variants={fadeUp}>
             <div className="lab-note-date lab-mono">
               <span />
               {note.updatedAt}

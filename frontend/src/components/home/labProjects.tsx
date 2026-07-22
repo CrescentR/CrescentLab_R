@@ -6,7 +6,7 @@ import { ArrowUpRight, X } from "lucide-react";
 import type { ProjectSite } from "@/types/content";
 import { labProjects } from "@/lib/labHomeContent";
 import { SectionIntro } from "@/components/home/sectionIntro";
-import { hoverTransition, labEase, revealGroup, revealItem, viewportOnce } from "@/components/home/motionConfig";
+import { cardHover, easing, fadeUp, stagger, transitionNormal, viewport } from "@/components/home/motionConfig";
 
 export function LabProjects() {
   const [selectedProject, setSelectedProject] = useState<ProjectSite | null>(null);
@@ -25,7 +25,7 @@ export function LabProjects() {
   }, [selectedProject]);
 
   return (
-    <motion.section className="lab-section lab-shell" id="projects" initial="hidden" variants={revealGroup} viewport={viewportOnce} whileInView="visible">
+    <motion.section className="lab-section lab-shell" id="projects" initial="hidden" variants={stagger} viewport={viewport} whileInView="visible">
       <SectionIntro
         description="存活足够久、成为真实项目的系统。"
         index="03 / 精选"
@@ -38,10 +38,9 @@ export function LabProjects() {
             key={project.id}
             layoutId={`project-${project.id}`}
             onClick={() => setSelectedProject(project)}
-            transition={hoverTransition}
             type="button"
-            variants={revealItem}
-            whileHover={{ y: -5 }}
+            variants={fadeUp}
+            {...cardHover}
           >
             <ProjectCardContent index={index} project={project} />
           </motion.button>
@@ -57,7 +56,7 @@ export function LabProjects() {
             initial={{ opacity: 0 }}
             onMouseDown={() => setSelectedProject(null)}
             role="presentation"
-            transition={{ duration: 0.2 }}
+            transition={transitionNormal}
           >
             <motion.article
               aria-label={`${selectedProject.title} 项目详情`}
@@ -66,7 +65,7 @@ export function LabProjects() {
               layoutId={`project-${selectedProject.id}`}
               onMouseDown={(event) => event.stopPropagation()}
               role="dialog"
-              transition={{ duration: 0.48, ease: labEase }}
+              transition={{ duration: 0.48, ease: easing.standard }}
             >
               <button aria-label="关闭项目详情" className="lab-project-modal-close" onClick={() => setSelectedProject(null)} type="button"><X size={18} /></button>
               <span className="lab-mono">SELECTED PROJECT / {selectedProject.category}</span>

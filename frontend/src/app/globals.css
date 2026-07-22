@@ -30,6 +30,13 @@
   --radius: 8px;
   --shadow-soft: 0 18px 42px rgba(31, 28, 22, 0.08);
   --shadow-tight: 0 10px 24px rgba(31, 28, 22, 0.06);
+  --motion-fast: 180ms;
+  --motion-normal: 320ms;
+  --motion-slow: 640ms;
+  --motion-slower: 960ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-exit: cubic-bezier(0.4, 0, 1, 1);
   --page-wash: radial-gradient(circle at 18% 12%, rgba(63, 114, 229, 0.05), transparent 28rem);
   --grid-line: rgba(221, 215, 204, 0.12);
   --header-highlight: rgba(255, 255, 255, 0.62);

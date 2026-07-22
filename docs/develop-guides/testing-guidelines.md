@@ -9,9 +9,13 @@
 
 ## 目录
 
-- 后端单元测试：`backend/test/unit`
-- 后端集成测试：`backend/test/integration`
-- 后端端到端测试：`backend/test/e2e`
+Go 测试文件与被测包放在同一目录下（遵循 Go 惯例），文件名以 `_test.go` 结尾：
+
+- 单元测试：与源码同目录，如 `internal/modules/users/repository_test.go`
+- 集成测试：与源码同目录，如 `internal/modules/auth/integration_test.go`
+- 测试辅助函数（如建临时库、构造测试数据）放在同包的 `_test.go` 文件中
+
+前端测试目录后续根据需要建立。
 
 ## 当前项目命令
 

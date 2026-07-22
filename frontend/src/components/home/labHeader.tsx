@@ -1,14 +1,45 @@
 "use client";
 
-import { useState } from "react";
-import { useMotionValueEvent, useScroll } from "motion/react";
+import { useEffect, useRef, useState } from "react";
 import { labNavigation } from "@/lib/labHomeContent";
+import { gsap, useGSAP } from "@/lib/gsap";
 
 export function LabHeader() {
   const [scrolled, setScrolled] = useState(false);
-  const { scrollY } = useScroll();
+  const progressRef = useRef<HTMLSpanElement>(null);
 
-  useMotionValueEvent(scrollY, "change", (latest) => setScrolled(latest > 28));
+  useGSAP(() => {
+    const progress = progressRef.current;
+    if (!progress) return;
+
+    const media = gsap.matchMedia();
+    media.add("(prefers-reduced-motion: no-preference)", () => {
+      gsap.fromTo(
+        progress,
+        { scaleX: 0 },
+        {
+          ease: "none",
+          scaleX: 1,
+          scrollTrigger: {
+            end: "bottom bottom",
+            scrub: 0.2,
+            start: "top top",
+            trigger: document.documentElement,
+          },
+        },
+      );
+    });
+
+    return () => media.revert();
+  });
+
+  // 使用原生 scroll 事件驱动 scrolled 状态，避免 Motion useScroll 依赖
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 28);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
     <header className={scrolled ? "lab-header lab-header-scrolled" : "lab-header"}>
@@ -28,6 +59,7 @@ export function LabHeader() {
           <i /> ONLINE
         </span>
       </div>
+      <span aria-hidden="true" className="lab-scroll-progress" ref={progressRef} />
     </header>
   );
 }

@@ -1,6 +1,5 @@
 "use client";
 
-import { MotionConfig } from "motion/react";
 import { useEffect } from "react";
 import Lenis from "lenis";
 import { LabFooter } from "@/components/home/labFooter";
@@ -37,16 +36,14 @@ export function HomeClient() {
   }, []);
 
   return (
-    <MotionConfig reducedMotion="user">
-      <main className="lab-home">
-        <LabHeader />
-        <LabHero />
-        <NowBuildingSection />
-        <ExperimentsSection />
-        <LabProjects />
-        <LabNotes />
-        <LabFooter />
-      </main>
-    </MotionConfig>
+    <main className="lab-home">
+      <LabHeader />
+      <LabHero />
+      <NowBuildingSection />
+      <ExperimentsSection />
+      <LabProjects />
+      <LabNotes />
+      <LabFooter />
+    </main>
   );
 }
