@@ -1,108 +1,30 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
+import { motion, type PanInfo, useReducedMotion } from "motion/react";
 import { labExperiments } from "@/lib/labHomeContent";
-import { gsap, useGSAP } from "@/lib/gsap";
 import { SectionIntro } from "@/components/home/sectionIntro";
 
 export function ExperimentsSection() {
-  const sectionRef = useRef<HTMLElement>(null);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const shouldReduceMotion = useReducedMotion();
 
-  useGSAP(
-    () => {
-      const section = sectionRef.current;
-      if (!section) return;
+  const showExperiment = (index: number) => {
+    if (index < 0 || index >= labExperiments.length || index === activeIndex) return;
+    setActiveIndex(index);
+  };
 
-      const panels = gsap.utils.toArray<HTMLElement>("[data-experiment-panel]", section);
-      const indexItems = gsap.utils.toArray<HTMLElement>("[data-experiment-index]", section);
-      const indexDots = gsap.utils.toArray<HTMLElement>("[data-experiment-index-dot]", section);
-      const signals = gsap.utils.toArray<HTMLElement>("[data-experiment-signal]", section);
-      const progressFill = section.querySelector<HTMLElement>("[data-experiment-progress]");
-      const media = gsap.matchMedia();
-
-      media.add(
-        "(min-width: 981px) and (min-height: 720px) and (prefers-reduced-motion: no-preference)",
-        () => {
-          if (!progressFill) return;
-
-          gsap.set(panels.slice(1), { autoAlpha: 0, y: 28 });
-          gsap.set(indexItems[0], { autoAlpha: 1, x: 8 });
-          gsap.set(indexItems.slice(1), { autoAlpha: 0.38, x: 0 });
-          gsap.set(indexDots[0], { scale: 1 });
-          gsap.set(indexDots.slice(1), { scale: 0.6 });
-          gsap.set(signals.slice(1), { autoAlpha: 0, rotation: -8, scale: 0.92 });
-          gsap.set(progressFill, { scaleX: 0, transformOrigin: "left center" });
-
-          const timeline = gsap.timeline({
-            defaults: { duration: 0.42, ease: "power2.inOut" },
-            scrollTrigger: {
-              trigger: section,
-              start: "top top",
-              end: () => `+=${window.innerHeight * 2.4}`,
-              invalidateOnRefresh: true,
-              pin: true,
-              scrub: 0.7,
-            },
-          });
-
-          timeline.addLabel("experiment-1", 0);
-
-          for (let index = 1; index < panels.length; index += 1) {
-            const position = index;
-            timeline
-              .addLabel(`experiment-${index + 1}`, position)
-              .to(panels[index - 1], { autoAlpha: 0, y: -28, duration: 0.34 }, position - 0.22)
-              .to(signals[index - 1], { autoAlpha: 0, rotation: 8, scale: 1.08 }, position - 0.22)
-              .to(indexItems[index - 1], { autoAlpha: 0.38, x: 0, duration: 0.26 }, position - 0.16)
-              .to(indexDots[index - 1], { scale: 0.6, duration: 0.26 }, position - 0.16)
-              .fromTo(
-                panels[index],
-                { autoAlpha: 0, y: 28 },
-                { autoAlpha: 1, duration: 0.46, immediateRender: false, y: 0 },
-                position,
-              )
-              .fromTo(
-                signals[index],
-                { autoAlpha: 0, rotation: -8, scale: 0.92 },
-                { autoAlpha: 1, duration: 0.5, immediateRender: false, rotation: 0, scale: 1 },
-                position,
-              )
-              .to(indexItems[index], { autoAlpha: 1, x: 8, duration: 0.3 }, position)
-              .to(indexDots[index], { scale: 1, duration: 0.3 }, position);
-          }
-
-          timeline.to(progressFill, { duration: 2.55, ease: "none", scaleX: 1 }, 0);
-        },
-        section,
-      );
-
-      media.add(
-        "(prefers-reduced-motion: no-preference) and ((max-width: 980px) or (max-height: 719px))",
-        () => {
-          panels.forEach((panel) => {
-            gsap.from(panel, {
-              autoAlpha: 0,
-              duration: 0.55,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: panel,
-                start: "top 88%",
-                once: true,
-              },
-              y: 20,
-            });
-          });
-        },
-        section,
-      );
-
-      return () => media.revert();
-    },
-    { scope: sectionRef },
-  );
+  const handleDragEnd = (_event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const swipeDistance = info.offset.x + info.velocity.x * 0.12;
+    if (swipeDistance < -80) {
+      showExperiment(activeIndex + 1);
+    } else if (swipeDistance > 80) {
+      showExperiment(activeIndex - 1);
+    }
+  };
 
   return (
-    <section className="lab-section lab-experiments" id="experiments" ref={sectionRef}>
+    <section className="lab-section lab-experiments" id="experiments">
       <div className="lab-shell">
         <SectionIntro
           description="来自受控失败、未完成工具和技术问题的笔记。"
@@ -111,53 +33,105 @@ export function ExperimentsSection() {
         />
 
         <div className="lab-observatory">
-          <ol aria-label="实验记录索引" className="lab-observatory-index">
-            {labExperiments.map((experiment) => (
-              <li data-experiment-index key={experiment.id}>
-                <span className="lab-observatory-index-dot" data-experiment-index-dot />
-                <span className="lab-mono">EXP—{experiment.number}</span>
-                <strong>{experiment.name}</strong>
-              </li>
-            ))}
-            <li aria-hidden="true" className="lab-observatory-progress">
-              <span className="lab-mono">01</span>
-              <span className="lab-observatory-progress-track">
-                <i data-experiment-progress />
-              </span>
-              <span className="lab-mono">03</span>
-            </li>
-          </ol>
-
-          <div className="lab-observatory-stage">
-            <div aria-hidden="true" className="lab-observatory-visual">
-              <div className="lab-observatory-grid" />
-              <span className="lab-observatory-feed lab-mono">LIVE FEED / ARCHIVE</span>
+          <div className="lab-observatory-rail">
+            <ol aria-label="实验记录索引" className="lab-observatory-index">
               {labExperiments.map((experiment, index) => (
-                <div
-                  className={`lab-observatory-signal lab-observatory-signal-${index + 1}`}
-                  data-experiment-signal
-                  key={experiment.id}
-                >
-                  <span />
-                  <span />
-                  <i />
-                </div>
+                <li className={index === activeIndex ? "is-active" : undefined} key={experiment.id}>
+                  <button
+                    aria-current={index === activeIndex ? "true" : undefined}
+                    onClick={() => showExperiment(index)}
+                    type="button"
+                  >
+                    <span className="lab-observatory-index-dot" />
+                    <span className="lab-mono">EXP—{experiment.number}</span>
+                    <strong>{experiment.name}</strong>
+                  </button>
+                </li>
               ))}
+            </ol>
+            <div aria-hidden="true" className="lab-observatory-progress">
+              <span className="lab-mono">0{activeIndex + 1}</span>
+              <span className="lab-observatory-progress-track">
+                <motion.i
+                  animate={{ scaleX: (activeIndex + 1) / labExperiments.length }}
+                  transition={shouldReduceMotion ? { duration: 0 } : { damping: 20, stiffness: 260, type: "spring" }}
+                />
+              </span>
+              <span className="lab-mono">0{labExperiments.length}</span>
             </div>
+          </div>
 
+          <div
+            aria-label="实验观测卡片，可使用左右方向键切换"
+            className="lab-observatory-stage"
+            onKeyDown={(event) => {
+              if (event.key === "ArrowLeft") showExperiment(activeIndex - 1);
+              if (event.key === "ArrowRight") showExperiment(activeIndex + 1);
+            }}
+            role="region"
+            tabIndex={0}
+          >
+            <span aria-hidden="true" className="lab-observatory-feed lab-mono">DRAG / SWIPE TO EXPLORE</span>
             <div className="lab-observatory-panels">
-              {labExperiments.map((experiment) => (
-                <article className="lab-observatory-panel" data-experiment-panel key={experiment.id}>
-                  <div className="lab-observatory-panel-meta">
-                    <span className="lab-experiment-number lab-mono">OBSERVATION / {experiment.number}</span>
-                    <span className="lab-experiment-status lab-mono"><i /> {experiment.status}</span>
+              {labExperiments.map((experiment, index) => (
+                <motion.article
+                  animate={
+                    index < activeIndex
+                      ? { borderRadius: 26, opacity: 0, rotateZ: -7, scale: 0.88, x: "-112%", y: 0, z: 80 }
+                      : index === activeIndex
+                        ? { borderRadius: 26, opacity: 1, rotateX: 0, rotateZ: 0, scale: 1, x: 0, y: 0, z: 0 }
+                        : {
+                            borderRadius: 26,
+                            opacity: Math.max(0.22, 0.52 - (index - activeIndex) * 0.12),
+                            rotateX: (index - activeIndex) * -3,
+                            rotateZ: (index - activeIndex) * 0.8,
+                            scale: 1 - (index - activeIndex) * 0.055,
+                            x: (index - activeIndex) * 24,
+                            y: (index - activeIndex) * 22,
+                            z: (index - activeIndex) * -120,
+                          }
+                  }
+                  aria-label={`观测 ${experiment.number}：${experiment.name}`}
+                  aria-hidden={index !== activeIndex}
+                  className="lab-observatory-panel"
+                  data-experiment-card
+                  drag={index === activeIndex && !shouldReduceMotion ? "x" : false}
+                  dragConstraints={{ left: 0, right: 0 }}
+                  dragElastic={0.18}
+                  dragMomentum={false}
+                  onDragEnd={handleDragEnd}
+                  key={experiment.id}
+                  style={{
+                    pointerEvents: index === activeIndex ? "auto" : "none",
+                    zIndex: labExperiments.length - Math.abs(index - activeIndex),
+                  }}
+                  transition={
+                    shouldReduceMotion
+                      ? { duration: 0 }
+                      : { damping: 17, mass: 0.72, stiffness: 210, type: "spring" }
+                  }
+                  whileDrag={{ borderRadius: 36, rotateZ: -1.5, scaleX: 1.025, scaleY: 0.975 }}
+                >
+                  <div className="lab-observatory-panel-copy">
+                    <div className="lab-observatory-panel-meta">
+                      <span className="lab-experiment-number lab-mono">OBSERVATION / {experiment.number}</span>
+                      <span className="lab-experiment-status lab-mono"><i /> {experiment.status}</span>
+                    </div>
+                    <h3>{experiment.name}</h3>
+                    <p>{experiment.summary}</p>
+                    <div className="lab-experiment-tags">
+                      {experiment.tags.map((tag) => <span className="lab-mono" key={tag}>{tag}</span>)}
+                    </div>
                   </div>
-                  <h3>{experiment.name}</h3>
-                  <p>{experiment.summary}</p>
-                  <div className="lab-experiment-tags">
-                    {experiment.tags.map((tag) => <span className="lab-mono" key={tag}>{tag}</span>)}
+                  <div aria-hidden="true" className="lab-observatory-card-visual">
+                    <div className="lab-observatory-grid" />
+                    <div className={`lab-observatory-signal lab-observatory-signal-${index + 1}`}>
+                      <span />
+                      <span />
+                      <i />
+                    </div>
                   </div>
-                </article>
+                </motion.article>
               ))}
             </div>
           </div>

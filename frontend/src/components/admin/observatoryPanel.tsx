@@ -1,0 +1,363 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import {
+  AlertTriangle,
+  BookOpen,
+  ChevronRight,
+  CircleDot,
+  Code2,
+  Flame,
+  Lightbulb,
+  Plus,
+  Search,
+  Trash2,
+  Wrench,
+} from "lucide-react";
+import {
+  createObservatoryNote,
+  deleteObservatoryNote,
+  listObservatoryNotes,
+  updateObservatoryNote,
+  type NoteStatus,
+  type NoteType,
+  type ObservatoryListParams,
+} from "@/lib/api/observatory";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Panel } from "@/components/ui/panel";
+import { useToast } from "@/components/ui/toast";
+import { cn } from "@/lib/utils";
+
+type NoteFormData = {
+  title: string;
+  content_md: string;
+  tags: string;
+  note_type: NoteType;
+  status: NoteStatus;
+};
+
+const emptyForm: NoteFormData = {
+  title: "",
+  content_md: "",
+  tags: "",
+  note_type: "fragment",
+  status: "active",
+};
+
+const noteTypeConfig: Record<NoteType, { label: string; icon: typeof Flame; tone: "amber" | "rose" | "cyan" | "purple" | "green" }> = {
+  fragment: { label: "碎碎念", icon: BookOpen, tone: "cyan" },
+  failure: { label: "失败实验", icon: AlertTriangle, tone: "rose" },
+  idea: { label: "想法", icon: Lightbulb, tone: "amber" },
+  tool_idea: { label: "工具构想", icon: Wrench, tone: "purple" },
+  tech_debt: { label: "技术债", icon: Code2, tone: "green" },
+};
+
+const statusConfig: Record<NoteStatus, { label: string; tone: "cyan" | "green" | "neutral" }> = {
+  active: { label: "进行中", tone: "cyan" },
+  resolved: { label: "已解决", tone: "green" },
+  abandoned: { label: "已放弃", tone: "neutral" },
+};
+
+export function ObservatoryPanel() {
+  const { push } = useToast();
+  const [notes, setNotes] = useState<Awaited<ReturnType<typeof listObservatoryNotes>>["items"]>([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<NoteFormData | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [filterType, setFilterType] = useState<NoteType | "">("");
+  const [filterStatus, setFilterStatus] = useState<NoteStatus | "">("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const fetchNotes = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: ObservatoryListParams = { page_size: 50 };
+      if (filterType) params.note_type = filterType;
+      if (filterStatus) params.status = filterStatus;
+      if (searchQuery) params.search = searchQuery;
+      const result = await listObservatoryNotes(params);
+      setNotes(result.items);
+    } catch (err) {
+      push(extractErrorMessage(err, "加载观测台笔记失败"), "error");
+    } finally {
+      setLoading(false);
+    }
+  }, [filterType, filterStatus, searchQuery, push]);
+
+  useEffect(() => {
+    fetchNotes();
+  }, [fetchNotes]);
+
+  function handleNewNote() {
+    setEditing({ ...emptyForm });
+    setEditingId(null);
+  }
+
+  function handleEditNote(note: (typeof notes)[number]) {
+    setEditing({
+      title: note.title,
+      content_md: "",
+      tags: note.tags.join(", "),
+      note_type: note.note_type,
+      status: note.status,
+    });
+    setEditingId(note.id);
+  }
+
+  async function handleSave() {
+    if (!editing || !editing.title.trim()) {
+      push("标题为必填项", "error");
+      return;
+    }
+    setSaving(true);
+    try {
+      const input = {
+        title: editing.title,
+        content_md: editing.content_md,
+        tags: editing.tags.split(",").map((t) => t.trim()).filter(Boolean),
+        note_type: editing.note_type,
+        status: editing.status,
+      };
+      if (editingId) {
+        await updateObservatoryNote(editingId, input);
+        push("笔记已更新", "success");
+      } else {
+        await createObservatoryNote(input);
+        push("笔记已创建", "success");
+      }
+      setEditing(null);
+      setEditingId(null);
+      await fetchNotes();
+    } catch (err) {
+      push(extractErrorMessage(err, "保存失败"), "error");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete(id: number) {
+    if (!confirm("确定要删除这条笔记吗？")) return;
+    try {
+      await deleteObservatoryNote(id);
+      push("笔记已删除", "success");
+      await fetchNotes();
+    } catch (err) {
+      push(extractErrorMessage(err, "删除失败"), "error");
+    }
+  }
+
+  return (
+    <main className="flex-1 overflow-auto px-4 py-6 md:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-6">
+        <header className="grid gap-5 lg:grid-cols-[1fr_360px]">
+          <Panel className="lab-card p-6">
+            <Badge tone="amber">观测台</Badge>
+            <h1 className="mt-4 font-lab-display text-3xl font-semibold text-[var(--text-strong)]">
+              实验观测台
+            </h1>
+            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+              记录失败实验、半成品工具、技术问题和一闪而过的想法。这里不追求完整性，只追求诚实。
+            </p>
+            <Button className="mt-4" icon={<Plus size={15} />} variant="primary" onClick={handleNewNote}>
+              记录一条
+            </Button>
+          </Panel>
+
+          <Panel className="lab-card p-5">
+            <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">过滤器</h2>
+            <div className="mt-4 flex items-center gap-2">
+              <Search size={16} className="text-[var(--muted)]" />
+              <input
+                className="field-surface h-10 flex-1 rounded-[var(--radius)] px-4 text-sm text-[var(--text)] outline-none"
+                placeholder="搜索笔记..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="mt-4">
+              <span className="font-lab-mono text-xs text-[var(--muted)]">类型</span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <FilterPill active={filterType === ""} onClick={() => setFilterType("")}>全部</FilterPill>
+                {(Object.keys(noteTypeConfig) as NoteType[]).map((type) => {
+                  const config = noteTypeConfig[type];
+                  return (
+                    <FilterPill key={type} active={filterType === type} onClick={() => setFilterType(type)}>
+                      {config.label}
+                    </FilterPill>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-4">
+              <span className="font-lab-mono text-xs text-[var(--muted)]">状态</span>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <FilterPill active={filterStatus === ""} onClick={() => setFilterStatus("")}>全部</FilterPill>
+                {(Object.keys(statusConfig) as NoteStatus[]).map((status) => (
+                  <FilterPill key={status} active={filterStatus === status} onClick={() => setFilterStatus(status)}>
+                    {statusConfig[status].label}
+                  </FilterPill>
+                ))}
+              </div>
+            </div>
+          </Panel>
+        </header>
+
+        {editing && (
+          <Panel className="lab-card p-6">
+            <div className="flex items-center justify-between">
+              <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">
+                {editingId ? "编辑笔记" : "新建笔记"}
+              </h2>
+              <Button variant="ghost" onClick={() => setEditing(null)}>取消</Button>
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-[1fr_280px]">
+              <div className="space-y-4">
+                <input
+                  className="field-surface block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+                  placeholder="标题"
+                  value={editing.title}
+                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
+                />
+                <textarea
+                  className="field-surface block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+                  placeholder="内容（支持 Markdown）..."
+                  rows={8}
+                  value={editing.content_md}
+                  onChange={(e) => setEditing({ ...editing, content_md: e.target.value })}
+                />
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <span className="font-lab-mono text-xs text-[var(--muted)]">类型</span>
+                  <select
+                    className="field-surface mt-2 block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+                    value={editing.note_type}
+                    onChange={(e) => setEditing({ ...editing, note_type: e.target.value as NoteType })}
+                  >
+                    {(Object.keys(noteTypeConfig) as NoteType[]).map((type) => (
+                      <option key={type} value={type}>{noteTypeConfig[type].label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <span className="font-lab-mono text-xs text-[var(--muted)]">状态</span>
+                  <select
+                    className="field-surface mt-2 block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+                    value={editing.status}
+                    onChange={(e) => setEditing({ ...editing, status: e.target.value as NoteStatus })}
+                  >
+                    {(Object.keys(statusConfig) as NoteStatus[]).map((status) => (
+                      <option key={status} value={status}>{statusConfig[status].label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <span className="font-lab-mono text-xs text-[var(--muted)]">标签（逗号分隔）</span>
+                  <input
+                    className="field-surface mt-2 block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
+                    placeholder="如: 前端,性能,待验证"
+                    value={editing.tags}
+                    onChange={(e) => setEditing({ ...editing, tags: e.target.value })}
+                  />
+                </div>
+                <Button disabled={saving} variant="primary" onClick={handleSave}>
+                  {saving ? "保存中..." : editingId ? "更新" : "创建"}
+                </Button>
+              </div>
+            </div>
+          </Panel>
+        )}
+
+        <Panel className="overflow-hidden">
+          <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-4">
+            <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">笔记列表</h2>
+            <Badge tone="cyan">{notes.length} 条</Badge>
+          </div>
+          {loading ? (
+            <div className="p-8 text-center font-lab-mono text-sm text-[var(--muted)]">加载中...</div>
+          ) : notes.length === 0 ? (
+            <div className="p-8 text-center font-lab-mono text-sm text-[var(--muted)]">
+              还没有笔记，点击上方按钮记录第一条。
+            </div>
+          ) : (
+            <div className="divide-y divide-[var(--border-soft)]">
+              {notes.map((note) => {
+                const typeCfg = noteTypeConfig[note.note_type];
+                const statusCfg = statusConfig[note.status];
+                const Icon = typeCfg.icon;
+                return (
+                  <div className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-[var(--surface-field)]" key={note.id}>
+                    <span className="grid size-9 shrink-0 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] text-[var(--muted)]">
+                      <Icon size={16} />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="truncate text-sm font-medium text-[var(--text-strong)]">{note.title}</h3>
+                        <Badge tone={typeCfg.tone}>{typeCfg.label}</Badge>
+                        <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
+                      </div>
+                      {note.tags.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1">
+                          {note.tags.map((tag) => (
+                            <span className="font-lab-mono text-[10px] text-[var(--muted-low)]" key={tag}>#{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <span className="shrink-0 font-lab-mono text-xs text-[var(--muted-low)]">
+                      {formatShortDate(note.updated_at)}
+                    </span>
+                    <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                      <Button className="w-8 px-0" variant="ghost" onClick={() => handleEditNote(note)}>
+                        <ChevronRight size={14} />
+                      </Button>
+                      <Button className="w-8 px-0" variant="ghost" onClick={() => handleDelete(note.id)}>
+                        <Trash2 size={14} className="text-[var(--rose)]" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </Panel>
+      </div>
+    </main>
+  );
+}
+
+function FilterPill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      className={cn(
+        "rounded-full px-3 py-1 font-lab-mono text-xs transition-colors",
+        active
+          ? "border border-[var(--cyan)] bg-[var(--cyan-soft)] text-[var(--cyan)]"
+          : "border border-[var(--border-soft)] bg-[var(--surface-field)] text-[var(--muted)] hover:border-[var(--cyan)]",
+      )}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function formatShortDate(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / 86400000);
+  if (diffDays === 0) return "今天";
+  if (diffDays === 1) return "昨天";
+  if (diffDays < 7) return `${diffDays} 天前`;
+  return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+}
+
+function extractErrorMessage(err: unknown, fallback: string): string {
+  if (err && typeof err === "object" && "message" in err) {
+    return (err as { message: string }).message;
+  }
+  return fallback;
+}

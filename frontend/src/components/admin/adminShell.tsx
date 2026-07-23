@@ -6,7 +6,9 @@ import {
   ArrowLeft,
   BookOpen,
   CircleHelp,
+  Eye,
   FileText,
+  Flame,
   Gauge,
   Home,
   Image,
@@ -32,6 +34,8 @@ import { buttonPress, fadeUp, stagger, transitionFast } from "@/components/home/
 const navItems = [
   { href: "/admin", label: "仪表盘", icon: Gauge, tone: "cyan" },
   { href: "/admin/postManagement/new", label: "内容", icon: FileText, tone: "purple" },
+  { href: "/admin/projects", label: "项目", icon: Flame, tone: "amber" },
+  { href: "/admin/observatory", label: "观测台", icon: Eye, tone: "green" },
   { href: "/admin/media", label: "媒体", icon: Image, tone: "amber" },
   { href: "/admin/comments", label: "评论", icon: MessageSquare, tone: "green" },
   { href: "/admin/users", label: "用户", icon: Users, tone: "rose" },

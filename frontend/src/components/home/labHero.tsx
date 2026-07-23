@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import BlurText from "@/components/BlurText";
 import { cardHover, fadeUp, scaleIn, stagger } from "@/components/home/motionConfig";
 import { CrescentCore } from "@/components/home/crescentCore";
+import { scrollToSection } from "@/lib/scrollToSection";
 
 export function LabHero() {
   return (
@@ -19,20 +20,22 @@ export function LabHero() {
           一个持续运转的个人技术实验室。这里收录正在构建的产品、开源实验、工程笔记，以及那些仍需要被证明的想法。
         </motion.p>
         <motion.div className="lab-hero-actions" variants={fadeUp}>
-          <motion.a
+          <motion.button
             className="lab-button lab-button-primary"
-            href="#building"
+            onClick={() => scrollToSection("building")}
+            type="button"
             {...cardHover}
           >
             进入实验室 <ArrowDownRight size={16} />
-          </motion.a>
-          <motion.a
+          </motion.button>
+          <motion.button
             className="lab-button lab-button-quiet"
-            href="#notes"
+            onClick={() => scrollToSection("notes")}
+            type="button"
             {...cardHover}
           >
             阅读田野笔记
-          </motion.a>
+          </motion.button>
         </motion.div>
         <motion.dl className="lab-hero-readout" variants={fadeUp}>
           <div>

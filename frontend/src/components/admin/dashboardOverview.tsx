@@ -7,7 +7,9 @@ import {
   Boxes,
   CalendarClock,
   DatabaseZap,
+  Eye,
   FileText,
+  Flame,
   Gauge,
   Image,
   MessageSquare,
@@ -24,9 +26,9 @@ import { cn } from "@/lib/utils";
 
 const quickActions = [
   { label: "新建文章", href: "/admin/postManagement/new", icon: FileText, tone: "cyan" },
+  { label: "项目管理", href: "/admin/projects", icon: Flame, tone: "amber" },
+  { label: "观测台", href: "/admin/observatory", icon: Eye, tone: "green" },
   { label: "媒体库", href: "/admin/media", icon: Image, tone: "amber" },
-  { label: "评论审核", href: "/admin/comments", icon: MessageSquare, tone: "green" },
-  { label: "用户权限", href: "/admin/users", icon: Users, tone: "rose" },
 ] as const;
 
 const insightCards = [

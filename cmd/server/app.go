@@ -10,6 +10,8 @@ import (
 
 	authmodule "CrescentLab_R/internal/modules/auth"
 	contentmodule "CrescentLab_R/internal/modules/content"
+	observatorymodule "CrescentLab_R/internal/modules/observatory"
+	projectsmodule "CrescentLab_R/internal/modules/projects"
 	settingsmodule "CrescentLab_R/internal/modules/settings"
 	usersmodule "CrescentLab_R/internal/modules/users"
 	"CrescentLab_R/internal/platform/config"
@@ -92,6 +94,8 @@ func (a *App) Run() error {
 	adminGroup.Use(middleware.RequireAuth(authService), middleware.RequireAdmin())
 	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
 	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
+	projectsmodule.NewHandler(projectsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
+	observatorymodule.NewHandler(observatorymodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
 
 	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())
 

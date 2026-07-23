@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { labNavigation } from "@/lib/labHomeContent";
 import { gsap, useGSAP } from "@/lib/gsap";
+import { scrollToSection } from "@/lib/scrollToSection";
 
 export function LabHeader() {
   const [scrolled, setScrolled] = useState(false);
@@ -44,15 +45,15 @@ export function LabHeader() {
   return (
     <header className={scrolled ? "lab-header lab-header-scrolled" : "lab-header"}>
       <div className="lab-shell lab-header-inner">
-        <a className="lab-brand" href="#home" aria-label="Crescent Lab 首页">
+        <button className="lab-brand" onClick={() => scrollToSection("home")} type="button" aria-label="Crescent Lab 首页">
           <span aria-hidden="true" className="lab-crescent-mark" />
           <span>CRESCENT LAB</span>
-        </a>
+        </button>
         <nav aria-label="主导航" className="lab-nav">
           {labNavigation.map((item) => (
-            <a href={item.href} key={item.href}>
+            <button key={item.sectionId} onClick={() => scrollToSection(item.sectionId)} type="button">
               {item.label}
-            </a>
+            </button>
           ))}
         </nav>
         <span className="lab-header-signal lab-mono">

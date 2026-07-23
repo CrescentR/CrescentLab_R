@@ -10,16 +10,19 @@ import { LabProjects } from "@/components/home/labProjects";
 import { ExperimentsSection } from "@/components/home/experimentsSection";
 import { NowBuildingSection } from "@/components/home/nowBuildingSection";
 import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { registerSectionScroller } from "@/lib/scrollToSection";
 
 export function HomeClient() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
 
     const lenis = new Lenis({
-      anchors: true,
       duration: 1.05,
       smoothWheel: true,
       wheelMultiplier: 0.9,
+    });
+    const unregisterSectionScroller = registerSectionScroller((section) => {
+      lenis.scrollTo(section, { duration: 1.05 });
     });
     const update = (time: number) => {
       lenis.raf(time * 1000);
@@ -29,6 +32,7 @@ export function HomeClient() {
     gsap.ticker.lagSmoothing(0);
 
     return () => {
+      unregisterSectionScroller();
       gsap.ticker.remove(update);
       lenis.off("scroll", ScrollTrigger.update);
       lenis.destroy();

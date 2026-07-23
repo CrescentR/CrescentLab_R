@@ -110,3 +110,51 @@ CREATE TABLE IF NOT EXISTS articles (
   CHECK (word_count >= 0),
   CHECK (reading_time_minutes >= 0)
 );
+
+-- =========================================================
+-- 4. Projects (独立 SaaS / 产品介绍站)
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  public_id TEXT UNIQUE,
+  owner_id INTEGER,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
+  tagline TEXT,
+  description TEXT NOT NULL DEFAULT '',
+  content_html TEXT NOT NULL DEFAULT '',
+  cover_url TEXT,
+  repo_url TEXT,
+  demo_url TEXT,
+  status TEXT NOT NULL DEFAULT 'draft',
+  tech_stack TEXT NOT NULL DEFAULT '[]',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  view_count INTEGER NOT NULL DEFAULT 0,
+  published_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME,
+  CHECK (status IN ('draft', 'published', 'archived')),
+  CHECK (view_count >= 0)
+);
+
+-- =========================================================
+-- 5. Observatory notes (实验观测台碎片笔记)
+-- =========================================================
+
+CREATE TABLE IF NOT EXISTS observatory_notes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  public_id TEXT UNIQUE,
+  title TEXT NOT NULL,
+  content_md TEXT NOT NULL DEFAULT '',
+  content_html TEXT NOT NULL DEFAULT '',
+  tags TEXT NOT NULL DEFAULT '[]',
+  note_type TEXT NOT NULL DEFAULT 'fragment',
+  status TEXT NOT NULL DEFAULT 'active',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME,
+  CHECK (note_type IN ('fragment', 'failure', 'idea', 'tool_idea', 'tech_debt')),
+  CHECK (status IN ('active', 'resolved', 'abandoned'))
+);
