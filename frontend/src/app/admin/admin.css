@@ -1,0 +1,39 @@
+.admin-shell {
+  font-family: "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.admin-shell .font-lab-display,
+.admin-shell .font-lab-mono,
+.admin-shell button,
+.admin-shell input,
+.admin-shell select,
+.admin-shell textarea {
+  font-family: inherit;
+}
+
+.admin-shell .font-lab-mono {
+  letter-spacing: 0.01em;
+}
+
+.admin-shell .text-\[10px\],
+.admin-shell .text-\[11px\] {
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.admin-shell .text-xs {
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.admin-shell .text-sm {
+  font-size: 15px;
+  line-height: 22px;
+}
+
+.admin-shell .tiptap-editor {
+  font-size: 16px;
+  line-height: 1.75;
+}

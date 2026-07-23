@@ -29,10 +29,12 @@ func (h *Handler) RegisterPublicRoutes(group *gin.RouterGroup) {
 
 func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/articles", h.adminList)
-	group.GET("/articles/:id", h.adminDetail)
+	group.GET("/articles/detail", h.adminDetail)
 	group.POST("/articles", h.create)
-	group.PUT("/articles/:id", h.update)
-	group.DELETE("/articles/:id", h.delete)
+	group.POST("/articles/preview", h.preview)
+	group.POST("/articles/update", h.update)
+	group.POST("/articles/publish", h.publish)
+	group.POST("/articles/delete", h.delete)
 }
 
 func (h *Handler) list(c *gin.Context) {
@@ -86,9 +88,9 @@ func (h *Handler) detail(c *gin.Context) {
 }
 
 func (h *Handler) adminDetail(c *gin.Context) {
-	id, err := parseArticleID(c)
-	if err != nil {
-		platformhttp.WriteError(c, err)
+	id, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	if err != nil || id < 1 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid article id"))
 		return
 	}
 
@@ -126,23 +128,24 @@ func (h *Handler) create(c *gin.Context) {
 }
 
 func (h *Handler) update(c *gin.Context) {
-	id, err := parseArticleID(c)
-	if err != nil {
-		platformhttp.WriteError(c, err)
-		return
+	var input struct {
+		ID int64 `json:"id"`
+		CreateInput
 	}
-
-	var input CreateInput
 	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
 		platformhttp.WriteError(c, platformhttp.ValidationError("invalid request body"))
 		return
 	}
-	if err := h.prepareInput(&input); err != nil {
+	if input.ID < 1 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid article id"))
+		return
+	}
+	if err := h.prepareInput(&input.CreateInput); err != nil {
 		platformhttp.WriteError(c, err)
 		return
 	}
 
-	article, err := h.repo.Update(c.Request.Context(), id, input)
+	article, err := h.repo.Update(c.Request.Context(), input.ID, input.CreateInput)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			platformhttp.WriteError(c, platformhttp.NotFound("article not found"))
@@ -156,13 +159,19 @@ func (h *Handler) update(c *gin.Context) {
 }
 
 func (h *Handler) delete(c *gin.Context) {
-	id, err := parseArticleID(c)
-	if err != nil {
-		platformhttp.WriteError(c, err)
+	var input struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid request body"))
+		return
+	}
+	if input.ID < 1 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid article id"))
 		return
 	}
 
-	if err := h.repo.SoftDelete(c.Request.Context(), id); err != nil {
+	if err := h.repo.SoftDelete(c.Request.Context(), input.ID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			platformhttp.WriteError(c, platformhttp.NotFound("article not found"))
 			return
@@ -171,7 +180,62 @@ func (h *Handler) delete(c *gin.Context) {
 		return
 	}
 
-	c.Status(http.StatusNoContent)
+	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *Handler) preview(c *gin.Context) {
+	var input struct {
+		ContentMD string `json:"content_md"`
+	}
+	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid request body"))
+		return
+	}
+
+	rendered, err := h.renderer.Render(input.ContentMD)
+	if err != nil {
+		platformhttp.WriteError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"content_html":         rendered.HTML,
+		"word_count":           rendered.WordCount,
+		"reading_time_minutes": rendered.ReadingTimeMinutes,
+	})
+}
+
+func (h *Handler) publish(c *gin.Context) {
+	var input struct {
+		ID int64 `json:"id"`
+		CreateInput
+	}
+	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid request body"))
+		return
+	}
+	if input.ID < 1 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid article id"))
+		return
+	}
+
+	input.CreateInput.Status = string(StatusPublished)
+	if err := h.prepareInput(&input.CreateInput); err != nil {
+		platformhttp.WriteError(c, err)
+		return
+	}
+
+	article, err := h.repo.Update(c.Request.Context(), input.ID, input.CreateInput)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			platformhttp.WriteError(c, platformhttp.NotFound("article not found"))
+			return
+		}
+		writeArticleMutationError(c, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, article.Detail())
 }
 
 func (h *Handler) prepareInput(input *CreateInput) error {
@@ -187,14 +251,6 @@ func (h *Handler) prepareInput(input *CreateInput) error {
 	input.WordCount = rendered.WordCount
 	input.ReadingTimeMinutes = rendered.ReadingTimeMinutes
 	return nil
-}
-
-func parseArticleID(c *gin.Context) (int64, error) {
-	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
-	if err != nil || id < 1 {
-		return 0, platformhttp.ValidationError("invalid article id")
-	}
-	return id, nil
 }
 
 func writeArticleMutationError(c *gin.Context, err error) {

@@ -219,7 +219,7 @@ func TestHandlerAdminDetailReturnsDraftByID(t *testing.T) {
 	seedArticle(t, db, "draft-post", "Draft Post", "draft")
 	router := newContentTestRouterWithDB(t, db)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/admin/articles/1", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/admin/articles/detail?id=1", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
@@ -240,9 +240,9 @@ func TestHandlerAdminDetailRejectsInvalidOrMissingID(t *testing.T) {
 		path string
 		want int
 	}{
-		{path: "/api/admin/articles/not-an-id", want: http.StatusBadRequest},
-		{path: "/api/admin/articles/1", want: http.StatusNotFound},
-		{path: "/api/admin/articles/999", want: http.StatusNotFound},
+		{path: "/api/admin/articles/detail?id=not-a-number", want: http.StatusBadRequest},
+		{path: "/api/admin/articles/detail", want: http.StatusBadRequest},
+		{path: "/api/admin/articles/detail?id=999", want: http.StatusNotFound},
 	}
 	for _, tt := range tests {
 		req := httptest.NewRequest(http.MethodGet, tt.path, nil)
@@ -259,14 +259,14 @@ func TestHandlerUpdateArticle(t *testing.T) {
 	seedArticle(t, db, "old-post", "Old Post", "draft")
 	router := newContentTestRouterWithDB(t, db)
 
-	body := `{"title":"Updated Post","slug":"updated-post","content_md":"# Updated","status":"published"}`
-	req := httptest.NewRequest(http.MethodPut, "/api/admin/articles/1", strings.NewReader(body))
+	body := `{"id":1,"title":"Updated Post","slug":"updated-post","content_md":"# Updated","status":"published"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/update", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
-		t.Fatalf("PUT status = %d, want 200, body = %s", rec.Code, rec.Body.String())
+		t.Fatalf("POST status = %d, want 200, body = %s", rec.Code, rec.Body.String())
 	}
 	if !strings.Contains(rec.Body.String(), `"title":"Updated Post"`) || !strings.Contains(rec.Body.String(), `"status":"published"`) {
 		t.Fatalf("body should contain updated article: %s", rec.Body.String())
@@ -281,13 +281,23 @@ func TestHandlerUpdateValidationFails(t *testing.T) {
 	seedArticle(t, db, "post", "Post", "draft")
 	router := newContentTestRouterWithDB(t, db)
 
-	for _, body := range []string{`{"slug":"post"}`, `not json`} {
-		req := httptest.NewRequest(http.MethodPut, "/api/admin/articles/1", strings.NewReader(body))
-		rec := httptest.NewRecorder()
-		router.ServeHTTP(rec, req)
-		if rec.Code != http.StatusBadRequest {
-			t.Fatalf("PUT status = %d, want 400, body = %s", rec.Code, rec.Body.String())
-		}
+	tests := []struct {
+		name string
+		body string
+	}{
+		{"missing title", `{"id":1,"slug":"post"}`},
+		{"invalid json", `not json`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/update", strings.NewReader(tt.body))
+			req.Header.Set("Content-Type", "application/json")
+			rec := httptest.NewRecorder()
+			router.ServeHTTP(rec, req)
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("POST status = %d, want 400 for %s, body = %s", rec.Code, tt.name, rec.Body.String())
+			}
+		})
 	}
 }
 
@@ -296,12 +306,14 @@ func TestHandlerUpdateNotFound(t *testing.T) {
 	seedDeletedArticle(t, db, "deleted", "Deleted", "draft")
 	router := newContentTestRouterWithDB(t, db)
 
-	for _, path := range []string{"/api/admin/articles/1", "/api/admin/articles/999"} {
-		req := httptest.NewRequest(http.MethodPut, path, strings.NewReader(`{"title":"Updated","slug":"updated"}`))
+	for _, id := range []string{"1", "999"} {
+		body := `{"id":` + id + `,"title":"Updated","slug":"updated"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/update", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 		if rec.Code != http.StatusNotFound {
-			t.Fatalf("PUT %s status = %d, want 404, body = %s", path, rec.Code, rec.Body.String())
+			t.Fatalf("POST (id=%s) status = %d, want 404, body = %s", id, rec.Code, rec.Body.String())
 		}
 	}
 }
@@ -311,12 +323,14 @@ func TestHandlerDeleteArticle(t *testing.T) {
 	seedArticle(t, db, "post", "Post", "published")
 	router := newContentTestRouterWithDB(t, db)
 
-	req := httptest.NewRequest(http.MethodDelete, "/api/admin/articles/1", nil)
+	body := `{"id":1}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/delete", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusNoContent {
-		t.Fatalf("DELETE status = %d, want 204, body = %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusOK {
+		t.Fatalf("POST status = %d, want 200, body = %s", rec.Code, rec.Body.String())
 	}
 	var deletedAt sql.NullTime
 	if err := db.QueryRow("SELECT deleted_at FROM articles WHERE id = 1").Scan(&deletedAt); err != nil {
@@ -332,13 +346,102 @@ func TestHandlerDeleteNotFound(t *testing.T) {
 	seedDeletedArticle(t, db, "deleted", "Deleted", "draft")
 	router := newContentTestRouterWithDB(t, db)
 
-	for _, path := range []string{"/api/admin/articles/1", "/api/admin/articles/999"} {
-		req := httptest.NewRequest(http.MethodDelete, path, nil)
+	for _, id := range []string{"1", "999"} {
+		body := `{"id":` + id + `}`
+		req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/delete", strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 		if rec.Code != http.StatusNotFound {
-			t.Fatalf("DELETE %s status = %d, want 404, body = %s", path, rec.Code, rec.Body.String())
+			t.Fatalf("POST (id=%s) status = %d, want 404, body = %s", id, rec.Code, rec.Body.String())
 		}
+	}
+}
+
+func TestHandlerPublishArticle(t *testing.T) {
+	db := openContentTestDB(t)
+	seedArticle(t, db, "draft-post", "Draft Post", "draft")
+	router := newContentTestRouterWithDB(t, db)
+
+	body := `{"id":1,"title":"Published Now","slug":"published-now","content_md":"# Content"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/publish", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("POST status = %d, want 200, body = %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"status":"published"`) {
+		t.Fatalf("body should show published status: %s", rec.Body.String())
+	}
+	if strings.Contains(rec.Body.String(), `"published_at":null`) {
+		t.Fatalf("published_at should be set: %s", rec.Body.String())
+	}
+}
+
+func TestHandlerPublishValidationFails(t *testing.T) {
+	db := openContentTestDB(t)
+	seedArticle(t, db, "post", "Post", "draft")
+	router := newContentTestRouterWithDB(t, db)
+
+	body := `{"id":1,"slug":"post"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/publish", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("POST status = %d, want 400, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHandlerPublishNotFound(t *testing.T) {
+	db := openContentTestDB(t)
+	seedDeletedArticle(t, db, "deleted", "Deleted", "draft")
+	router := newContentTestRouterWithDB(t, db)
+
+	body := `{"id":1,"title":"Updated","slug":"updated"}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/publish", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("POST status = %d, want 404, body = %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestHandlerPreviewArticle(t *testing.T) {
+	db := openContentTestDB(t)
+	router := newContentTestRouterWithDB(t, db)
+
+	body := `{"content_md":"# Preview Title\n\nSome content."}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/preview", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("POST status = %d, want 200, body = %s", rec.Code, rec.Body.String())
+	}
+	if !strings.Contains(rec.Body.String(), `"content_html"`) {
+		t.Fatalf("body should contain content_html: %s", rec.Body.String())
+	}
+}
+
+func TestHandlerPreviewEmptyContent(t *testing.T) {
+	db := openContentTestDB(t)
+	router := newContentTestRouterWithDB(t, db)
+
+	body := `{"content_md":""}`
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/articles/preview", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	router.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("POST status = %d, want 200, body = %s", rec.Code, rec.Body.String())
 	}
 }
 

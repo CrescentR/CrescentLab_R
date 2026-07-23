@@ -99,7 +99,7 @@
 
 .lab-brand {
   width: max-content;
-  font-family: "JetBrains Mono", monospace;
+  font-family: "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
   font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.13em;
@@ -131,8 +131,11 @@
 }
 
 .lab-nav a {
-  color: var(--lab-muted);
-  font-size: 14px;
+  color: var(--lab-copy);
+  font-family: "HarmonyOS Sans SC", "Noto Sans SC", "Microsoft YaHei UI", sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   transition: color 200ms ease;
 }
 

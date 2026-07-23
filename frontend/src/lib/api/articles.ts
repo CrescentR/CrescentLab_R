@@ -67,7 +67,7 @@ export function listAdminArticles(params: ArticleListParams = {}) {
 }
 
 export function getAdminArticle(id: number) {
-  return apiJson<ArticleDetail>(`/api/admin/articles/${id}`);
+  return apiJson<ArticleDetail>(`/api/admin/articles/detail?id=${id}`);
 }
 
 export function createAdminArticle(input: ArticleInput) {
@@ -79,15 +79,41 @@ export function createAdminArticle(input: ArticleInput) {
 }
 
 export function updateAdminArticle(id: number, input: ArticleInput) {
-  return apiJson<ArticleDetail>(`/api/admin/articles/${id}`, {
-    body: JSON.stringify(input),
+  return apiJson<ArticleDetail>("/api/admin/articles/update", {
+    body: JSON.stringify({ id, ...input }),
     headers: { "Content-Type": "application/json" },
-    method: "PUT",
+    method: "POST",
   });
 }
 
 export function deleteAdminArticle(id: number) {
-  return apiJson<void>(`/api/admin/articles/${id}`, { method: "DELETE" });
+  return apiJson<{ success: boolean }>("/api/admin/articles/delete", {
+    body: JSON.stringify({ id }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+}
+
+export type PreviewResult = {
+  content_html: string;
+  word_count: number;
+  reading_time_minutes: number;
+};
+
+export function previewArticle(content_md: string) {
+  return apiJson<PreviewResult>("/api/admin/articles/preview", {
+    body: JSON.stringify({ content_md }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+}
+
+export function publishAdminArticle(id: number, input: ArticleInput) {
+  return apiJson<ArticleDetail>("/api/admin/articles/publish", {
+    body: JSON.stringify({ id, ...input }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
 }
 
 function toQueryString(params: ArticleListParams | Omit<ArticleListParams, "status">) {
