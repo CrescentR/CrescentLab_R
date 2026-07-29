@@ -41,7 +41,9 @@ func (a *App) Run() error {
 	}
 
 	a.cfg = cfg
-	db, err := database.Open(context.Background(), cfg.Database)
+	databaseCtx, cancelDatabaseOpen := context.WithTimeout(context.Background(), 10*time.Second)
+	db, err := database.Open(databaseCtx, cfg.Database)
+	cancelDatabaseOpen()
 	if err != nil {
 		return err
 	}

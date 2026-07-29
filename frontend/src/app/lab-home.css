@@ -722,9 +722,33 @@
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(115deg, rgba(255, 255, 255, 0.05), transparent 34%);
+  background:
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.09), transparent 22%),
+    linear-gradient(115deg, rgba(255, 255, 255, 0.05), transparent 34%);
   content: "";
   pointer-events: none;
+}
+
+.lab-observatory-panel::after {
+  position: absolute;
+  top: -34%;
+  right: -10%;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 44% 56% 64% 36% / 48% 38% 62% 52%;
+  background: radial-gradient(circle at 36% 34%, rgba(139, 124, 255, 0.3), rgba(99, 216, 255, 0.08) 52%, transparent 72%);
+  content: "";
+  filter: blur(8px);
+  opacity: 0.48;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transition: border-radius 420ms var(--ease-standard), opacity 240ms ease, transform 420ms var(--ease-standard);
+}
+
+.lab-observatory-panel[data-active="true"]:hover::after {
+  border-radius: 62% 38% 42% 58% / 38% 58% 42% 62%;
+  opacity: 0.72;
+  transform: translate3d(-8%, 10%, 0) scale(1.08);
 }
 
 .lab-observatory-panel-copy {
@@ -1244,5 +1268,9 @@
   .lab-home *::before,
   .lab-home *::after {
     scroll-behavior: auto !important;
+  }
+
+  .lab-observatory-panel::after {
+    transition: none;
   }
 }

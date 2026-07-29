@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
-const userColumns = `id, group_id, username, username_key, email, email_key, password_hash, nickname,
-avatar_file_id, avatar_url, website, bio, status, is_system, email_verified_at, activated_at,
-last_login_at, last_login_ip, password_changed_at, created_at, updated_at, deleted_at`
+// Hexo 博客表结构适配
+// Hexo users 表字段: id, deleted_at, created_at, updated_at, username, password_hash,
+// nickname, avatar, email, website, last_login_at, status(bigint), user_group_id
+const userColumns = `id, user_group_id, username, email, password_hash, nickname,
+avatar, website, status, last_login_at, created_at, updated_at, deleted_at`
 
 type Repository struct {
 	db     *sql.DB
@@ -29,61 +32,26 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (User, error
 	if r == nil || r.db == nil {
 		return User{}, errors.New("users repository database is nil")
 	}
-
-	status := input.Status
-	if status == "" {
-		status = StatusPending
-	}
-
-	args := []any{
-		input.GroupID, input.Username, input.UsernameKey, input.Email, input.EmailKey,
-		input.PasswordHash, input.Nickname, status, input.IsSystem,
-	}
-	if r.driver == "postgres" {
-		query := `INSERT INTO users
-(group_id, username, username_key, email, email_key, password_hash, nickname, status, is_system)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id`
-		var id int64
-		if err := r.db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
-			return User{}, fmt.Errorf("create user: %w", err)
-		}
-		return r.getByID(ctx, id, "fetch created user")
-	}
-
-	result, err := r.db.ExecContext(ctx, `INSERT INTO users
-(group_id, username, username_key, email, email_key, password_hash, nickname, status, is_system)
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, args...)
-	if err != nil {
-		return User{}, fmt.Errorf("create user: %w", err)
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return User{}, fmt.Errorf("create user last insert id: %w", err)
-	}
-	return r.getByID(ctx, id, "fetch created user")
+	return User{}, errors.New("create user not supported for Hexo schema")
 }
 
 func (r *Repository) GetByUsernameKey(ctx context.Context, usernameKey string) (User, error) {
 	if r == nil || r.db == nil {
 		return User{}, errors.New("users repository database is nil")
 	}
-	query := "SELECT " + userColumns + " FROM users WHERE username_key = ? AND deleted_at IS NULL"
+	// Hexo 表用 username 字段，不区分大小写匹配
+	query := "SELECT " + userColumns + " FROM users WHERE LOWER(username) = LOWER(?) AND deleted_at IS NULL"
 	if r.driver == "postgres" {
-		query = "SELECT " + userColumns + " FROM users WHERE username_key = $1 AND deleted_at IS NULL"
+		query = "SELECT " + userColumns + " FROM users WHERE LOWER(username) = LOWER($1) AND deleted_at IS NULL"
 	}
-	return scanUser(r.db.QueryRowContext(ctx, query, usernameKey), "get user by username_key")
+	return scanUser(r.db.QueryRowContext(ctx, query, usernameKey), "get user by username")
 }
 
 func (r *Repository) GetByEmailKey(ctx context.Context, emailKey string) (User, error) {
 	if r == nil || r.db == nil {
 		return User{}, errors.New("users repository database is nil")
 	}
-	query := "SELECT " + userColumns + " FROM users WHERE email_key = ? AND deleted_at IS NULL"
-	if r.driver == "postgres" {
-		query = "SELECT " + userColumns + " FROM users WHERE email_key = $1 AND deleted_at IS NULL"
-	}
-	return scanUser(r.db.QueryRowContext(ctx, query, emailKey), "get user by email_key")
+	return User{}, errors.New("get by email not supported for Hexo schema")
 }
 
 func (r *Repository) GetByID(ctx context.Context, id int64) (User, error) {
@@ -97,33 +65,23 @@ func (r *Repository) UpdateLastLogin(ctx context.Context, id int64, lastLoginAt 
 	if r == nil || r.db == nil {
 		return errors.New("users repository database is nil")
 	}
-	query := `UPDATE users
-SET last_login_at = ?, last_login_ip = ?, updated_at = CURRENT_TIMESTAMP
-WHERE id = ? AND deleted_at IS NULL`
-	if r.driver == "postgres" {
-		query = `UPDATE users
-SET last_login_at = $1, last_login_ip = $2, updated_at = CURRENT_TIMESTAMP
-WHERE id = $3 AND deleted_at IS NULL`
-	}
-	result, err := r.db.ExecContext(ctx, query, lastLoginAt, lastLoginIP, id)
+	query := `UPDATE users SET last_login_at = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND deleted_at IS NULL`
+	result, err := r.db.ExecContext(ctx, query, lastLoginAt, id)
 	if err != nil {
 		return fmt.Errorf("update user last login: %w", err)
 	}
-	affected, err := result.RowsAffected()
+	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return fmt.Errorf("update user last login rows affected: %w", err)
 	}
-	if affected == 0 {
+	if rowsAffected == 0 {
 		return sql.ErrNoRows
 	}
 	return nil
 }
 
 func (r *Repository) getByID(ctx context.Context, id int64, operation string) (User, error) {
-	query := "SELECT " + userColumns + " FROM users WHERE id = ? AND deleted_at IS NULL"
-	if r.driver == "postgres" {
-		query = "SELECT " + userColumns + " FROM users WHERE id = $1 AND deleted_at IS NULL"
-	}
+	query := "SELECT " + userColumns + " FROM users WHERE id = $1 AND deleted_at IS NULL"
 	return scanUser(r.db.QueryRowContext(ctx, query, id), operation)
 }
 
@@ -133,12 +91,14 @@ type userScanner interface {
 
 func scanUser(scanner userScanner, operation string) (User, error) {
 	var user User
-	var status string
+	var status sql.NullInt64
+	var email sql.NullString
+	var website sql.NullString
+	var avatar sql.NullString
 	if err := scanner.Scan(
-		&user.ID, &user.GroupID, &user.Username, &user.UsernameKey, &user.Email, &user.EmailKey,
-		&user.PasswordHash, &user.Nickname, &user.AvatarFileID, &user.AvatarURL, &user.Website,
-		&user.Bio, &status, &user.IsSystem, &user.EmailVerifiedAt, &user.ActivatedAt,
-		&user.LastLoginAt, &user.LastLoginIP, &user.PasswordChangedAt, &user.CreatedAt,
+		&user.ID, &user.GroupID, &user.Username, &email,
+		&user.PasswordHash, &user.Nickname, &avatar, &website,
+		&status, &user.LastLoginAt, &user.CreatedAt,
 		&user.UpdatedAt, &user.DeletedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -146,6 +106,22 @@ func scanUser(scanner userScanner, operation string) (User, error) {
 		}
 		return User{}, fmt.Errorf("%s: %w", operation, err)
 	}
-	user.Status = Status(status)
+
+	// Hexo: status 1 = active
+	if status.Valid && status.Int64 == 1 {
+		user.Status = StatusActive
+	} else {
+		user.Status = StatusDisabled
+	}
+
+	// Hexo: user_group_id = 1 表示管理员
+	if user.GroupID.Valid && user.GroupID.Int64 == 1 {
+		user.IsSystem = true
+	}
+
+	user.UsernameKey = strings.ToLower(user.Username)
+	user.Email = email
+	user.AvatarURL = avatar
+	user.Website = website
 	return user, nil
 }

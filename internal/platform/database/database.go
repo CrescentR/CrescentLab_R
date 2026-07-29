@@ -9,9 +9,11 @@ import (
 
 	"CrescentLab_R/internal/platform/config"
 
-	_ "github.com/lib/pq"
+	"github.com/lib/pq"
 	_ "modernc.org/sqlite"
 )
+
+const databasePingRetryInterval = time.Second
 
 type DB struct {
 	sqlDB  *sql.DB
@@ -34,12 +36,34 @@ func Open(ctx context.Context, cfg config.DatabaseConfig) (*DB, error) {
 	sqlDB.SetMaxIdleConns(5)
 	sqlDB.SetConnMaxLifetime(30 * time.Minute)
 
-	if err := sqlDB.PingContext(ctx); err != nil {
+	if err := pingDatabase(ctx, cfg.Driver, databasePingRetryInterval, sqlDB.PingContext); err != nil {
 		_ = sqlDB.Close()
 		return nil, fmt.Errorf("ping database: %w", err)
 	}
 
 	return &DB{sqlDB: sqlDB, driver: cfg.Driver}, nil
+}
+
+func pingDatabase(ctx context.Context, driver string, retryInterval time.Duration, ping func(context.Context) error) error {
+	for {
+		err := ping(ctx)
+		if err == nil {
+			return nil
+		}
+
+		var postgresError *pq.Error
+		if driver != "postgres" || !errors.As(err, &postgresError) || postgresError.Code != pq.ErrorCode("57P03") {
+			return err
+		}
+
+		timer := time.NewTimer(retryInterval)
+		select {
+		case <-ctx.Done():
+			timer.Stop()
+			return ctx.Err()
+		case <-timer.C:
+		}
+	}
 }
 
 func (db *DB) SQL() *sql.DB {

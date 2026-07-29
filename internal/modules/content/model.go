@@ -59,8 +59,11 @@ type ArticleListItem struct {
 	CoverURL           string     `json:"cover_url"`
 	Status             string     `json:"status"`
 	IsPinned           bool       `json:"is_pinned"`
+	PinSort            int        `json:"pin_sort"`
+	HomeSort           int        `json:"home_sort"`
 	ViewCount          int64      `json:"view_count"`
 	CommentCount       int        `json:"comment_count"`
+	WordCount          int        `json:"word_count"`
 	ReadingTimeMinutes int        `json:"reading_time_minutes"`
 	PublishedAt        *time.Time `json:"published_at"`
 	CreatedAt          time.Time  `json:"created_at"`
