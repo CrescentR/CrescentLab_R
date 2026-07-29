@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const backendURL = process.env.BACKEND_URL ?? "http://localhost:8091";
+
 const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
@@ -16,11 +18,11 @@ const nextConfig: NextConfig = {
       beforeFiles: [
         {
           source: "/api/:path*",
-          destination: "http://localhost:8091/api/:path*",
+          destination: `${backendURL}/api/:path*`,
         },
         {
           source: "/f/:path*",
-          destination: "http://localhost:8091/f/:path*",
+          destination: `${backendURL}/f/:path*`,
         },
       ],
     };

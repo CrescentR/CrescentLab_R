@@ -3,10 +3,11 @@ import { ReactNode } from "react";
 import { Providers } from "./providers";
 import { siteBranding } from "@/lib/site-settings";
 import "./globals.css";
+import "./lab-home.css";
 
 export const metadata: Metadata = {
-  title: "CrescentLab",
-  description: "Developer-centric blog and CMS workspace.",
+  title: "Crescent Lab — Digital Research Laboratory",
+  description: "个人项目、开源实验、技术笔记和正在构建产品的数字实验室。",
   icons: {
     icon: siteBranding.faviconUrl,
   },

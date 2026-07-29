@@ -16,13 +16,13 @@ db-sqlite-init:
 	sqlite3 data/crescentlab.db < database/sqlite/schema.sql
 
 frontend-install:
-	cd frontend && npm install
+	cd frontend && pnpm install
 
 frontend-dev:
-	cd frontend && npm run dev
+	cd frontend && pnpm run dev
 
 frontend-build:
-	cd frontend && npm run build
+	cd frontend && pnpm run build
 
 frontend-typecheck:
-	cd frontend && npm run typecheck
+	cd frontend && pnpm run typecheck

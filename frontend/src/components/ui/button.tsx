@@ -1,8 +1,12 @@
-import Link from "next/link";
-import { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
-import { cn } from "@/lib/utils";
+"use client";
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+import Link from "next/link";
+import { AnchorHTMLAttributes, ReactNode } from "react";
+import { HTMLMotionProps, motion } from "motion/react";
+import { cn } from "@/lib/utils";
+import { buttonPress } from "@/components/home/motionConfig";
+
+type ButtonProps = HTMLMotionProps<"button"> & {
   children: ReactNode;
   icon?: ReactNode;
   variant?: "primary" | "secondary" | "ghost";
@@ -15,18 +19,19 @@ const variants = {
 };
 
 const baseClass =
-  "inline-flex h-9 items-center justify-center gap-2 rounded-[8px] px-4 font-lab-mono text-sm font-medium transition-[background,border-color,color,filter,transform] disabled:cursor-not-allowed disabled:opacity-45";
+  "inline-flex h-11 items-center justify-center gap-2 rounded-[8px] px-4 font-lab-mono text-sm font-medium transition-[background,border-color,color,filter,transform] duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45";
 
 export function Button({ children, icon, variant = "secondary", className, type = "button", ...props }: ButtonProps) {
   return (
-    <button
+    <motion.button
       className={cn(baseClass, variants[variant], className)}
       type={type}
+      {...buttonPress}
       {...props}
     >
       {icon}
       <span>{children}</span>
-    </button>
+    </motion.button>
   );
 }
 
@@ -39,9 +44,11 @@ type ButtonLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
 
 export function ButtonLink({ children, href, icon, variant = "secondary", className, ...props }: ButtonLinkProps) {
   return (
-    <Link className={cn(baseClass, variants[variant], className)} href={href} {...props}>
-      {icon}
-      <span>{children}</span>
-    </Link>
+    <motion.div {...buttonPress} className="inline-flex">
+      <Link className={cn(baseClass, variants[variant], className)} href={href} {...props}>
+        {icon}
+        <span>{children}</span>
+      </Link>
+    </motion.div>
   );
 }

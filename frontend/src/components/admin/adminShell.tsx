@@ -1,38 +1,41 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   BookOpen,
   CircleHelp,
+  Eye,
   FileText,
+  Flame,
   Gauge,
   Home,
   Image,
-  LockKeyhole,
+  LogOut,
   MessageSquare,
   Moon,
   Palette,
   PenLine,
-  RadioTower,
   Settings,
-  ShieldAlert,
   Sun,
   Users,
 } from "lucide-react";
-import { ReactNode } from "react";
-import { personas } from "@/lib/personas";
-import { useUiStore } from "@/store/uiStore";
-import { Badge } from "@/components/ui/badge";
+import { ReactNode, useEffect, useState } from "react";
+import { motion } from "motion/react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 import { backgroundImageStyle, siteBranding } from "@/lib/site-settings";
+import { getAuthUser, isAuthenticated, logout, type AuthUser } from "@/lib/api/client";
+import { useUiStore } from "@/store/uiStore";
+import { buttonPress, fadeUp, stagger, transitionFast } from "@/components/home/motionConfig";
 
 const navItems = [
   { href: "/admin", label: "仪表盘", icon: Gauge, tone: "cyan" },
   { href: "/admin/postManagement/new", label: "内容", icon: FileText, tone: "purple" },
+  { href: "/admin/projects", label: "项目", icon: Flame, tone: "amber" },
+  { href: "/admin/observatory", label: "观测台", icon: Eye, tone: "green" },
   { href: "/admin/media", label: "媒体", icon: Image, tone: "amber" },
   { href: "/admin/comments", label: "评论", icon: MessageSquare, tone: "green" },
   { href: "/admin/users", label: "用户", icon: Users, tone: "rose" },
@@ -43,11 +46,33 @@ const navItems = [
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const activePersona = useUiStore((state) => state.activePersona);
-  const persona = personas[activePersona];
+  const router = useRouter();
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  if (!persona.canEnterAdmin) {
-    return <AdminAccessDenied />;
+  useEffect(() => {
+    const storedUser = getAuthUser();
+    if (!isAuthenticated() || !storedUser) {
+      setAuthChecked(true);
+      router.replace("/login");
+      return;
+    }
+
+    setUser(storedUser);
+    setAuthChecked(true);
+  }, [router]);
+
+  async function handleLogout() {
+    await logout();
+    router.replace("/login");
+  }
+
+  if (!authChecked || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[var(--background)] text-[var(--muted)]">
+        正在验证身份…
+      </div>
+    );
   }
 
   return (
@@ -68,14 +93,23 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </span>
             </Link>
 
-            <div className="mt-6 grid grid-cols-2 gap-2">
-              <ButtonLink href="/" icon={<ArrowLeft size={15} />} variant="secondary">
-                返回前台
-              </ButtonLink>
-              <ButtonLink href="/admin/postManagement/new" icon={<PenLine size={15} />} variant="primary">
-                新建
-              </ButtonLink>
-            </div>
+            <motion.div
+              animate="visible"
+              className="mt-6 grid grid-cols-2 gap-2"
+              initial="hidden"
+              variants={stagger}
+            >
+              <motion.div variants={fadeUp}>
+                <ButtonLink href="/" icon={<ArrowLeft size={15} />} variant="secondary">
+                  返回前台
+                </ButtonLink>
+              </motion.div>
+              <motion.div variants={fadeUp}>
+                <ButtonLink href="/admin/postManagement/new" icon={<PenLine size={15} />} variant="primary">
+                  新建
+                </ButtonLink>
+              </motion.div>
+            </motion.div>
           </div>
 
           <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4">
@@ -86,16 +120,23 @@ export function AdminShell({ children }: { children: ReactNode }) {
               return (
                 <Link
                   className={cn(
-                    "group flex h-12 items-center gap-3 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium text-[var(--muted)] transition-colors",
-                    active && "border border-[var(--cyan)] bg-[var(--cyan-soft)] text-[var(--text-strong)]",
+                    "group relative flex h-12 items-center gap-3 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium text-[var(--muted)] transition-colors",
+                    active && "text-[var(--text-strong)]",
                     !active && "hover:bg-[var(--surface-field)] hover:text-[var(--text)]",
                   )}
                   href={item.href}
                   key={item.href}
                 >
-                  <Icon size={18} strokeWidth={2} />
-                  <span className="min-w-0 flex-1">{item.label}</span>
-                  <span className="size-1.5 rounded-full bg-[var(--border)] group-hover:bg-[var(--cyan)]" />
+                  {active && (
+                    <motion.span
+                      className="absolute inset-0 rounded-[var(--radius)] border border-[var(--cyan)] bg-[var(--cyan-soft)]"
+                      layoutId="admin-nav-active"
+                      transition={transitionFast}
+                    />
+                  )}
+                  <Icon className="relative z-10" size={18} strokeWidth={2} />
+                  <span className="relative z-10 min-w-0 flex-1">{item.label}</span>
+                  <span className="relative z-10 size-1.5 rounded-full bg-[var(--border)] group-hover:bg-[var(--cyan)]" />
                 </Link>
               );
             })}
@@ -105,11 +146,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
             <Panel className="p-4 shadow-none">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">signed in as</span>
-                  <strong className="mt-1 block text-sm text-[var(--text-strong)]">{persona.name}</strong>
+                  <span className="font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">当前登录为</span>
+                  <strong className="mt-1 block text-sm text-[var(--text-strong)]">{user.nickname || user.username}</strong>
                 </div>
                 <span
-                  aria-label={`${persona.name} avatar`}
+                  aria-label={`${user.username} avatar`}
                   className="block size-9 rounded-[var(--radius)] bg-[var(--surface-field)] bg-cover bg-center"
                   role="img"
                   style={backgroundImageStyle(siteBranding.defaultAvatarUrl)}
@@ -118,7 +159,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </Panel>
             <Link className="flex h-9 items-center gap-3 rounded-[var(--radius)] px-4 text-sm text-[var(--muted)] hover:bg-[var(--surface-field)]" href="/docs">
               <CircleHelp size={16} />
-              Help
+              帮助
             </Link>
           </div>
         </aside>
@@ -133,7 +174,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 style={backgroundImageStyle(siteBranding.adminLogoUrl)}
               />
               <div className="min-w-0">
-                <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">admin</span>
+                <span className="block font-lab-mono text-[10px] uppercase text-[var(--muted-low)]">管理</span>
                 <strong className="block truncate text-sm text-[var(--text-strong)]">CrescentLab 后台控制台</strong>
               </div>
             </div>
@@ -142,77 +183,24 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 返回前台
               </ButtonLink>
               <ThemeToggle />
+              <motion.div {...buttonPress}>
+                <Button aria-label="退出登录" className="w-10 px-0" icon={<LogOut size={16} />} onClick={handleLogout} variant="secondary">
+                  <span className="sr-only">退出登录</span>
+                </Button>
+              </motion.div>
             </div>
           </header>
-          {children}
+          <motion.main
+            animate="visible"
+            initial="hidden"
+            key={pathname}
+            variants={fadeUp}
+          >
+            {children}
+          </motion.main>
         </div>
       </div>
     </div>
-  );
-}
-
-function AdminAccessDenied() {
-  const activePersona = useUiStore((state) => state.activePersona);
-  const setActivePersona = useUiStore((state) => state.setActivePersona);
-  const persona = personas[activePersona];
-
-  return (
-    <main className="min-h-screen bg-[var(--background)] px-4 py-6 text-[var(--text)] md:px-8">
-      <div className="mx-auto flex max-w-5xl flex-col gap-6">
-        <header className="flex flex-wrap items-center justify-between gap-3 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-glass)] px-4 py-3 backdrop-blur">
-          <Link className="flex items-center gap-3" href="/">
-            <span className="grid size-10 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-raised)] text-[var(--cyan)]">
-              <ArrowLeft size={18} />
-            </span>
-            <span>
-              <span className="block font-lab-display text-lg font-bold text-[var(--text-strong)]">返回前台</span>
-              <span className="block font-lab-mono text-xs text-[var(--muted)]">Admin requires elevated role</span>
-            </span>
-          </Link>
-          <ThemeToggle />
-        </header>
-
-        <section className="grid gap-5 lg:grid-cols-[1fr_360px]">
-          <Panel className="lab-card p-6 md:p-8">
-            <Badge tone="rose">Access Gate</Badge>
-            <div className="mt-6 flex items-start gap-4">
-              <span className="grid size-12 shrink-0 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] text-[var(--rose)]">
-                <ShieldAlert size={22} />
-              </span>
-              <div>
-                <h1 className="font-lab-display text-3xl font-semibold text-[var(--text-strong)]">当前身份不能进入后台</h1>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-                  你现在是 {persona.name}。普通用户可以阅读、评论、订阅和维护个人资料，但用户、插件、主题、存储、系统设置这些后台模块只开放给管理员。
-                </p>
-              </div>
-            </div>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <Button icon={<LockKeyhole size={15} />} onClick={() => setActivePersona("admin")} variant="primary">
-                切换为管理员演示
-              </Button>
-              <ButtonLink href="/" icon={<Home size={15} />} variant="secondary">
-                回到前台
-              </ButtonLink>
-            </div>
-          </Panel>
-
-          <Panel className="lab-card p-5">
-            <div className="flex items-center gap-2 text-[var(--cyan)]">
-              <RadioTower size={18} />
-              <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">共享权限</h2>
-            </div>
-            <div className="mt-5 space-y-3">
-              {["阅读公开内容", "发表评论与回复", "维护个人资料", "订阅通知"].map((item) => (
-                <div className="flex items-center justify-between rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] px-3 py-2" key={item}>
-                  <span className="text-sm text-[var(--text)]">{item}</span>
-                  <Badge tone="green">shared</Badge>
-                </div>
-              ))}
-            </div>
-          </Panel>
-        </section>
-      </div>
-    </main>
   );
 }
 
@@ -222,8 +210,10 @@ function ThemeToggle() {
   const Icon = theme === "dark" ? Sun : Moon;
 
   return (
-    <Button aria-label="切换黑白主题" className="w-10 px-0" icon={<Icon size={16} />} onClick={toggleTheme} variant="secondary">
-      <span className="sr-only">切换主题</span>
-    </Button>
+    <motion.div {...buttonPress}>
+      <Button aria-label="切换黑白主题" className="w-10 px-0" icon={<Icon size={16} />} onClick={toggleTheme} variant="secondary">
+        <span className="sr-only">切换主题</span>
+      </Button>
+    </motion.div>
   );
 }

@@ -1,0 +1,54 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-m.daocloud.io/docker.io/library/postgres:16-alpine}
+    environment:
+      POSTGRES_DB: crescentlab
+      POSTGRES_USER: crescentlab
+      POSTGRES_PASSWORD: crescentlab
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/postgres/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crescentlab -d crescentlab"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      target: backend
+      provenance: false
+      sbom: false
+      args:
+        GO_IMAGE: ${GO_IMAGE:-m.daocloud.io/docker.io/library/golang:1.26-alpine}
+        ALPINE_IMAGE: ${ALPINE_IMAGE:-m.daocloud.io/docker.io/library/alpine:3.22}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8091:8091"
+    volumes:
+      - ./default_files/conf.postgres.ini:/app/data/conf.ini:ro
+
+  frontend:
+    build:
+      context: .
+      target: frontend
+      provenance: false
+      sbom: false
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-m.daocloud.io/docker.io/library/node:24-slim}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        BACKEND_URL: http://backend:8091
+    environment:
+      BACKEND_URL: http://backend:8091
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

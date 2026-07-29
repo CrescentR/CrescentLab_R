@@ -1,70 +1,53 @@
 "use client";
 
-import gsap from "gsap";
-import { useEffect, useMemo, useRef } from "react";
-import { ActivitySection } from "@/components/home/activitySection";
-import { AnnouncementBar } from "@/components/home/announcementBar";
-import { ArticleSection } from "@/components/home/articleSection";
-import { ContentObjectsPanel } from "@/components/home/contentObjectsPanel";
-import { HeroSection } from "@/components/home/heroSection";
-import { HomeHeader } from "@/components/home/homeHeader";
-import { ProjectSection } from "@/components/home/projectSection";
-import { personas } from "@/lib/personas";
-import { useUiStore } from "@/store/uiStore";
-import type { HomeContent } from "@/types/home";
+import { useEffect } from "react";
+import Lenis from "lenis";
+import { LabFooter } from "@/components/home/labFooter";
+import { LabHeader } from "@/components/home/labHeader";
+import { LabHero } from "@/components/home/labHero";
+import { LabNotes } from "@/components/home/labNotes";
+import { LabProjects } from "@/components/home/labProjects";
+import { ExperimentsSection } from "@/components/home/experimentsSection";
+import { NowBuildingSection } from "@/components/home/nowBuildingSection";
+import { gsap, ScrollTrigger } from "@/lib/gsap";
+import { registerSectionScroller } from "@/lib/scrollToSection";
 
-export function HomeClient({ content }: { content: HomeContent }) {
-  const rootRef = useRef<HTMLElement>(null);
-  const activePersona = useUiStore((state) => state.activePersona);
-  const loginPanelOpen = useUiStore((state) => state.loginPanelOpen);
-  const setActivePersona = useUiStore((state) => state.setActivePersona);
-  const setLoginPanelOpen = useUiStore((state) => state.setLoginPanelOpen);
-  const theme = useUiStore((state) => state.theme);
-  const toggleTheme = useUiStore((state) => state.toggleTheme);
-  const persona = personas[activePersona];
-  const personaOptions = useMemo(() => [personas.member, personas.admin], []);
-
+export function HomeClient() {
   useEffect(() => {
-    if (!rootRef.current || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      return;
-    }
+    if (window.matchMedia("(prefers-reduced-motion: reduce), (pointer: coarse)").matches) return;
 
-    const ctx = gsap.context(() => {
-      gsap.from("[data-lab-animate]", {
-        autoAlpha: 0,
-        duration: 0.42,
-        ease: "power3.out",
-        stagger: 0.025,
-        y: 10,
-      });
-    }, rootRef);
+    const lenis = new Lenis({
+      duration: 1.05,
+      smoothWheel: true,
+      wheelMultiplier: 0.9,
+    });
+    const unregisterSectionScroller = registerSectionScroller((section) => {
+      lenis.scrollTo(section, { duration: 1.05 });
+    });
+    const update = (time: number) => {
+      lenis.raf(time * 1000);
+    };
+    lenis.on("scroll", ScrollTrigger.update);
+    gsap.ticker.add(update);
+    gsap.ticker.lagSmoothing(0);
 
-    return () => ctx.revert();
-  }, [activePersona]);
+    return () => {
+      unregisterSectionScroller();
+      gsap.ticker.remove(update);
+      lenis.off("scroll", ScrollTrigger.update);
+      lenis.destroy();
+    };
+  }, []);
 
   return (
-    <main ref={rootRef} className="home-page min-h-screen">
-      <HomeHeader
-        activePersona={activePersona}
-        loginPanelOpen={loginPanelOpen}
-        navItems={content.navItems}
-        onSelectPersona={setActivePersona}
-        onToggleLogin={() => setLoginPanelOpen(!loginPanelOpen)}
-        onToggleTheme={toggleTheme}
-        persona={persona}
-        personaOptions={personaOptions}
-        theme={theme}
-      />
-      <AnnouncementBar announcement={content.announcement} />
-      <HeroSection categories={content.categories} feature={content.feature} hero={content.hero} />
-
-      <section className="home-container grid gap-4 pb-14 lg:grid-cols-[minmax(0,1fr)_310px]">
-        <ArticleSection articles={content.articles} />
-        <ContentObjectsPanel modules={content.modules} />
-      </section>
-
-      <ProjectSection projects={content.projects} />
-      <ActivitySection activities={content.activities} canEnterAdmin={persona.canEnterAdmin} />
+    <main className="lab-home">
+      <LabHeader />
+      <LabHero />
+      <NowBuildingSection />
+      <ExperimentsSection />
+      <LabProjects />
+      <LabNotes />
+      <LabFooter />
     </main>
   );
 }

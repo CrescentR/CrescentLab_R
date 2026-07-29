@@ -15,6 +15,7 @@ type Config struct {
 	Server   ServerConfig   `mapstructure:"server"`
 	Frontend FrontendConfig `mapstructure:"frontend"`
 	Database DatabaseConfig `mapstructure:"database"`
+	Auth     AuthConfig     `mapstructure:"auth"`
 }
 
 type ServerConfig struct {
@@ -35,6 +36,12 @@ type FrontendConfig struct {
 type DatabaseConfig struct {
 	Driver string `mapstructure:"driver"`
 	DSN    string `mapstructure:"dsn"`
+}
+
+type AuthConfig struct {
+	JWTSecret  string `mapstructure:"jwt_secret"`
+	AccessTTL  string `mapstructure:"access_ttl"`
+	RefreshTTL string `mapstructure:"refresh_ttl"`
 }
 
 func Load(paths ...string) (Config, error) {
@@ -80,8 +87,18 @@ func setDefaults(v *viper.Viper) {
 	v.SetDefault("server.port", 8091)
 	v.SetDefault("frontend.enabled", true)
 	v.SetDefault("frontend.dev_url", "http://localhost:3000")
-	v.SetDefault("database.driver", "sqlite")
-	v.SetDefault("database.dsn", "data/crescentlab.db")
+	v.SetDefault("database.driver", envOrDefault("DB_DRIVER", "sqlite"))
+	v.SetDefault("database.dsn", envOrDefault("DB_DSN", "data/crescentlab.db"))
+	v.SetDefault("auth.jwt_secret", "")
+	v.SetDefault("auth.access_ttl", "2h")
+	v.SetDefault("auth.refresh_ttl", "168h")
+}
+
+func envOrDefault(key, fallback string) string {
+	if val := os.Getenv(key); strings.TrimSpace(val) != "" {
+		return val
+	}
+	return fallback
 }
 
 func decode(v *viper.Viper, source string) (Config, error) {

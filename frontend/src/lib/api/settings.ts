@@ -1,3 +1,5 @@
+import { apiJson } from "@/lib/api/client";
+
 export type AdminSettingValue = string | number | boolean | null | Record<string, unknown> | unknown[];
 
 export type AdminSetting = {
@@ -26,33 +28,13 @@ export async function listAdminSettings(params: { scope?: string; group_key?: st
   }
 
   const suffix = searchParams.size > 0 ? `?${searchParams.toString()}` : "";
-  const response = await fetch(`/api/admin/settings${suffix}`, {
-    headers: { Accept: "application/json" },
-  });
-
-  return readAdminSettingsResponse(response);
+  return apiJson<AdminSettingsResponse>(`/api/admin/settings${suffix}`);
 }
 
 export async function saveAdminSettings(settings: AdminSetting[]) {
-  const response = await fetch("/api/admin/settings", {
+  return apiJson<AdminSettingsResponse>("/api/admin/settings", {
     body: JSON.stringify({ settings }),
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
-    },
+    headers: { "Content-Type": "application/json" },
     method: "PUT",
   });
-
-  return readAdminSettingsResponse(response);
-}
-
-async function readAdminSettingsResponse(response: Response) {
-  const payload = await response.json().catch(() => null);
-
-  if (!response.ok) {
-    const message = typeof payload?.error === "string" ? payload.error : `Request failed with status ${response.status}`;
-    throw new Error(message);
-  }
-
-  return payload as AdminSettingsResponse;
 }
