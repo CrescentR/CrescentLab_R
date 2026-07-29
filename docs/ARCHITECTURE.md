@@ -2,7 +2,7 @@
 
 ## 当前阶段
 
-本仓库当前已完成整体框架、前端信息架构、基础工具选型、项目边界和 PostgreSQL 首版数据库设计。HTTP API、认证协议、文件上传协议暂不设计。
+本仓库当前已完成整体框架、前端信息架构、基础工具选型、项目边界、PostgreSQL 首版数据库设计，以及后台设置模块的首条 API 链路。认证协议、文件上传协议暂不设计。
 
 ## 技术选型
 
@@ -14,9 +14,9 @@
 | 图标 | lucide-react | 统一后台操作图标 |
 | 客户端状态 | Zustand | 侧栏、弹窗、局部 UI 状态 |
 | 服务端状态 | TanStack Query | 后续 API 接入后的缓存、重试、失效控制 |
-| HTTP 客户端 | Axios | 后续集中拦截器、认证刷新、错误归一化 |
-| 后端入口 | Go | 当前仅保留服务入口组装，不注册业务 API |
-| 数据库 | PostgreSQL | 手动创建数据库并导入 `database/postgres/schema.sql`，不做自动 migration |
+| HTTP 客户端 | Axios | 后台设置接口已接入，后续集中拦截器、认证刷新、错误归一化 |
+| 后端入口 | Go | 已接入配置、日志、数据库、健康检查和后台设置 API |
+| 数据库 | PostgreSQL / SQLite | PostgreSQL 为首版完整结构；SQLite 用于本地开发，当前覆盖后台设置表；均不做自动 migration |
 
 ## Figma 转译原则
 
@@ -41,7 +41,7 @@ frontend/src/
 │   ├── layout/          # 公开页布局组件
 │   └── ui/              # Button、Panel、Badge、Field 等基础组件
 ├── lib/
-│   ├── api/             # API 客户端边界，暂不设计接口
+│   ├── api/             # API 客户端边界，后台设置接口已接入
 │   ├── mockData.ts      # 静态演示数据
 │   └── utils.ts
 ├── store/               # Zustand store
@@ -57,6 +57,7 @@ Go 侧采用更直观的模块化目录：
 - `internal/platform`：技术平台能力，如 database、http、logger、storage、search、jobs
 - `internal/shared`：跨模块共享能力，如 auth、events、idgen、markdown、security、validate
 - `database/postgres/schema.sql`：手动导入的 PostgreSQL 建表 SQL
+- `database/sqlite/schema.sql`：本地开发用 SQLite SQL，当前覆盖设置表
 
 完整说明见 `docs/PROJECT_STRUCTURE.md`。
 
@@ -69,8 +70,8 @@ Go 侧采用更直观的模块化目录：
 
 ## 后续接入顺序
 
-1. 配置系统与日志
-2. Gin 路由壳与健康检查
-3. 基于 `database/postgres/schema.sql` 落数据库访问层，迁移 SQL 仍保持人工执行
-4. 认证与用户系统
-5. 文章编辑器接入 Tiptap 与文章 API
+1. 完善后台设置模块的数据校验、前端保存反馈和本地联调流程
+2. 认证与用户系统
+3. 文章编辑器接入 Tiptap 与文章 API
+4. 文件上传与媒体管理
+5. 评论、统计、SEO 等后续模块

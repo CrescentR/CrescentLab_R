@@ -68,6 +68,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
 
+## 编码细则（接口设计）:
+1.该项目接口，除部分无需传参的使用get以外，其他的接口要求必须使用post，不允许使用put和delete
+2.拼接路径参数这种可以使用，尤其是文章一类有强id属性的
+3.
+
 
 ## 代码 Review 准则
 

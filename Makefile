@@ -1,4 +1,4 @@
-.PHONY: run test fmt vet frontend-install frontend-dev frontend-build frontend-typecheck
+.PHONY: run test fmt vet db-sqlite-init frontend-install frontend-dev frontend-build frontend-typecheck
 
 run:
 	go run main.go
@@ -11,6 +11,9 @@ fmt:
 
 vet:
 	go vet ./...
+
+db-sqlite-init:
+	sqlite3 data/crescentlab.db < database/sqlite/schema.sql
 
 frontend-install:
 	cd frontend && npm install
