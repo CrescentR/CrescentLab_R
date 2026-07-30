@@ -91,7 +91,6 @@ export function ExperimentsSection() {
                     aria-label={`观测 ${experiment.number}：${experiment.name}`}
                     aria-hidden={index !== activeIndex}
                     className="lab-observatory-panel"
-                    data-active={index === activeIndex ? "true" : undefined}
                     data-experiment-card
                     drag={index === activeIndex && !shouldReduceMotion ? "x" : false}
                     dragConstraints={{ left: 0, right: 0 }}
