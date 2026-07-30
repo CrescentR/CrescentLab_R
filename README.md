@@ -27,7 +27,6 @@ CrescentLab_R 是一个自托管博客 / CMS。当前阶段已完成构建基线
 - 登录页 `/login`，AdminShell 权限检查真实 token，退出按钮
 - 前端 API 客户端（`frontend/src/lib/api/client.ts`）：封装 fetch、自动携带 token、刷新拦截器
 - SQLite 与 PostgreSQL 双数据库支持，手动导入 schema
-- CI 工作流（GitHub Actions）：Go test/vet/build + 前端 lint/typecheck/build
 >>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 
 ## 技术栈
@@ -193,7 +192,6 @@ npm run dev
 ├── database/postgres/schema.sql # PostgreSQL 建表 SQL
 >>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 ├── default_files/conf.ini      # 默认配置模板
-├── .github/workflows/ci.yml    # CI 工作流
 ├── docs/ARCHITECTURE.md        # 架构说明
 ├── docs/PROJECT_STRUCTURE.md   # 项目目录设计
 ├── docs/DATABASE_SCHEMA.md     # 数据库表设计
