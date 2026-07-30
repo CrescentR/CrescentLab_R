@@ -12,6 +12,6 @@ func New(w io.Writer) *slog.Logger {
 	}
 
 	return slog.New(slog.NewTextHandler(w, &slog.HandlerOptions{
-		Level: slog.LevelInfo,
+		Level: slog.LevelDebug,
 	}))
 }

@@ -11,9 +11,9 @@ import (
 
 // Hexo 博客表结构适配
 // Hexo users 表字段: id, deleted_at, created_at, updated_at, username, password_hash,
-// nickname, avatar, email, website, last_login_at, status(bigint), user_group_id
-const userColumns = `id, user_group_id, username, email, password_hash, nickname,
-avatar, website, status, last_login_at, created_at, updated_at, deleted_at`
+// nickname, avatar_url, email, website, last_login_at, status(text), group_id
+const userColumns = `id, group_id, username, email, password_hash, nickname,
+avatar_url, website, status, last_login_at, created_at, updated_at, deleted_at`
 
 type Repository struct {
 	db     *sql.DB
@@ -61,6 +61,28 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (User, error) {
 	return r.getByID(ctx, id, "get user by id")
 }
 
+func (r *Repository) UpdatePassword(ctx context.Context, id int64, passwordHash string) error {
+	if r == nil || r.db == nil {
+		return errors.New("users repository database is nil")
+	}
+	query := `UPDATE users SET password_hash = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`
+	if r.driver == "postgres" {
+		query = `UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND deleted_at IS NULL`
+	}
+	result, err := r.db.ExecContext(ctx, query, passwordHash, id)
+	if err != nil {
+		return fmt.Errorf("update user password: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("update user password rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+	return nil
+}
+
 func (r *Repository) UpdateLastLogin(ctx context.Context, id int64, lastLoginAt time.Time, lastLoginIP string) error {
 	if r == nil || r.db == nil {
 		return errors.New("users repository database is nil")
@@ -91,7 +113,7 @@ type userScanner interface {
 
 func scanUser(scanner userScanner, operation string) (User, error) {
 	var user User
-	var status sql.NullInt64
+	var status sql.NullString
 	var email sql.NullString
 	var website sql.NullString
 	var avatar sql.NullString
@@ -107,14 +129,12 @@ func scanUser(scanner userScanner, operation string) (User, error) {
 		return User{}, fmt.Errorf("%s: %w", operation, err)
 	}
 
-	// Hexo: status 1 = active
-	if status.Valid && status.Int64 == 1 {
+	if status.Valid && status.String == "active" {
 		user.Status = StatusActive
 	} else {
 		user.Status = StatusDisabled
 	}
 
-	// Hexo: user_group_id = 1 表示管理员
 	if user.GroupID.Valid && user.GroupID.Int64 == 1 {
 		user.IsSystem = true
 	}

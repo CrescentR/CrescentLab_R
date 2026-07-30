@@ -3,6 +3,7 @@ package auth
 import (
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -12,6 +13,7 @@ import (
 
 	"CrescentLab_R/internal/modules/users"
 	platformhttp "CrescentLab_R/internal/platform/http"
+	"CrescentLab_R/internal/platform/http/middleware"
 	"CrescentLab_R/internal/shared/auth"
 )
 
@@ -19,10 +21,11 @@ type Handler struct {
 	authService *auth.Service
 	userRepo    *users.Repository
 	tokenRepo   *Repository
+	log         *slog.Logger
 }
 
-func NewHandler(authService *auth.Service, userRepo *users.Repository, tokenRepo *Repository) *Handler {
-	return &Handler{authService: authService, userRepo: userRepo, tokenRepo: tokenRepo}
+func NewHandler(authService *auth.Service, userRepo *users.Repository, tokenRepo *Repository, log *slog.Logger) *Handler {
+	return &Handler{authService: authService, userRepo: userRepo, tokenRepo: tokenRepo, log: log}
 }
 
 // RegisterRoutes 注册认证路由（公开接口）。
@@ -30,6 +33,11 @@ func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
 	group.POST("/auth/login", h.login)
 	group.POST("/auth/refresh", h.refresh)
 	group.POST("/auth/logout", h.logout)
+}
+
+// RegisterAdminRoutes 注册需要管理员认证的路由。
+func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
+	group.POST("/auth/change-password", h.changePassword)
 }
 
 type loginRequest struct {
@@ -208,6 +216,61 @@ func (h *Handler) logout(c *gin.Context) {
 		return
 	}
 
+	c.Status(http.StatusNoContent)
+}
+
+type changePasswordRequest struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
+// changePassword 允许已登录的管理员修改自己的密码。
+func (h *Handler) changePassword(c *gin.Context) {
+	var req changePasswordRequest
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError("请求格式错误"))
+		return
+	}
+
+	if req.OldPassword == "" || req.NewPassword == "" {
+		platformhttp.WriteError(c, platformhttp.ValidationError("旧密码和新密码不能为空"))
+		return
+	}
+
+	if len(req.NewPassword) < 8 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("新密码长度至少为 8 位"))
+		return
+	}
+
+	identity, ok := middleware.GetIdentity(c)
+	if !ok {
+		platformhttp.WriteError(c, platformhttp.Unauthorized("请先登录"))
+		return
+	}
+
+	user, err := h.userRepo.GetByID(c.Request.Context(), identity.UserID)
+	if err != nil {
+		platformhttp.WriteError(c, platformhttp.InternalError(""))
+		return
+	}
+
+	if err := auth.VerifyPassword(user.PasswordHash, req.OldPassword); err != nil {
+		platformhttp.WriteError(c, platformhttp.Unauthorized("旧密码错误"))
+		return
+	}
+
+	newHash, err := auth.HashPassword(req.NewPassword)
+	if err != nil {
+		platformhttp.WriteError(c, platformhttp.InternalError(""))
+		return
+	}
+
+	if err := h.userRepo.UpdatePassword(c.Request.Context(), user.ID, newHash); err != nil {
+		platformhttp.WriteError(c, platformhttp.InternalError(""))
+		return
+	}
+
+	h.log.Info("password changed", "user_id", identity.UserID, "username", identity.Username)
 	c.Status(http.StatusNoContent)
 }
 

@@ -69,28 +69,26 @@ func AdminInit(args []string) error {
 		return nil
 	}
 
-	// 创建管理员
+	// 创建管理员（直接 SQL 插入，兼容 Hexo 表结构）
 	passwordHash, err := auth.HashPassword(*password)
 	if err != nil {
 		return fmt.Errorf("hash password: %w", err)
 	}
 
-	input := users.CreateInput{
-		Username:     strings.TrimSpace(*username),
-		UsernameKey:  strings.ToLower(strings.TrimSpace(*username)),
-		PasswordHash: passwordHash,
-		Nickname:     strings.TrimSpace(*nickname),
-		Status:       users.StatusActive,
-		IsSystem:     true,
-	}
-
-	user, err := userRepo.Create(ctx, input)
+	_, err = db.SQL().ExecContext(ctx,
+		`INSERT INTO users (group_id, username, username_key, password_hash, nickname, status)
+		 VALUES (1, $1, $2, $3, $4, 'active')`,
+		strings.TrimSpace(*username),
+		strings.ToLower(strings.TrimSpace(*username)),
+		passwordHash,
+		strings.TrimSpace(*nickname),
+	)
 	if err != nil {
 		return fmt.Errorf("create admin user: %w", err)
 	}
 
-	log.Info("admin user created", "username", user.Username, "id", user.ID)
-	fmt.Printf("admin user created: username=%s, status=active, group=admin\n", user.Username)
+	log.Info("admin user created", "username", strings.TrimSpace(*username))
+	fmt.Printf("admin user created: username=%s, status=active, group=admin\n", strings.TrimSpace(*username))
 	return nil
 }
 

@@ -81,7 +81,7 @@ func (a *App) Run() error {
 	// 认证接口（公开）
 	userRepo := usersmodule.NewRepository(db.SQL(), db.Driver())
 	tokenRepo := authmodule.NewRepository(db.SQL(), db.Driver())
-	authHandler := authmodule.NewHandler(authService, userRepo, tokenRepo)
+	authHandler := authmodule.NewHandler(authService, userRepo, tokenRepo, a.log)
 	authHandler.RegisterRoutes(engine.Group("/api"))
 
 	// 公开文章接口（不需认证）
@@ -97,6 +97,7 @@ func (a *App) Run() error {
 	// 管理接口（需认证 + 管理员）
 	adminGroup := engine.Group("/api/admin")
 	adminGroup.Use(middleware.RequireAuth(authService), middleware.RequireAdmin())
+	authHandler.RegisterAdminRoutes(adminGroup)
 	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
 	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
 	projectsHandler.RegisterAdminRoutes(adminGroup)

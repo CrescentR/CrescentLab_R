@@ -20,6 +20,7 @@ import (
 	platformdb "CrescentLab_R/internal/platform/database"
 	platformhttp "CrescentLab_R/internal/platform/http"
 	"CrescentLab_R/internal/platform/http/middleware"
+	"CrescentLab_R/internal/platform/logger"
 	sharedauth "CrescentLab_R/internal/shared/auth"
 )
 
@@ -95,6 +96,87 @@ func TestAuthFlow_LoginAccessLogout(t *testing.T) {
 	}
 }
 
+// TestAuthFlow_ChangePassword 验证修改密码主链路：
+// 成功修改 → 旧密码失效 → 新密码可登录。
+func TestAuthFlow_ChangePassword(t *testing.T) {
+	engine := setupAuthTestEngine(t)
+	const oldPassword = "test-password-123"
+	const newPassword = "new-password-4567"
+
+	// 1. 登录获取 token
+	loginResp := doJSON(t, engine, http.MethodPost, "/api/auth/login",
+		map[string]string{"username": "admin", "password": oldPassword})
+	if loginResp.Code != http.StatusOK {
+		t.Fatalf("login status = %d, body = %s", loginResp.Code, loginResp.Body.String())
+	}
+	var tokens struct {
+		AccessToken string `json:"access_token"`
+	}
+	if err := json.Unmarshal(loginResp.Body.Bytes(), &tokens); err != nil {
+		t.Fatalf("unmarshal login response: %v", err)
+	}
+
+	// 2. 未登录调用改密码 → 401
+	noAuthResp := doJSON(t, engine, http.MethodPost, "/api/admin/auth/change-password",
+		map[string]string{"old_password": oldPassword, "new_password": newPassword})
+	if noAuthResp.Code != http.StatusUnauthorized {
+		t.Fatalf("no-auth change password status = %d, want 401", noAuthResp.Code)
+	}
+
+	// 3. 旧密码错误 → 401
+	wrongOldRec := doRequest(t, engine, http.MethodPost, "/api/admin/auth/change-password",
+		"Bearer "+tokens.AccessToken, mustEncode(t, map[string]string{
+			"old_password": "wrong-old-password",
+			"new_password": newPassword,
+		}))
+	if wrongOldRec.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong old password status = %d, want 401", wrongOldRec.Code)
+	}
+
+	// 4. 新密码太短 → 400
+	shortRec := doRequest(t, engine, http.MethodPost, "/api/admin/auth/change-password",
+		"Bearer "+tokens.AccessToken, mustEncode(t, map[string]string{
+			"old_password": oldPassword,
+			"new_password": "short",
+		}))
+	if shortRec.Code != http.StatusBadRequest {
+		t.Fatalf("short new password status = %d, want 400", shortRec.Code)
+	}
+
+	// 5. 成功修改密码 → 204
+	changeRec := doRequest(t, engine, http.MethodPost, "/api/admin/auth/change-password",
+		"Bearer "+tokens.AccessToken, mustEncode(t, map[string]string{
+			"old_password": oldPassword,
+			"new_password": newPassword,
+		}))
+	if changeRec.Code != http.StatusNoContent {
+		t.Fatalf("change password status = %d, body = %s", changeRec.Code, changeRec.Body.String())
+	}
+
+	// 6. 旧密码登录失败 → 401
+	oldLoginResp := doJSON(t, engine, http.MethodPost, "/api/auth/login",
+		map[string]string{"username": "admin", "password": oldPassword})
+	if oldLoginResp.Code != http.StatusUnauthorized {
+		t.Fatalf("old password login status = %d, want 401", oldLoginResp.Code)
+	}
+
+	// 7. 新密码登录成功 → 200
+	newLoginResp := doJSON(t, engine, http.MethodPost, "/api/auth/login",
+		map[string]string{"username": "admin", "password": newPassword})
+	if newLoginResp.Code != http.StatusOK {
+		t.Fatalf("new password login status = %d, body = %s", newLoginResp.Code, newLoginResp.Body.String())
+	}
+}
+
+func mustEncode(t *testing.T, v any) *bytes.Buffer {
+	t.Helper()
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(v); err != nil {
+		t.Fatalf("encode: %v", err)
+	}
+	return &buf
+}
+
 // TestAuthFlow_LoginWrongPassword 验证错误密码返回 401。
 func TestAuthFlow_LoginWrongPassword(t *testing.T) {
 	engine := setupAuthTestEngine(t)
@@ -144,15 +226,11 @@ func setupAuthTestEngine(t *testing.T) *gin.Engine {
 	if err != nil {
 		t.Fatalf("hash password: %v", err)
 	}
-	_, err = userRepo.Create(context.Background(), users.CreateInput{
-		Username:     "admin",
-		UsernameKey:  "admin",
-		PasswordHash: hash,
-		Nickname:     "admin",
-		Status:       users.StatusActive,
-		IsSystem:     true,
-	})
-	if err != nil {
+	if _, err := db.ExecContext(context.Background(),
+		`INSERT INTO users (group_id, username, username_key, password_hash, nickname, status)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		1, "admin", "admin", hash, "admin", "active",
+	); err != nil {
 		t.Fatalf("create test admin: %v", err)
 	}
 
@@ -168,11 +246,12 @@ func setupAuthTestEngine(t *testing.T) *gin.Engine {
 	engine := gin.New()
 	engine.Use(platformhttp.RequestID(), gin.Recovery())
 
-	authHandler := NewHandler(authService, userRepo, tokenRepo)
+	authHandler := NewHandler(authService, userRepo, tokenRepo, logger.New(os.Stdout))
 	authHandler.RegisterRoutes(engine.Group("/api"))
 
 	adminGroup := engine.Group("/api/admin")
 	adminGroup.Use(middleware.RequireAuth(authService), middleware.RequireAdmin())
+	authHandler.RegisterAdminRoutes(adminGroup)
 	settingsmodule.NewHandler(settingsmodule.NewRepository(db, driver)).RegisterAdminRoutes(adminGroup)
 
 	return engine
