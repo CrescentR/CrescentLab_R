@@ -43,50 +43,6 @@ const NEW_ARTICLE_TEMPLATE: ArticleFormState = {
   cover_url: "",
 };
 
-function htmlToMarkdown(html: string): string {
-  let md = html;
-  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "# $1\n\n");
-  md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "## $1\n\n");
-  md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "### $1\n\n");
-  md = md.replace(/<h4[^>]*>(.*?)<\/h4>/gi, "#### $1\n\n");
-  md = md.replace(/<h5[^>]*>(.*?)<\/h5>/gi, "##### $1\n\n");
-  md = md.replace(/<h6[^>]*>(.*?)<\/h6>/gi, "###### $1\n\n");
-  md = md.replace(/<strong>(.*?)<\/strong>/gi, "**$1**");
-  md = md.replace(/<b>(.*?)<\/b>/gi, "**$1**");
-  md = md.replace(/<em>(.*?)<\/em>/gi, "*$1*");
-  md = md.replace(/<i>(.*?)<\/i>/gi, "*$1*");
-  md = md.replace(/<u>(.*?)<\/u>/gi, "$1");
-  md = md.replace(/<s>(.*?)<\/s>/gi, "~~$1~~");
-  md = md.replace(/<del>(.*?)<\/del>/gi, "~~$1~~");
-  md = md.replace(/<a href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "[$2]($1)");
-  md = md.replace(/<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*\/?>/gi, "![$2]($1)");
-  md = md.replace(/<img[^>]*src="([^"]*)"[^>]*\/?>/gi, "![]($1)");
-  md = md.replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gi, (_, content) => {
-    return content
-      .split("\n")
-      .map((line: string) => `> ${line}`)
-      .join("\n");
-  });
-  md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`");
-  md = md.replace(/<pre[^>]*>(.*?)<\/pre>/gi, "```\n$1\n```\n");
-  md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, "- $1\n");
-  md = md.replace(/<ul[^>]*>/gi, "\n");
-  md = md.replace(/<\/ul>/gi, "\n");
-  md = md.replace(/<ol[^>]*>/gi, "\n");
-  md = md.replace(/<\/ol>/gi, "\n");
-  md = md.replace(/<br\s*\/?>/gi, "\n");
-  md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n\n");
-  md = md.replace(/<hr\s*\/?>/gi, "---\n\n");
-  md = md.replace(/<[^>]+>/g, "");
-  md = md.replace(/&amp;/g, "&");
-  md = md.replace(/&lt;/g, "<");
-  md = md.replace(/&gt;/g, ">");
-  md = md.replace(/&quot;/g, '"');
-  md = md.replace(/&#39;/g, "'");
-  md = md.replace(/\n{3,}/g, "\n\n");
-  return md.trim();
-}
-
 function extractErrorMessage(err: unknown, fallback: string): string {
   if (err && typeof err === "object" && "message" in err) {
     return (err as { message: string }).message;
@@ -121,9 +77,9 @@ export function ArticleEditorWorkspace() {
       title: form.title,
       slug: form.slug,
       excerpt: form.excerpt,
-      content_md: htmlToMarkdown(form.content_html),
+      content_html: form.content_html,
       cover_url: form.cover_url,
-      source_format: "markdown",
+      source_format: "tiptap",
       status: "draft",
     };
   }, [form]);
@@ -152,7 +108,7 @@ export function ArticleEditorWorkspace() {
       push(extractErrorMessage(err, "保存失败"), "error");
       setSaveStatus("idle");
     }
-  }, [articleId, buildApiInput, form.slug, form.title, push]);
+  }, [articleId, buildApiInput, form.title, push]);
 
   const handlePublish = useCallback(async () => {
     if (!form.title.trim()) {
@@ -172,9 +128,9 @@ export function ArticleEditorWorkspace() {
         title: form.title,
         slug: form.slug,
         excerpt: form.excerpt,
-        content_md: htmlToMarkdown(form.content_html),
+        content_html: form.content_html,
         cover_url: form.cover_url,
-        source_format: "markdown",
+        source_format: "tiptap",
       });
       setStatus(result.status as "draft" | "published");
       push("文章已发布", "success");
@@ -188,7 +144,7 @@ export function ArticleEditorWorkspace() {
   const handlePreview = useCallback(async () => {
     setIsPreviewing(true);
     try {
-      const result = await previewArticle(htmlToMarkdown(form.content_html));
+      const result = await previewArticle(form.content_html);
       const previewWindow = window.open("", "_blank");
       if (previewWindow) {
         previewWindow.document.write(`<!DOCTYPE html>
@@ -386,6 +342,7 @@ export function ArticleEditorWorkspace() {
           <TipTapEditor
             content={form.content_html}
             onChange={(html) => updateField("content_html", html)}
+            onSave={handleSave}
           />
         </div>
       </section>

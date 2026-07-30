@@ -1,4 +1,4 @@
-import { apiJson } from "@/lib/api/client";
+import { apiFetch, apiJson } from "@/lib/api/client";
 
 export type ProjectStatus = "draft" | "published" | "archived";
 
@@ -31,12 +31,29 @@ export type ProjectDetail = ProjectListItem & {
   content_html: string;
 };
 
+export type ProjectArtifact = {
+  id: number;
+  project_id: number;
+  public_id: string;
+  version: number;
+  label: string;
+  source_type: "html" | "zip";
+  entry_path: string;
+  size_bytes: number;
+  sha256: string;
+  is_published: boolean;
+  published_at: string | null;
+  created_at: string;
+};
+
 export type ProjectInput = {
   name: string;
   slug: string;
   tagline?: string;
   description?: string;
   content_md?: string;
+  content_html?: string;
+  source_format?: "markdown" | "tiptap" | "html";
   cover_url?: string;
   repo_url?: string;
   demo_url?: string;
@@ -96,6 +113,32 @@ export function previewProject(content_md: string) {
     body: JSON.stringify({ content_md }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
+  });
+}
+
+export function listProjectArtifacts(projectId: number) {
+  return apiJson<{ items: ProjectArtifact[] }>(`/api/admin/projects/artifacts?project_id=${projectId}`);
+}
+
+export async function uploadProjectArtifact(projectId: number, file: File, label: string) {
+  const body = new FormData();
+  body.set("project_id", String(projectId));
+  body.set("file", file);
+  body.set("label", label);
+  const response = await apiFetch("/api/admin/projects/artifacts/upload", { method: "POST", body });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = payload && typeof payload === "object" && "message" in payload ? String(payload.message) : "上传失败";
+    throw new Error(message);
+  }
+  return payload as ProjectArtifact;
+}
+
+export function publishProjectArtifact(projectId: number, artifactId: number) {
+  return apiJson<ProjectArtifact>("/api/admin/projects/artifacts/publish", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project_id: projectId, artifact_id: artifactId }),
   });
 }
 

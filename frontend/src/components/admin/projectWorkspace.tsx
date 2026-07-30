@@ -8,13 +8,16 @@ import {
   ExternalLink,
   GitFork,
   Globe,
+  History,
   Loader2,
   Plus,
+  Rocket,
   Save,
   Send,
+  Upload,
   Trash2,
 } from "lucide-react";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Panel } from "@/components/ui/panel";
 import { Field } from "@/components/ui/field";
@@ -23,9 +26,14 @@ import { TipTapEditor } from "@/components/admin/tiptapEditor";
 import {
   createAdminProject,
   deleteAdminProject,
+  getAdminProject,
   listAdminProjects,
+  listProjectArtifacts,
   publishAdminProject,
+  publishProjectArtifact,
   updateAdminProject,
+  uploadProjectArtifact,
+  type ProjectArtifact,
   type ProjectInput,
   type ProjectListItem,
 } from "@/lib/api/projects";
@@ -54,29 +62,6 @@ function generateSlug(): string {
   return result;
 }
 
-function htmlToMarkdown(html: string): string {
-  let md = html;
-  md = md.replace(/<h1[^>]*>(.*?)<\/h1>/gi, "# $1\n\n");
-  md = md.replace(/<h2[^>]*>(.*?)<\/h2>/gi, "## $1\n\n");
-  md = md.replace(/<h3[^>]*>(.*?)<\/h3>/gi, "### $1\n\n");
-  md = md.replace(/<strong>(.*?)<\/strong>/gi, "**$1**");
-  md = md.replace(/<b>(.*?)<\/b>/gi, "**$1**");
-  md = md.replace(/<em>(.*?)<\/em>/gi, "*$1*");
-  md = md.replace(/<code[^>]*>(.*?)<\/code>/gi, "`$1`");
-  md = md.replace(/<pre[^>]*>(.*?)<\/pre>/gi, "```\n$1\n```\n");
-  md = md.replace(/<li[^>]*>(.*?)<\/li>/gi, "- $1\n");
-  md = md.replace(/<ul[^>]*>/gi, "\n");
-  md = md.replace(/<\/ul>/gi, "\n");
-  md = md.replace(/<br\s*\/?>/gi, "\n");
-  md = md.replace(/<p[^>]*>(.*?)<\/p>/gi, "$1\n\n");
-  md = md.replace(/<[^>]+>/g, "");
-  md = md.replace(/&amp;/g, "&");
-  md = md.replace(/&lt;/g, "<");
-  md = md.replace(/&gt;/g, ">");
-  md = md.replace(/\n{3,}/g, "\n\n");
-  return md.trim();
-}
-
 const emptyForm: ProjectFormState = {
   name: "",
   slug: generateSlug(),
@@ -99,6 +84,12 @@ export function ProjectWorkspace() {
   const [status, setStatus] = useState<"draft" | "published">("draft");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saving, setSaving] = useState(false);
+  const [editorTab, setEditorTab] = useState<"content" | "releases">("content");
+  const [artifacts, setArtifacts] = useState<ProjectArtifact[]>([]);
+  const [artifactFile, setArtifactFile] = useState<File | null>(null);
+  const [artifactLabel, setArtifactLabel] = useState("");
+  const [uploadingArtifact, setUploadingArtifact] = useState(false);
+  const [previewArtifact, setPreviewArtifact] = useState<ProjectArtifact | null>(null);
 
   const fetchProjects = useCallback(async () => {
     setLoading(true);
@@ -113,8 +104,21 @@ export function ProjectWorkspace() {
   }, [push]);
 
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    let active = true;
+    listAdminProjects({ page_size: 50 })
+      .then((result) => {
+        if (active) setProjects(result.items);
+      })
+      .catch((err) => {
+        if (active) push(extractErrorMessage(err, "加载项目列表失败"), "error");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [push]);
 
   function handleNew() {
     setForm({ ...emptyForm, slug: generateSlug() });
@@ -123,21 +127,28 @@ export function ProjectWorkspace() {
     setActiveView("editor");
   }
 
-  function handleEdit(project: ProjectListItem) {
-    setForm({
-      name: project.name,
-      slug: project.slug,
-      tagline: project.tagline,
-      description: "",
-      content_html: "",
-      cover_url: project.cover_url,
-      repo_url: project.repo_url,
-      demo_url: project.demo_url,
-      tech_stack: project.tech_stack.join(", "),
-    });
-    setProjectId(project.id);
-    setStatus(project.status as "draft" | "published");
-    setActiveView("editor");
+  async function handleEdit(project: ProjectListItem) {
+    try {
+      const detail = await getAdminProject(project.id);
+      setForm({
+        name: detail.name,
+        slug: detail.slug,
+        tagline: detail.tagline,
+        description: detail.description,
+        content_html: detail.content_html || "<p></p>",
+        cover_url: detail.cover_url,
+        repo_url: detail.repo_url,
+        demo_url: detail.demo_url,
+        tech_stack: detail.tech_stack.join(", "),
+      });
+      setProjectId(detail.id);
+      setStatus(detail.status as "draft" | "published");
+      setActiveView("editor");
+      const releases = await listProjectArtifacts(detail.id);
+      setArtifacts(releases.items);
+    } catch (err) {
+      push(extractErrorMessage(err, "加载项目详情失败"), "error");
+    }
   }
 
   function updateField<K extends keyof ProjectFormState>(key: K, value: ProjectFormState[K]) {
@@ -150,7 +161,8 @@ export function ProjectWorkspace() {
       slug: form.slug,
       tagline: form.tagline,
       description: form.description,
-      content_md: htmlToMarkdown(form.content_html),
+      content_html: form.content_html,
+      source_format: "tiptap",
       cover_url: form.cover_url,
       repo_url: form.repo_url,
       demo_url: form.demo_url,
@@ -205,7 +217,8 @@ export function ProjectWorkspace() {
         slug: form.slug,
         tagline: form.tagline,
         description: form.description,
-        content_md: htmlToMarkdown(form.content_html),
+        content_html: form.content_html,
+        source_format: "tiptap",
         cover_url: form.cover_url,
         repo_url: form.repo_url,
         demo_url: form.demo_url,
@@ -217,6 +230,41 @@ export function ProjectWorkspace() {
       push(extractErrorMessage(err, "发布失败"), "error");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleArtifactUpload() {
+    if (!projectId) {
+      push("请先保存项目，再上传发布产物", "error");
+      return;
+    }
+    if (!artifactFile) {
+      push("请选择 HTML 或 ZIP 文件", "error");
+      return;
+    }
+    setUploadingArtifact(true);
+    try {
+      const artifact = await uploadProjectArtifact(projectId, artifactFile, artifactLabel);
+      setArtifacts((items) => [artifact, ...items]);
+      setArtifactFile(null);
+      setArtifactLabel("");
+      setPreviewArtifact(artifact);
+      push(`版本 v${artifact.version} 已上传`, "success");
+    } catch (err) {
+      push(extractErrorMessage(err, "上传发布产物失败"), "error");
+    } finally {
+      setUploadingArtifact(false);
+    }
+  }
+
+  async function handleArtifactPublish(artifact: ProjectArtifact) {
+    if (!projectId) return;
+    try {
+      const published = await publishProjectArtifact(projectId, artifact.id);
+      setArtifacts((items) => items.map((item) => ({ ...item, is_published: item.id === published.id, published_at: item.id === published.id ? published.published_at : null })));
+      push(`已发布项目产物 v${published.version}`, "success");
+    } catch (err) {
+      push(extractErrorMessage(err, "发布产物失败"), "error");
     }
   }
 
@@ -293,8 +341,51 @@ export function ProjectWorkspace() {
             </div>
           </aside>
 
-          <div className="min-h-0 overflow-auto bg-[var(--background-soft)] p-4 md:p-6">
-            <TipTapEditor content={form.content_html} onChange={(html) => updateField("content_html", html)} />
+          <div className="flex min-h-0 flex-col overflow-auto bg-[var(--background-soft)] p-4 md:p-6">
+            <nav className="mb-4 flex w-fit gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-1">
+              <button className={`rounded-lg px-4 py-2 font-lab-mono text-xs ${editorTab === "content" ? "bg-[var(--blue-soft)] text-[var(--blue)]" : "text-[var(--muted)]"}`} onClick={() => setEditorTab("content")} type="button">内容编辑</button>
+              <button className={`rounded-lg px-4 py-2 font-lab-mono text-xs ${editorTab === "releases" ? "bg-[var(--blue-soft)] text-[var(--blue)]" : "text-[var(--muted)]"}`} onClick={() => setEditorTab("releases")} type="button">发布工作台</button>
+            </nav>
+            {editorTab === "content" ? (
+              <TipTapEditor content={form.content_html} onChange={(html) => updateField("content_html", html)} onSave={handleSave} />
+            ) : (
+              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,1.2fr)]">
+                <section className="space-y-4">
+                  <Panel className="p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="grid size-10 place-items-center rounded-xl bg-[var(--blue-soft)] text-[var(--blue)]"><Upload size={18} /></span>
+                      <div>
+                        <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">上传静态站点</h2>
+                        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">支持单文件 HTML，或根目录包含 index.html 的 ZIP。每次上传都会生成不可变版本。</p>
+                      </div>
+                    </div>
+                    <div className="mt-5 space-y-3">
+                      <Field label="版本说明" value={artifactLabel} onChange={setArtifactLabel} />
+                      <input accept=".html,.htm,.zip" className="block w-full rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] p-3 text-sm text-[var(--text)]" onChange={(event) => setArtifactFile(event.target.files?.[0] || null)} type="file" />
+                      <Button disabled={uploadingArtifact || !projectId} icon={uploadingArtifact ? <Loader2 className="animate-spin" size={15} /> : <Upload size={15} />} onClick={handleArtifactUpload} variant="primary">上传并预览</Button>
+                    </div>
+                  </Panel>
+                  <Panel className="overflow-hidden">
+                    <div className="flex items-center gap-2 border-b border-[var(--border-soft)] px-5 py-4"><History size={16} /><h2 className="font-lab-display font-semibold">版本历史</h2></div>
+                    {artifacts.length === 0 ? <p className="p-5 text-sm text-[var(--muted)]">尚未上传发布产物。</p> : artifacts.map((artifact) => (
+                      <div className="flex items-center gap-3 border-b border-[var(--border-soft)] px-5 py-4 last:border-0" key={artifact.id}>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2"><strong className="font-lab-mono text-sm">v{artifact.version}</strong>{artifact.is_published && <Badge tone="green">当前发布</Badge>}</div>
+                          <p className="mt-1 truncate text-xs text-[var(--muted)]">{artifact.label || artifact.source_type.toUpperCase()} · {(artifact.size_bytes / 1024).toFixed(1)} KB</p>
+                        </div>
+                        {artifact.is_published && <a aria-label="打开已发布项目" className="grid size-8 place-items-center text-[var(--blue)]" href={`/api/p/${form.slug}/index.html`} rel="noopener noreferrer" target="_blank"><ExternalLink size={15} /></a>}
+                        <Button onClick={() => setPreviewArtifact(artifact)} variant="ghost">预览</Button>
+                        <Button icon={<Rocket size={14} />} onClick={() => handleArtifactPublish(artifact)} variant={artifact.is_published ? "secondary" : "primary"}>{artifact.is_published ? "重新发布" : "发布/回滚"}</Button>
+                      </div>
+                    ))}
+                  </Panel>
+                </section>
+                <Panel className="min-h-[620px] overflow-hidden">
+                  <div className="border-b border-[var(--border-soft)] px-5 py-4"><h2 className="font-lab-display font-semibold">隔离预览</h2><p className="mt-1 text-xs text-[var(--muted)]">脚本可运行，但不具备主站同源权限。</p></div>
+                  {previewArtifact ? <iframe className="h-[560px] w-full bg-white" sandbox="allow-scripts allow-forms allow-modals allow-popups" src={`/api/project-artifacts/${previewArtifact.public_id}/index.html`} title={`项目产物 v${previewArtifact.version} 预览`} /> : <div className="grid h-[560px] place-items-center text-sm text-[var(--muted)]">选择一个版本开始预览</div>}
+                </Panel>
+              </div>
+            )}
           </div>
         </section>
       </main>

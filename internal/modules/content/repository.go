@@ -5,23 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math/rand"
 	"strings"
 
 	"github.com/lib/pq"
 	"modernc.org/sqlite"
 	sqlite3 "modernc.org/sqlite/lib"
 )
-
-const slugAlphabet = "abcdefghijklmnopqrstuvwxyz0123456789"
-
-func generateRandomSlug() string {
-	b := make([]byte, 6)
-	for i := range b {
-		b[i] = slugAlphabet[rand.Intn(len(slugAlphabet))]
-	}
-	return string(b)
-}
 
 var ErrSlugConflict = errors.New("article slug already exists")
 
@@ -92,17 +81,22 @@ func buildArticleListQueries(driver string, filter ListFilter, page, pageSize in
 
 	if filter.Status != "" {
 		where = append(where, "a.status = ?")
-		args = append(args, strings.ToUpper(string(filter.Status)))
+		args = append(args, string(filter.Status))
 	}
 	if strings.TrimSpace(filter.Search) != "" {
-		where = append(where, "(a.title LIKE ? OR a.content_md LIKE ?)")
+		where = append(where, "(a.title LIKE ? OR a.excerpt LIKE ?)")
 		pattern := "%" + filter.Search + "%"
 		args = append(args, pattern, pattern)
 	}
+	if strings.TrimSpace(filter.Category) != "" {
+		where = append(where, "c.slug = ?")
+		args = append(args, filter.Category)
+	}
 
 	whereClause := strings.Join(where, " AND ")
-	countQuery := "SELECT COUNT(*) FROM articles a WHERE " + whereClause
-	listQuery := "SELECT a.id, a.abbrlink, a.title, a.cover_url, a.status, a.pin_sort, a.home_sort, a.view_count, a.word_count, a.reading_time, a.created_at, a.updated_at FROM articles a WHERE " + whereClause + " ORDER BY a.pin_sort DESC, a.created_at DESC LIMIT ? OFFSET ?"
+	from := " FROM articles a LEFT JOIN post_categories c ON a.category_id = c.id WHERE "
+	countQuery := "SELECT COUNT(*)" + from + whereClause
+	listQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at" + from + whereClause + " ORDER BY a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC LIMIT ? OFFSET ?"
 
 	if driver == "postgres" {
 		countQuery = convertPlaceholders(countQuery)
@@ -117,8 +111,7 @@ func (r *Repository) GetBySlug(ctx context.Context, slug string) (Article, error
 		return Article{}, errors.New("content repository database is nil")
 	}
 
-	// 用 abbrlink 作为 slug 进行查找
-	query := "SELECT id, abbrlink, title, content_md, content_html, cover_url, status, pin_sort, home_sort, view_count, word_count, reading_time, created_at, updated_at, deleted_at FROM articles WHERE abbrlink = ? AND deleted_at IS NULL"
+	query := articleDetailQuery("slug")
 
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
@@ -132,7 +125,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (Article, error) {
 		return Article{}, errors.New("content repository database is nil")
 	}
 
-	query := "SELECT id, abbrlink, title, content_md, content_html, cover_url, status, pin_sort, home_sort, view_count, word_count, reading_time, created_at, updated_at, deleted_at FROM articles WHERE id = ? AND deleted_at IS NULL"
+	query := articleDetailQuery("id")
 
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
@@ -144,11 +137,13 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (Article, error) {
 func scanArticleRow(row *sql.Row, op string) (Article, error) {
 	var article Article
 	var status string
-	var abbrlink sql.NullString
 	if err := row.Scan(
-		&article.ID, &abbrlink, &article.Title, &article.ContentMD, &article.ContentHTML,
-		&article.CoverURL, &status, &article.PinSort, &article.HomeSort,
-		&article.ViewCount, &article.WordCount, &article.ReadingTimeMinutes,
+		&article.ID, &article.PublicID, &article.OwnerID, &article.CategoryID,
+		&article.Title, &article.Slug, &article.Excerpt, &article.ContentMD, &article.ContentHTML,
+		&article.CoverURL, &status, &article.Visibility, &article.SourceFormat,
+		&article.AllowComment, &article.IsPinned, &article.PinSort, &article.HomeSort,
+		&article.ViewCount, &article.CommentCount, &article.WordCount, &article.ReadingTimeMinutes,
+		&article.PublishedAt,
 		&article.CreatedAt, &article.UpdatedAt, &article.DeletedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -157,14 +152,16 @@ func scanArticleRow(row *sql.Row, op string) (Article, error) {
 		return Article{}, fmt.Errorf("%s: %w", op, err)
 	}
 
-	// abbrlink 作为 slug，为 NULL 时生成随机 slug
-	if abbrlink.Valid && abbrlink.String != "" {
-		article.Slug = abbrlink.String
-	} else {
-		article.Slug = generateRandomSlug()
-	}
-	article.Status = ArticleStatus(strings.ToLower(status))
+	article.Status = ArticleStatus(status)
 	return article, nil
+}
+
+func articleDetailQuery(key string) string {
+	return `SELECT id, COALESCE(public_id, ''), owner_id, category_id, title, slug, excerpt,
+		content_md, content_html, cover_url, status, visibility, source_format,
+		allow_comment, is_pinned, pin_sort, home_sort, view_count, comment_count,
+		word_count, reading_time_minutes, published_at, created_at, updated_at, deleted_at
+		FROM articles WHERE ` + key + ` = ? AND deleted_at IS NULL`
 }
 
 func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, error) {
@@ -324,27 +321,28 @@ type articleScanner interface {
 
 func scanArticleListItem(scanner articleScanner) (ArticleListItem, error) {
 	var item ArticleListItem
-	var abbrlink sql.NullString
+	var publicID sql.NullString
+	var excerpt sql.NullString
 	var coverURL sql.NullString
 	var status string
+	var publishedAt sql.NullTime
 
 	if err := scanner.Scan(
-		&item.ID, &abbrlink, &item.Title, &coverURL, &status,
-		&item.PinSort, &item.HomeSort,
-		&item.ViewCount, &item.WordCount, &item.ReadingTimeMinutes,
+		&item.ID, &publicID, &item.Title, &item.Slug, &excerpt, &coverURL, &status,
+		&item.IsPinned, &item.ViewCount, &item.CommentCount, &item.ReadingTimeMinutes,
+		&publishedAt,
 		&item.CreatedAt, &item.UpdatedAt,
 	); err != nil {
 		return ArticleListItem{}, err
 	}
 
-	// abbrlink 作为 slug，为 NULL 时生成随机 slug
-	if abbrlink.Valid && abbrlink.String != "" {
-		item.Slug = abbrlink.String
-	} else {
-		item.Slug = generateRandomSlug()
+	item.PublicID = publicID.String
+	item.Excerpt = excerpt.String
+	if publishedAt.Valid {
+		item.PublishedAt = &publishedAt.Time
 	}
 	item.CoverURL = coverURL.String
-	item.Status = strings.ToLower(status)
+	item.Status = status
 	return item, nil
 }
 

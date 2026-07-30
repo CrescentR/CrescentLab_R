@@ -139,6 +139,24 @@ CREATE TABLE IF NOT EXISTS projects (
   CHECK (view_count >= 0)
 );
 
+CREATE TABLE IF NOT EXISTS project_artifacts (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL,
+  public_id TEXT NOT NULL UNIQUE,
+  version INTEGER NOT NULL,
+  label TEXT NOT NULL DEFAULT '',
+  source_type TEXT NOT NULL,
+  entry_path TEXT NOT NULL DEFAULT 'index.html',
+  storage_path TEXT NOT NULL,
+  size_bytes INTEGER NOT NULL DEFAULT 0,
+  sha256 TEXT NOT NULL,
+  is_published BOOLEAN NOT NULL DEFAULT false,
+  published_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE (project_id, version),
+  CHECK (source_type IN ('html', 'zip'))
+);
+
 -- =========================================================
 -- 5. Observatory notes (实验观测台碎片笔记)
 -- =========================================================

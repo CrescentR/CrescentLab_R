@@ -160,7 +160,7 @@ type CreateInput struct {
 	CoverURL           string `json:"cover_url"`
 	Status             string `json:"status"`
 	SourceFormat       string `json:"source_format"`
-	ContentHTML        string `json:"-"`
+	ContentHTML        string `json:"content_html"`
 	WordCount          int    `json:"-"`
 	ReadingTimeMinutes int    `json:"-"`
 }

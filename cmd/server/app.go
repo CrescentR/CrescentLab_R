@@ -17,7 +17,6 @@ import (
 	"CrescentLab_R/internal/platform/config"
 	"CrescentLab_R/internal/platform/database"
 	platformhttp "CrescentLab_R/internal/platform/http"
-	"CrescentLab_R/internal/platform/http/handler"
 	"CrescentLab_R/internal/platform/http/middleware"
 	"CrescentLab_R/internal/platform/logger"
 	"CrescentLab_R/internal/shared/auth"
@@ -55,10 +54,6 @@ func (a *App) Run() error {
 
 	a.db = db
 	a.httpServer = platformhttp.New(cfg.Server, a.log)
-<<<<<<< HEAD
-	a.httpServer.RegisterHealthRoutes(db)
-	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL())).RegisterAdminRoutes(a.httpServer.Engine().Group("/api/admin"))
-=======
 	engine := a.httpServer.Engine()
 
 	// JWT auth service
@@ -81,9 +76,7 @@ func (a *App) Run() error {
 		return err
 	}
 
-	// 健康检查（公开）
-	healthHandler := handler.NewHealthHandler(db)
-	healthHandler.RegisterRoutes(engine.Group(""))
+	a.httpServer.RegisterHealthRoutes(db)
 
 	// 认证接口（公开）
 	userRepo := usersmodule.NewRepository(db.SQL(), db.Driver())
@@ -94,15 +87,20 @@ func (a *App) Run() error {
 	// 公开文章接口（不需认证）
 	contentRepo := contentmodule.NewRepository(db.SQL(), db.Driver())
 	contentmodule.NewHandler(contentRepo).RegisterPublicRoutes(engine.Group("/api"))
+	projectsRepo := projectsmodule.NewRepository(db.SQL(), db.Driver())
+	if err := projectsRepo.EnsureArtifactSchema(context.Background()); err != nil {
+		return err
+	}
+	projectsHandler := projectsmodule.NewHandler(projectsRepo)
+	projectsHandler.RegisterArtifactRoutes(engine.Group("/api"))
 
 	// 管理接口（需认证 + 管理员）
 	adminGroup := engine.Group("/api/admin")
 	adminGroup.Use(middleware.RequireAuth(authService), middleware.RequireAdmin())
 	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
 	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
-	projectsmodule.NewHandler(projectsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
+	projectsHandler.RegisterAdminRoutes(adminGroup)
 	observatorymodule.NewHandler(observatorymodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 
 	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())
 

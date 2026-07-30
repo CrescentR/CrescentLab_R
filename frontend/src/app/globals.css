@@ -57,6 +57,69 @@
   color-scheme: light;
 }
 
+.tiptap-editor > * + * {
+  margin-top: 0.9em;
+}
+
+.tiptap-editor table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+}
+
+.tiptap-editor th,
+.tiptap-editor td {
+  border: 1px solid var(--border-soft);
+  min-width: 7rem;
+  padding: 0.65rem 0.75rem;
+  vertical-align: top;
+}
+
+.tiptap-editor th {
+  background: var(--surface-field);
+  color: var(--text-strong);
+  font-weight: 650;
+}
+
+.tiptap-editor ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+}
+
+.tiptap-editor ul[data-type="taskList"] li {
+  align-items: flex-start;
+  display: flex;
+  gap: 0.65rem;
+}
+
+.tiptap-editor ul[data-type="taskList"] li > label {
+  margin-top: 0.35rem;
+}
+
+.tiptap-editor pre {
+  background: var(--text-strong);
+  border-radius: var(--radius);
+  color: var(--surface);
+  overflow-x: auto;
+  padding: 1rem 1.15rem;
+}
+
+.tiptap-editor blockquote {
+  background: var(--surface-field);
+  border-left: 3px solid var(--blue);
+  color: var(--muted);
+  margin-left: 0;
+  padding: 0.6rem 1rem;
+}
+
+.tiptap-editor .selectedCell::after {
+  background: var(--blue-soft);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
 :root[data-theme="dark"] {
   --background: #23261f;
   --background-soft: #2a2e26;

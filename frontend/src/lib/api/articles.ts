@@ -41,9 +41,10 @@ export type ArticleInput = {
   slug: string;
   excerpt?: string;
   content_md?: string;
+  content_html?: string;
   cover_url?: string;
   status?: ArticleStatus;
-  source_format?: "markdown";
+  source_format?: "markdown" | "tiptap" | "html";
 };
 
 export type ArticleListParams = {
@@ -100,9 +101,9 @@ export type PreviewResult = {
   reading_time_minutes: number;
 };
 
-export function previewArticle(content_md: string) {
+export function previewArticle(content_html: string) {
   return apiJson<PreviewResult>("/api/admin/articles/preview", {
-    body: JSON.stringify({ content_md }),
+    body: JSON.stringify({ content_html, source_format: "tiptap" }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });

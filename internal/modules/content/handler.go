@@ -6,10 +6,14 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
+	"github.com/microcosm-cc/bluemonday"
 
 	platformhttp "CrescentLab_R/internal/platform/http"
+	"CrescentLab_R/internal/shared/editorhtml"
 	sharedmarkdown "CrescentLab_R/internal/shared/markdown"
 )
 
@@ -185,23 +189,38 @@ func (h *Handler) delete(c *gin.Context) {
 
 func (h *Handler) preview(c *gin.Context) {
 	var input struct {
-		ContentMD string `json:"content_md"`
+		ContentMD    string `json:"content_md"`
+		ContentHTML  string `json:"content_html"`
+		SourceFormat string `json:"source_format"`
 	}
 	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
 		platformhttp.WriteError(c, platformhttp.ValidationError("invalid request body"))
 		return
 	}
 
-	rendered, err := h.renderer.Render(input.ContentMD)
-	if err != nil {
-		platformhttp.WriteError(c, err)
-		return
+	contentHTML := input.ContentHTML
+	wordCount := 0
+	readingTime := 0
+	if input.SourceFormat == "tiptap" || input.SourceFormat == "html" {
+		contentHTML = editorhtml.Sanitize(contentHTML)
+		text := strings.TrimSpace(bluemonday.StrictPolicy().Sanitize(contentHTML))
+		wordCount = utf8.RuneCountInString(strings.ReplaceAll(text, " ", ""))
+		if wordCount > 0 {
+			readingTime = (wordCount + 299) / 300
+		}
+	} else {
+		rendered, err := h.renderer.Render(input.ContentMD)
+		if err != nil {
+			platformhttp.WriteError(c, err)
+			return
+		}
+		contentHTML, wordCount, readingTime = rendered.HTML, rendered.WordCount, rendered.ReadingTimeMinutes
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"content_html":         rendered.HTML,
-		"word_count":           rendered.WordCount,
-		"reading_time_minutes": rendered.ReadingTimeMinutes,
+		"content_html":         contentHTML,
+		"word_count":           wordCount,
+		"reading_time_minutes": readingTime,
 	})
 }
 
@@ -243,6 +262,15 @@ func (h *Handler) prepareInput(input *CreateInput) error {
 		return platformhttp.ValidationError(err.Error())
 	}
 
+	if input.SourceFormat == "tiptap" || input.SourceFormat == "html" {
+		input.ContentHTML = editorhtml.Sanitize(input.ContentHTML)
+		text := strings.TrimSpace(bluemonday.StrictPolicy().Sanitize(input.ContentHTML))
+		input.WordCount = utf8.RuneCountInString(strings.ReplaceAll(text, " ", ""))
+		if input.WordCount > 0 {
+			input.ReadingTimeMinutes = (input.WordCount + 299) / 300
+		}
+		return nil
+	}
 	rendered, err := h.renderer.Render(input.ContentMD)
 	if err != nil {
 		return err
