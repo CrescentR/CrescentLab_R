@@ -139,8 +139,18 @@ export async function logout(): Promise<void> {
 
 // ---- 通用请求 ----
 
+// 服务端渲染时使用绝对 URL，否则相对路径的 fetch 不会经过 Next.js rewrites 代理。
+const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:8091";
+
+function resolveApiUrl(path: string): string {
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  if (typeof window !== "undefined") return path;
+  return `${BACKEND_URL}${path}`;
+}
+
 export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const accessToken = getAccessToken();
+  const url = resolveApiUrl(path);
 
   const headers = new Headers(init.headers);
   if (accessToken) {
@@ -150,7 +160,7 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<Re
     headers.set("Accept", "application/json");
   }
 
-  let res = await fetch(path, { ...init, headers });
+  let res = await fetch(url, { ...init, headers });
 
   // 401 时尝试刷新一次
   if (res.status === 401 && accessToken) {
