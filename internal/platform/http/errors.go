@@ -2,10 +2,14 @@ package http
 
 import (
 	"errors"
+	"log/slog"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 )
+
+var errorLog = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 
 // ErrorCode 是稳定的错误码字符串。
 type ErrorCode string
@@ -116,7 +120,13 @@ func WriteError(c *gin.Context, err error) {
 		return
 	}
 
-	// 非 AppError 一律视为内部错误，不回传 err.Error()。
+	// 非 AppError 一律视为内部错误，记录实际错误后返回 500。
+	errorLog.Error("internal error",
+		"request_id", GetRequestID(c),
+		"method", c.Request.Method,
+		"path", c.Request.URL.Path,
+		"error", err,
+	)
 	c.JSON(http.StatusInternalServerError, errorBody{
 		Code:      CodeInternalError,
 		Message:   "服务暂时不可用",
