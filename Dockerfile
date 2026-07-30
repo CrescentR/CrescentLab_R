@@ -29,7 +29,7 @@ WORKDIR /src/frontend
 ARG BACKEND_URL=http://backend:8091
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV BACKEND_URL=${BACKEND_URL}
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm config set registry "${NPM_REGISTRY}" \
   && pnpm install --frozen-lockfile

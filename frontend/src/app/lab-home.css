@@ -1,17 +1,17 @@
 .lab-home {
-  --lab-bg: #f7f6f1;
-  --lab-bg-alt: #efeee7;
-  --lab-card: #ffffff;
-  --lab-card-raised: #faf9f4;
-  --lab-ink: #1e2621;
-  --lab-copy: #4f5a53;
-  --lab-muted: #667066;
-  --lab-line: #e3e1d7;
-  --lab-line-strong: #cdcabc;
-  --lab-sage: #3f7d6a;
-  --lab-sage-soft: #e8f0eb;
-  --lab-blue: #4a7395;
-  --lab-clay: #b06a55;
+  --lab-bg: var(--background);
+  --lab-bg-alt: var(--background-soft);
+  --lab-card: var(--surface);
+  --lab-card-raised: var(--surface-raised);
+  --lab-ink: var(--text-strong);
+  --lab-copy: var(--text);
+  --lab-muted: var(--muted);
+  --lab-line: var(--border);
+  --lab-line-strong: #c9c8bc;
+  --lab-sage: var(--teal);
+  --lab-sage-soft: var(--teal-soft);
+  --lab-blue: var(--blue);
+  --lab-clay: var(--coral);
   --lab-radius: 16px;
   --motion-fast: 180ms;
   --motion-normal: 320ms;
@@ -23,7 +23,10 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: var(--lab-bg);
+  background:
+    radial-gradient(circle at 9% 5%, rgba(57, 120, 100, 0.07), transparent 26rem),
+    radial-gradient(circle at 92% 24%, rgba(82, 117, 143, 0.045), transparent 24rem),
+    var(--lab-bg);
   color: var(--lab-copy);
   font-family: Inter, "Noto Sans SC", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -43,6 +46,13 @@
 
 .lab-home button {
   font: inherit;
+}
+
+.lab-home a:focus-visible,
+.lab-home button:focus-visible,
+.lab-observatory-stage:focus-visible {
+  outline: 3px solid rgba(57, 120, 100, 0.2);
+  outline-offset: 3px;
 }
 
 .lab-home h1,
@@ -70,8 +80,9 @@
   z-index: 50;
   top: 0;
   border-bottom: 1px solid var(--lab-line);
-  background: rgba(247, 246, 241, 0.88);
-  backdrop-filter: blur(14px) saturate(1.1);
+  background: rgba(255, 254, 250, 0.84);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.76) inset;
+  backdrop-filter: blur(18px) saturate(1.08);
 }
 
 .lab-header-inner {
@@ -141,7 +152,7 @@
 }
 
 .lab-tab:hover {
-  background: var(--lab-bg-alt);
+  background: var(--lab-card-raised);
   color: var(--lab-ink);
 }
 
@@ -185,7 +196,7 @@
 .lab-section-intro p {
   max-width: 560px;
   margin: 14px 0 0;
-  color: var(--lab-copy);
+  color: var(--lab-muted);
   font-size: 15px;
   line-height: 1.75;
 }
@@ -269,17 +280,18 @@
   background: var(--lab-sage);
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 8px 20px rgba(63, 125, 106, 0.18);
+  box-shadow: 0 8px 20px rgba(57, 120, 100, 0.2);
 }
 
 .lab-button-primary:hover {
-  background: #366b5b;
-  box-shadow: 0 12px 26px rgba(63, 125, 106, 0.24);
+  background: #2f6855;
+  box-shadow: 0 12px 26px rgba(57, 120, 100, 0.25);
 }
 
 .lab-button-quiet {
   background: var(--lab-card);
   color: var(--lab-copy);
+  box-shadow: var(--shadow-tight);
 }
 
 .lab-button-quiet:hover {
@@ -427,6 +439,7 @@
   border: 1px solid var(--lab-line);
   border-radius: var(--lab-radius);
   background: var(--lab-card);
+  box-shadow: 0 8px 24px rgba(35, 48, 39, 0.045);
   padding: 22px;
   transition: border-color 220ms ease, box-shadow 220ms ease;
 }
@@ -443,7 +456,7 @@
 
 .lab-build-card:hover {
   border-color: rgb(var(--lab-card-accent) / 0.5);
-  box-shadow: 0 14px 34px rgba(38, 46, 38, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .lab-build-card:nth-child(1) { grid-column: span 7; grid-row: span 2; }
@@ -666,7 +679,7 @@
   border: 1px solid var(--lab-line);
   border-radius: 24px;
   background: var(--lab-card);
-  box-shadow: 0 18px 44px rgba(38, 46, 38, 0.08);
+  box-shadow: var(--shadow-soft);
   padding: clamp(24px, 4vw, 38px);
   cursor: grab;
   touch-action: pan-y;
@@ -871,6 +884,7 @@
   border: 1px solid var(--lab-line);
   border-radius: var(--lab-radius);
   background: var(--lab-card);
+  box-shadow: 0 8px 24px rgba(35, 48, 39, 0.045);
   padding: 24px;
   text-align: left;
   cursor: pointer;
@@ -879,7 +893,7 @@
 
 .lab-project-card:hover {
   border-color: var(--lab-sage);
-  box-shadow: 0 16px 38px rgba(38, 46, 38, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .lab-project-card-1 { grid-column: 1 / span 7; }
@@ -971,6 +985,7 @@
   border: 1px solid var(--lab-line);
   border-radius: var(--lab-radius);
   background: var(--lab-card);
+  box-shadow: 0 8px 24px rgba(35, 48, 39, 0.045);
   padding: 26px;
 }
 
@@ -997,6 +1012,7 @@
   border: 1px solid var(--lab-line);
   border-radius: var(--lab-radius);
   background: var(--lab-card);
+  box-shadow: 0 8px 24px rgba(35, 48, 39, 0.045);
   overflow: hidden;
 }
 
@@ -1029,7 +1045,7 @@
 
 .lab-footer {
   border-top: 1px solid var(--lab-line);
-  background: var(--lab-bg-alt);
+  background: rgba(236, 236, 228, 0.78);
   padding-block: 40px;
 }
 

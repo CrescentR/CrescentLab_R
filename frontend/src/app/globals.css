@@ -1,35 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f6f1;
-  --background-soft: #efeee7;
-  --surface: #ffffff;
-  --surface-raised: #faf9f4;
-  --surface-field: #f1f0e9;
-  --surface-glass: rgba(255, 255, 255, 0.88);
-  --border: #e3e1d7;
-  --border-soft: rgba(58, 66, 58, 0.13);
-  --text: #4f5a53;
-  --text-strong: #1e2621;
-  --muted: #667066;
-  --muted-low: #949c92;
-  --blue: #4a7395;
+  --background: #f6f5ef;
+  --background-soft: #ecece4;
+  --surface: #fffefa;
+  --surface-raised: #f8f8f3;
+  --surface-field: #f0f1eb;
+  --surface-glass: rgba(255, 254, 250, 0.9);
+  --border: #dcdbd1;
+  --border-soft: rgba(49, 66, 55, 0.14);
+  --text: #46534b;
+  --text-strong: #1c2821;
+  --muted: #637068;
+  --muted-low: #8b958d;
+  --blue: #52758f;
   --blue-soft: rgba(74, 115, 149, 0.1);
   --violet: #7a6f92;
   --violet-soft: rgba(122, 111, 146, 0.1);
-  --teal: #3f7d6a;
+  --teal: #397864;
   --teal-soft: rgba(63, 125, 106, 0.1);
-  --amber: #91763f;
+  --amber: #8c713b;
   --amber-soft: rgba(145, 118, 63, 0.12);
-  --coral: #b06a55;
+  --coral: #a96350;
   --coral-soft: rgba(176, 106, 85, 0.12);
   --success: #43805c;
   --success-soft: rgba(67, 128, 92, 0.12);
   --sunny: #dceadf;
   --danger: #b3524a;
   --radius: 8px;
-  --shadow-soft: 0 16px 38px rgba(38, 46, 38, 0.07);
-  --shadow-tight: 0 8px 20px rgba(38, 46, 38, 0.05);
+  --shadow-soft: 0 18px 44px rgba(35, 48, 39, 0.09);
+  --shadow-tight: 0 8px 22px rgba(35, 48, 39, 0.07);
   --motion-fast: 180ms;
   --motion-normal: 320ms;
   --motion-slow: 640ms;
@@ -37,7 +37,9 @@
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --page-wash: radial-gradient(circle at 18% 12%, rgba(63, 125, 106, 0.05), transparent 28rem);
+  --page-wash:
+    radial-gradient(circle at 14% 8%, rgba(57, 120, 100, 0.075), transparent 27rem),
+    radial-gradient(circle at 88% 32%, rgba(82, 117, 143, 0.045), transparent 24rem);
   --grid-line: rgba(60, 70, 60, 0.08);
   --header-highlight: rgba(255, 255, 255, 0.7);
   --hero-wash: linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(247, 246, 241, 0.76));
