@@ -30,9 +30,9 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     >
       <div className="article-detail-shell">
         <motion.div variants={fadeUp}>
-          <Link className="article-back-link" href="/">
+          <Link className="article-back-link" href="/notes">
             <ArrowLeft size={16} />
-            返回首页
+            返回笔记
           </Link>
         </motion.div>
 

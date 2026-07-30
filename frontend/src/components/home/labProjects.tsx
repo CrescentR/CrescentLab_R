@@ -25,7 +25,7 @@ export function LabProjects() {
   }, [selectedProject]);
 
   return (
-    <motion.section className="lab-section lab-shell" id="projects" initial="hidden" variants={stagger} viewport={viewport} whileInView="visible">
+    <motion.section className="lab-section lab-shell" initial="hidden" variants={stagger} viewport={viewport} whileInView="visible">
       <SectionIntro
         description="存活足够久、成为真实项目的系统。"
         index="03 / 精选"

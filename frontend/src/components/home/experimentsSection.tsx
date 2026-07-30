@@ -33,7 +33,7 @@ export function ExperimentsSection() {
   const previewIndex = activeIndex + (dragDirection < 0 ? 1 : -1);
 
   return (
-    <section className="lab-section lab-experiments" id="experiments">
+    <section className="lab-section">
       <div className="lab-shell">
         <SectionIntro
           description="来自受控失败、未完成工具和技术问题的笔记。"

@@ -50,7 +50,7 @@ export function LabNotes() {
   }, []);
 
   return (
-    <motion.section className="lab-section lab-notes lab-shell" id="notes" initial="hidden" variants={stagger} viewport={viewport} whileInView="visible">
+    <motion.section className="lab-section lab-shell" initial="hidden" variants={stagger} viewport={viewport} whileInView="visible">
       <SectionIntro
         description="在公开构建系统和私下修订过程中的田野笔记。"
         index="04 / 日志"
@@ -58,11 +58,11 @@ export function LabNotes() {
       />
       <div className="lab-note-timeline">
         {loading ? (
-          <motion.p className="lab-mono text-sm text-[var(--muted)]" variants={fadeUp}>
+          <motion.p className="lab-note-empty" variants={fadeUp}>
             加载中…
           </motion.p>
         ) : notes.length === 0 ? (
-          <motion.p className="lab-mono text-sm text-[var(--muted)]" variants={fadeUp}>
+          <motion.p className="lab-note-empty" variants={fadeUp}>
             暂无笔记，去后台发布第一篇文章吧。
           </motion.p>
         ) : (

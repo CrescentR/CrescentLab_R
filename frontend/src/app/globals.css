@@ -1,35 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fbfaf7;
-  --background-soft: #f2efe8;
-  --surface: #fffefa;
-  --surface-raised: #f8f5ee;
-  --surface-field: #f0ede6;
-  --surface-glass: rgba(255, 254, 250, 0.86);
-  --border: #ddd7cc;
-  --border-soft: rgba(72, 64, 52, 0.14);
-  --text: #6d675f;
-  --text-strong: #191713;
-  --muted: #79736b;
-  --muted-low: #9d978e;
-  --blue: #3f72e5;
-  --blue-soft: rgba(37, 99, 235, 0.1);
-  --violet: #7c3aed;
-  --violet-soft: rgba(124, 58, 237, 0.1);
-  --teal: #0f8f8f;
-  --teal-soft: rgba(15, 143, 143, 0.1);
-  --amber: #b7791f;
-  --amber-soft: rgba(183, 121, 31, 0.13);
-  --coral: #d45843;
-  --coral-soft: rgba(212, 88, 67, 0.12);
-  --success: #2f855a;
-  --success-soft: rgba(47, 133, 90, 0.12);
-  --sunny: #f6d365;
-  --danger: #dc2626;
+  --background: #f7f6f1;
+  --background-soft: #efeee7;
+  --surface: #ffffff;
+  --surface-raised: #faf9f4;
+  --surface-field: #f1f0e9;
+  --surface-glass: rgba(255, 255, 255, 0.88);
+  --border: #e3e1d7;
+  --border-soft: rgba(58, 66, 58, 0.13);
+  --text: #4f5a53;
+  --text-strong: #1e2621;
+  --muted: #6e786f;
+  --muted-low: #98a096;
+  --blue: #4a7395;
+  --blue-soft: rgba(74, 115, 149, 0.1);
+  --violet: #7a6f92;
+  --violet-soft: rgba(122, 111, 146, 0.1);
+  --teal: #3f7d6a;
+  --teal-soft: rgba(63, 125, 106, 0.1);
+  --amber: #91763f;
+  --amber-soft: rgba(145, 118, 63, 0.12);
+  --coral: #b06a55;
+  --coral-soft: rgba(176, 106, 85, 0.12);
+  --success: #43805c;
+  --success-soft: rgba(67, 128, 92, 0.12);
+  --sunny: #dceadf;
+  --danger: #b3524a;
   --radius: 8px;
-  --shadow-soft: 0 18px 42px rgba(31, 28, 22, 0.08);
-  --shadow-tight: 0 10px 24px rgba(31, 28, 22, 0.06);
+  --shadow-soft: 0 16px 38px rgba(38, 46, 38, 0.07);
+  --shadow-tight: 0 8px 20px rgba(38, 46, 38, 0.05);
   --motion-fast: 180ms;
   --motion-normal: 320ms;
   --motion-slow: 640ms;
@@ -37,13 +37,13 @@
   --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-exit: cubic-bezier(0.4, 0, 1, 1);
-  --page-wash: radial-gradient(circle at 18% 12%, rgba(63, 114, 229, 0.05), transparent 28rem);
-  --grid-line: rgba(221, 215, 204, 0.12);
-  --header-highlight: rgba(255, 255, 255, 0.62);
-  --hero-wash: linear-gradient(135deg, rgba(255, 254, 250, 0.82), rgba(248, 245, 238, 0.74));
-  --category-wash: linear-gradient(180deg, rgba(255, 255, 255, 0.74), rgba(251, 253, 255, 0.88));
-  --category-highlight: rgba(255, 255, 255, 0.72);
-  --project-band-surface: rgba(255, 255, 255, 0.38);
+  --page-wash: radial-gradient(circle at 18% 12%, rgba(63, 125, 106, 0.05), transparent 28rem);
+  --grid-line: rgba(60, 70, 60, 0.08);
+  --header-highlight: rgba(255, 255, 255, 0.7);
+  --hero-wash: linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(247, 246, 241, 0.76));
+  --category-wash: linear-gradient(180deg, rgba(255, 255, 255, 0.76), rgba(250, 249, 244, 0.9));
+  --category-highlight: rgba(255, 255, 255, 0.74);
+  --project-band-surface: rgba(255, 255, 255, 0.4);
   --hero-image: url("https://images.unsplash.com/photo-1499750310107-5fef28a66643?auto=format&fit=crop&w=1400&q=82");
   --cyan: var(--blue);
   --cyan-soft: var(--blue-soft);
@@ -56,41 +56,41 @@
 }
 
 :root[data-theme="dark"] {
-  --background: #101623;
-  --background-soft: #172033;
-  --surface: #182235;
-  --surface-raised: #1d2940;
-  --surface-field: #22304a;
-  --surface-glass: rgba(24, 34, 53, 0.9);
-  --border: #33445f;
-  --border-soft: rgba(203, 213, 225, 0.16);
-  --text: #c4d0df;
-  --text-strong: #f8fafc;
-  --muted: #9eacbd;
-  --muted-low: #748398;
-  --blue: #6ea8ff;
-  --blue-soft: rgba(110, 168, 255, 0.14);
-  --violet: #b79cff;
-  --violet-soft: rgba(183, 156, 255, 0.14);
-  --teal: #52d0ca;
-  --teal-soft: rgba(82, 208, 202, 0.14);
-  --amber: #f0b44f;
-  --amber-soft: rgba(240, 180, 79, 0.14);
-  --coral: #ff947f;
-  --coral-soft: rgba(255, 148, 127, 0.14);
-  --success: #6ad49b;
-  --success-soft: rgba(106, 212, 155, 0.14);
-  --sunny: #f6d365;
-  --danger: #f87171;
-  --shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.28);
-  --shadow-tight: 0 10px 24px rgba(0, 0, 0, 0.22);
-  --page-wash: linear-gradient(180deg, rgba(29, 41, 64, 0.86), rgba(16, 22, 35, 0) 360px);
-  --grid-line: rgba(148, 163, 184, 0.12);
+  --background: #23261f;
+  --background-soft: #2a2e26;
+  --surface: #2c302a;
+  --surface-raised: #343830;
+  --surface-field: #3a3f36;
+  --surface-glass: rgba(44, 48, 42, 0.9);
+  --border: #454a3f;
+  --border-soft: rgba(226, 229, 216, 0.16);
+  --text: #ccd1c6;
+  --text-strong: #f5f6f0;
+  --muted: #a3aa9c;
+  --muted-low: #7d8578;
+  --blue: #8ab3cf;
+  --blue-soft: rgba(138, 179, 207, 0.14);
+  --violet: #b0a6c6;
+  --violet-soft: rgba(176, 166, 198, 0.14);
+  --teal: #7cc0a7;
+  --teal-soft: rgba(124, 192, 167, 0.14);
+  --amber: #cbab6f;
+  --amber-soft: rgba(203, 171, 111, 0.14);
+  --coral: #dd9781;
+  --coral-soft: rgba(221, 151, 129, 0.14);
+  --success: #85c39c;
+  --success-soft: rgba(133, 195, 156, 0.14);
+  --sunny: #3d4a3e;
+  --danger: #e08a80;
+  --shadow-soft: 0 18px 44px rgba(0, 0, 0, 0.3);
+  --shadow-tight: 0 10px 24px rgba(0, 0, 0, 0.24);
+  --page-wash: linear-gradient(180deg, rgba(52, 56, 48, 0.86), rgba(35, 38, 31, 0) 360px);
+  --grid-line: rgba(203, 209, 194, 0.1);
   --header-highlight: rgba(255, 255, 255, 0.05);
-  --hero-wash: linear-gradient(135deg, rgba(29, 41, 64, 0.82), rgba(16, 22, 35, 0.74));
-  --category-wash: linear-gradient(180deg, rgba(29, 41, 64, 0.74), rgba(24, 34, 53, 0.88));
+  --hero-wash: linear-gradient(135deg, rgba(52, 56, 48, 0.82), rgba(35, 38, 31, 0.74));
+  --category-wash: linear-gradient(180deg, rgba(52, 56, 48, 0.74), rgba(44, 48, 42, 0.88));
   --category-highlight: rgba(255, 255, 255, 0.05);
-  --project-band-surface: rgba(24, 34, 53, 0.38);
+  --project-band-surface: rgba(44, 48, 42, 0.38);
   color-scheme: dark;
 }
 
@@ -1277,8 +1277,8 @@ a:focus-visible {
 }
 
 .tiptap-editor pre {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: #2c302a;
+  color: #e6e8df;
   padding: 14px 16px;
   border-radius: 8px;
   overflow-x: auto;
@@ -1501,8 +1501,8 @@ a:focus-visible {
 }
 
 .article-content pre {
-  background: #1e293b;
-  color: #e2e8f0;
+  background: #2c302a;
+  color: #e6e8df;
   padding: 18px 20px;
   border-radius: 10px;
   overflow-x: auto;

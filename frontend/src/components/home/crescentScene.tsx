@@ -4,7 +4,6 @@ import { Canvas, type ThreeEvent, useFrame } from "@react-three/fiber";
 import type { MotionValue } from "motion/react";
 import { useMemo, useRef } from "react";
 import {
-  AdditiveBlending,
   DoubleSide,
   Group,
   MathUtils,
@@ -27,11 +26,10 @@ export function CrescentScene({ scrollProgress }: { scrollProgress: MotionValue<
       dpr={[1, 1.8]}
       gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
     >
-      <ambientLight intensity={0.46} />
-      <directionalLight color="#dff8ff" intensity={2.8} position={[-3.2, 3.4, 4.8]} />
-      <pointLight color="#63d8ff" intensity={9} position={[-2.4, 1.2, 2.8]} />
-      <pointLight color="#8b7cff" intensity={7} position={[2.6, -1.5, 2.2]} />
-      <pointLight color="#ffb86b" intensity={2.4} position={[0.8, 2.4, -1.6]} />
+      <ambientLight intensity={1.5} />
+      <directionalLight color="#ffffff" intensity={2.6} position={[-3.2, 3.4, 4.8]} />
+      <pointLight color="#cfe4d8" intensity={7} position={[-2.4, 1.2, 2.8]} />
+      <pointLight color="#e8ddd4" intensity={5} position={[2.6, -1.5, 2.2]} />
       <CrescentAssembly scrollProgress={scrollProgress} />
     </Canvas>
   );
@@ -218,25 +216,25 @@ function CrescentAssembly({ scrollProgress }: { scrollProgress: MotionValue<numb
           <extrudeGeometry args={[crescentShape, extrudeSettings]} />
           <meshPhysicalMaterial
             attach="material-0"
-            clearcoat={0.72}
-            clearcoatRoughness={0.24}
-            color="#766cff"
-            emissive="#31286f"
+            clearcoat={0.6}
+            clearcoatRoughness={0.3}
+            color="#5f9280"
+            emissive="#2c5145"
             emissiveIntensity={0.72}
-            metalness={0.48}
+            metalness={0.16}
             ref={frontMaterial}
-            roughness={0.28}
+            roughness={0.36}
             side={DoubleSide}
           />
           <meshPhysicalMaterial
             attach="material-1"
-            clearcoat={0.35}
-            color="#252361"
-            emissive="#17163d"
+            clearcoat={0.3}
+            color="#3f6b5c"
+            emissive="#25453a"
             emissiveIntensity={0.34}
-            metalness={0.56}
+            metalness={0.2}
             ref={sideMaterial}
-            roughness={0.38}
+            roughness={0.46}
           />
         </mesh>
       </group>
@@ -244,21 +242,21 @@ function CrescentAssembly({ scrollProgress }: { scrollProgress: MotionValue<numb
       <group ref={orbitOne} rotation={[0.2, 0.1, 0.35]}>
         <mesh>
           <torusGeometry args={[1.82, 0.012, 8, 180]} />
-          <meshBasicMaterial color="#63d8ff" opacity={0.44} transparent />
+          <meshBasicMaterial color="#8ba699" opacity={0.7} transparent />
         </mesh>
         <mesh position={[1.82, 0, 0]}>
           <sphereGeometry args={[0.035, 16, 16]} />
-          <meshBasicMaterial color="#d9f8ff" />
+          <meshBasicMaterial color="#3f7d6a" />
         </mesh>
       </group>
       <group ref={orbitTwo} rotation={[1.18, 0.12, -0.6]}>
         <mesh>
           <torusGeometry args={[1.56, 0.009, 8, 160]} />
-          <meshBasicMaterial color="#8b7cff" opacity={0.34} transparent />
+          <meshBasicMaterial color="#c0a396" opacity={0.6} transparent />
         </mesh>
         <mesh position={[-1.56, 0, 0]}>
           <sphereGeometry args={[0.025, 14, 14]} />
-          <meshBasicMaterial color="#a99fff" />
+          <meshBasicMaterial color="#b06a55" />
         </mesh>
       </group>
       <group ref={particleGroup}>
@@ -267,8 +265,7 @@ function CrescentAssembly({ scrollProgress }: { scrollProgress: MotionValue<numb
             <bufferAttribute attach="attributes-position" args={[particlePositions, 3]} />
           </bufferGeometry>
           <pointsMaterial
-            blending={AdditiveBlending}
-            color="#b7efff"
+            color="#7f9c8d"
             depthWrite={false}
             opacity={0.58}
             ref={particleMaterial}
@@ -280,8 +277,7 @@ function CrescentAssembly({ scrollProgress }: { scrollProgress: MotionValue<numb
       <mesh ref={pulseMesh} visible={false}>
         <torusGeometry args={[1.43, 0.014, 8, 180]} />
         <meshBasicMaterial
-          blending={AdditiveBlending}
-          color="#8ee7ff"
+          color="#3f7d6a"
           depthWrite={false}
           opacity={0}
           ref={pulseMaterial}

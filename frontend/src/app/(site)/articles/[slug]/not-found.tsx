@@ -5,9 +5,9 @@ export default function ArticleNotFound() {
   return (
     <div className="article-detail">
       <div className="article-detail-shell">
-        <Link className="article-back-link" href="/">
+        <Link className="article-back-link" href="/notes">
           <ArrowLeft size={16} />
-          返回首页
+          返回笔记
         </Link>
         <div style={{ padding: "4rem 0", textAlign: "center" }}>
           <h1 className="article-title" style={{ marginBottom: "1rem" }}>
