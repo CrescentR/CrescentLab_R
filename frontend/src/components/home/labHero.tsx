@@ -45,14 +45,15 @@ export function LabHero() {
 
       <motion.div
         animate="visible"
-        aria-label="抽象月牙核心静态预览"
+        aria-label="Crescent Lab 月牙核心"
         className="lab-hero-visual"
         initial="hidden"
         variants={scaleIn}
       >
-        <div className="lab-core-grid" />
-        <div className="lab-core-orbit lab-core-orbit-one" />
-        <div className="lab-core-orbit lab-core-orbit-two" />
+        <div className="lab-core-glow" />
+        <div className="lab-core-ring lab-core-ring-a" />
+        <div className="lab-core-ring lab-core-ring-b" />
+        <div className="lab-core-ring lab-core-ring-c" />
         <CrescentCore />
         <span className="lab-core-label lab-core-label-top lab-mono">CORE / 00</span>
         <span className="lab-core-label lab-core-label-bottom lab-mono">月球进程在线</span>

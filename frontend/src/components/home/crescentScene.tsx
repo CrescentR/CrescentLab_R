@@ -1,300 +1,157 @@
 "use client";
 
-import { Canvas, type ThreeEvent, useFrame } from "@react-three/fiber";
-import type { MotionValue } from "motion/react";
+import { Canvas, useFrame } from "@react-three/fiber";
 import { useMemo, useRef } from "react";
 import {
+  BufferGeometry,
   DoubleSide,
+  ExtrudeGeometry,
+  Float32BufferAttribute,
   Group,
+  Line,
+  LineBasicMaterial,
   MathUtils,
-  Mesh,
-  MeshBasicMaterial,
-  MeshPhysicalMaterial,
-  PointsMaterial,
+  MeshStandardMaterial,
   Shape,
 } from "three";
 
-type PointerCaptureTarget = {
-  releasePointerCapture: (pointerId: number) => void;
-  setPointerCapture: (pointerId: number) => void;
-};
+const EXTRUDE_DEPTH = 0.14;
 
-export function CrescentScene({ scrollProgress }: { scrollProgress: MotionValue<number> }) {
+export function CrescentScene() {
   return (
     <Canvas
-      camera={{ fov: 38, position: [0, 0, 5.8] }}
-      dpr={[1, 1.8]}
+      camera={{ fov: 34, position: [0, 0.08, 5.2] }}
+      dpr={[1, 1.6]}
       gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
     >
-      <ambientLight intensity={1.5} />
-      <directionalLight color="#ffffff" intensity={2.6} position={[-3.2, 3.4, 4.8]} />
-      <pointLight color="#cfe4d8" intensity={7} position={[-2.4, 1.2, 2.8]} />
-      <pointLight color="#e8ddd4" intensity={5} position={[2.6, -1.5, 2.2]} />
-      <CrescentAssembly scrollProgress={scrollProgress} />
+      <hemisphereLight args={["#f8f6f0", "#b7c4bc", 0.95]} />
+      <ambientLight intensity={0.7} />
+      <directionalLight color="#fffdf8" intensity={1.35} position={[-2.4, 3.2, 3.8]} />
+      <directionalLight color="#d7e2db" intensity={0.55} position={[2.8, -1.4, 2.2]} />
+      <CrescentAssembly />
     </Canvas>
   );
 }
 
-function CrescentAssembly({ scrollProgress }: { scrollProgress: MotionValue<number> }) {
-  const followGroup = useRef<Group>(null);
-  const coreGroup = useRef<Group>(null);
-  const orbitOne = useRef<Group>(null);
-  const orbitTwo = useRef<Group>(null);
-  const particleGroup = useRef<Group>(null);
-  const frontMaterial = useRef<MeshPhysicalMaterial>(null);
-  const sideMaterial = useRef<MeshPhysicalMaterial>(null);
-  const particleMaterial = useRef<PointsMaterial>(null);
-  const pulseMesh = useRef<Mesh>(null);
-  const pulseMaterial = useRef<MeshBasicMaterial>(null);
-  const interaction = useRef({
-    currentX: 0,
-    currentY: 0,
-    dragging: false,
-    hovered: false,
-    pulse: 0,
-    startPointerX: 0,
-    startPointerY: 0,
-    startRotationX: 0,
-    startRotationY: 0,
-    targetX: 0,
-    targetY: 0,
-    velocityX: 0,
-    velocityY: 0,
-  });
-  const crescentShape = useMemo(() => createCrescentShape(), []);
-  const extrudeSettings = useMemo(
-    () => ({ bevelEnabled: true, bevelSegments: 5, bevelSize: 0.045, bevelThickness: 0.055, curveSegments: 96, depth: 0.18, steps: 1 }),
-    [],
-  );
-  const particlePositions = useMemo(() => {
-    const positions = new Float32Array(66 * 3);
-    for (let index = 0; index < 66; index += 1) {
-      const angle = index * 2.399963;
-      const radius = 1.28 + ((index * 17) % 23) * 0.052;
-      positions[index * 3] = Math.cos(angle) * radius;
-      positions[index * 3 + 1] = Math.sin(angle) * radius * 0.72;
-      positions[index * 3 + 2] = ((index * 13) % 19) * 0.038 - 0.34;
-    }
-    return positions;
+function CrescentAssembly() {
+  const root = useRef<Group>(null);
+  const crescent = useRef<Group>(null);
+  const orbitA = useRef<Group>(null);
+  const orbitB = useRef<Group>(null);
+  const orbitC = useRef<Group>(null);
+  const pointer = useRef({ x: 0, y: 0 });
+
+  const crescentGeometry = useMemo(() => {
+    const geometry = new ExtrudeGeometry(createCrescentShape(), {
+      bevelEnabled: true,
+      bevelSegments: 3,
+      bevelSize: 0.018,
+      bevelThickness: 0.02,
+      curveSegments: 96,
+      depth: EXTRUDE_DEPTH,
+      steps: 1,
+    });
+    geometry.translate(0, 0, -EXTRUDE_DEPTH / 2);
+    geometry.computeVertexNormals();
+    return geometry;
   }, []);
 
+  const materials = useMemo(() => {
+    const face = new MeshStandardMaterial({
+      color: "#4d7163",
+      metalness: 0.04,
+      roughness: 0.82,
+      side: DoubleSide,
+    });
+    const edge = new MeshStandardMaterial({
+      color: "#2f4a41",
+      metalness: 0.06,
+      roughness: 0.9,
+    });
+    return [face, edge];
+  }, []);
+
+  const ringA = useMemo(() => createOrbitLine(1.92, 0.78, 180, "#7f9589", 0.55), []);
+  const ringB = useMemo(() => createOrbitLine(1.58, 1.12, 160, "#9aa79f", 0.38), []);
+  const ringC = useMemo(() => createOrbitLine(1.22, 1.22, 120, "#b8b4a8", 0.28), []);
+
   useFrame((state, delta) => {
-    if (!followGroup.current || !coreGroup.current || !orbitOne.current || !orbitTwo.current || !particleGroup.current) return;
+    if (!root.current || !crescent.current || !orbitA.current || !orbitB.current || !orbitC.current) return;
 
-    const controls = interaction.current;
-    const activity = controls.hovered || controls.dragging ? 1.85 : 1;
-    followGroup.current.rotation.x = MathUtils.damp(
-      followGroup.current.rotation.x,
-      -0.08 + state.pointer.y * 0.065,
-      4,
-      delta,
-    );
-    followGroup.current.rotation.y = MathUtils.damp(
-      followGroup.current.rotation.y,
-      0.12 + state.pointer.x * 0.09 + scrollProgress.get() * 0.55,
-      4,
-      delta,
-    );
+    pointer.current.x = MathUtils.damp(pointer.current.x, state.pointer.x, 3.2, delta);
+    pointer.current.y = MathUtils.damp(pointer.current.y, state.pointer.y, 3.2, delta);
 
-    if (controls.dragging) {
-      const previousX = controls.currentX;
-      const previousY = controls.currentY;
-      controls.currentX = MathUtils.damp(controls.currentX, controls.targetX, 9, delta);
-      controls.currentY = MathUtils.damp(controls.currentY, controls.targetY, 9, delta);
-      controls.velocityX = MathUtils.clamp((controls.currentX - previousX) / Math.max(delta, 0.001), -2.2, 2.2);
-      controls.velocityY = MathUtils.clamp((controls.currentY - previousY) / Math.max(delta, 0.001), -2.2, 2.2);
-    } else {
-      controls.velocityX = (controls.velocityX - controls.currentX * 19 * delta) * Math.exp(-6.5 * delta);
-      controls.velocityY = (controls.velocityY - controls.currentY * 19 * delta) * Math.exp(-6.5 * delta);
-      controls.currentX += controls.velocityX * delta;
-      controls.currentY += controls.velocityY * delta;
-    }
+    root.current.rotation.x = -0.08 + pointer.current.y * 0.12;
+    root.current.rotation.y = 0.16 + pointer.current.x * 0.16;
 
-    const elapsed = state.clock.elapsedTime;
-    coreGroup.current.rotation.x = 0.13 + controls.currentX + Math.sin(elapsed * 0.48) * 0.025;
-    coreGroup.current.rotation.y = -0.2 + controls.currentY + Math.cos(elapsed * 0.38) * 0.035;
-    coreGroup.current.rotation.z += delta * 0.012 * activity;
-    coreGroup.current.position.x = controls.currentY * 0.08;
-    coreGroup.current.position.y = -controls.currentX * 0.06;
-    orbitOne.current.rotation.z += delta * 0.052 * activity;
-    orbitTwo.current.rotation.z -= delta * 0.034 * activity;
-    particleGroup.current.rotation.z -= delta * 0.021 * activity;
+    const t = state.clock.elapsedTime;
+    crescent.current.rotation.x = 0.38 + Math.sin(t * 0.35) * 0.04;
+    crescent.current.rotation.y = t * 0.32;
+    crescent.current.rotation.z = Math.sin(t * 0.22) * 0.06;
+    crescent.current.position.y = Math.sin(t * 0.5) * 0.035;
 
-    if (frontMaterial.current && sideMaterial.current && particleMaterial.current) {
-      frontMaterial.current.emissiveIntensity = MathUtils.damp(
-        frontMaterial.current.emissiveIntensity,
-        controls.hovered ? 1.05 : 0.72,
-        5,
-        delta,
-      );
-      sideMaterial.current.emissiveIntensity = MathUtils.damp(
-        sideMaterial.current.emissiveIntensity,
-        controls.hovered ? 0.58 : 0.34,
-        5,
-        delta,
-      );
-      particleMaterial.current.opacity = MathUtils.damp(
-        particleMaterial.current.opacity,
-        controls.hovered ? 0.88 : 0.58,
-        5,
-        delta,
-      );
-      particleMaterial.current.size = MathUtils.damp(
-        particleMaterial.current.size,
-        controls.hovered ? 0.031 : 0.023,
-        5,
-        delta,
-      );
-    }
-
-    if (pulseMesh.current && pulseMaterial.current) {
-      if (controls.pulse > 0) {
-        controls.pulse = Math.min(1, controls.pulse + delta * 0.82);
-        const pulseScale = 1 + controls.pulse * 1.25;
-        pulseMesh.current.visible = true;
-        pulseMesh.current.scale.setScalar(pulseScale);
-        pulseMaterial.current.opacity = Math.pow(1 - controls.pulse, 2) * 0.48;
-        if (controls.pulse === 1) controls.pulse = 0;
-      } else {
-        pulseMesh.current.visible = false;
-      }
-    }
+    orbitA.current.rotation.z = t * 0.18;
+    orbitB.current.rotation.z = -t * 0.12;
+    orbitC.current.rotation.x = t * 0.08;
   });
 
-  const releaseCore = () => {
-    const controls = interaction.current;
-    if (!controls.dragging) return;
-    controls.dragging = false;
-    controls.targetX = 0;
-    controls.targetY = 0;
-    controls.pulse = 0.001;
-  };
-
-  const handlePointerDown = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation();
-    const pointerCapture = event.target as unknown as PointerCaptureTarget;
-    pointerCapture.setPointerCapture(event.pointerId);
-    const controls = interaction.current;
-    controls.dragging = true;
-    controls.startPointerX = event.pointer.x;
-    controls.startPointerY = event.pointer.y;
-    controls.startRotationX = controls.currentX;
-    controls.startRotationY = controls.currentY;
-  };
-
-  const handlePointerMove = (event: ThreeEvent<PointerEvent>) => {
-    const controls = interaction.current;
-    if (!controls.dragging) return;
-    controls.targetX = MathUtils.clamp(
-      controls.startRotationX - (event.pointer.y - controls.startPointerY) * 0.72,
-      -0.48,
-      0.48,
-    );
-    controls.targetY = MathUtils.clamp(
-      controls.startRotationY + (event.pointer.x - controls.startPointerX) * 0.9,
-      -0.58,
-      0.58,
-    );
-  };
-
   return (
-    <group ref={followGroup}>
-      <group
-        onPointerCancel={releaseCore}
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerOut={() => { interaction.current.hovered = false; }}
-        onPointerOver={() => { interaction.current.hovered = true; }}
-        onPointerUp={(event) => {
-          const pointerCapture = event.target as unknown as PointerCaptureTarget;
-          pointerCapture.releasePointerCapture(event.pointerId);
-          releaseCore();
-        }}
-        ref={coreGroup}
-      >
-        <mesh>
-          <extrudeGeometry args={[crescentShape, extrudeSettings]} />
-          <meshPhysicalMaterial
-            attach="material-0"
-            clearcoat={0.6}
-            clearcoatRoughness={0.3}
-            color="#5f9280"
-            emissive="#2c5145"
-            emissiveIntensity={0.72}
-            metalness={0.16}
-            ref={frontMaterial}
-            roughness={0.36}
-            side={DoubleSide}
-          />
-          <meshPhysicalMaterial
-            attach="material-1"
-            clearcoat={0.3}
-            color="#3f6b5c"
-            emissive="#25453a"
-            emissiveIntensity={0.34}
-            metalness={0.2}
-            ref={sideMaterial}
-            roughness={0.46}
-          />
-        </mesh>
+    <group ref={root}>
+      <group ref={crescent}>
+        <mesh geometry={crescentGeometry} material={materials} />
       </group>
 
-      <group ref={orbitOne} rotation={[0.2, 0.1, 0.35]}>
-        <mesh>
-          <torusGeometry args={[1.82, 0.012, 8, 180]} />
-          <meshBasicMaterial color="#8ba699" opacity={0.7} transparent />
-        </mesh>
-        <mesh position={[1.82, 0, 0]}>
-          <sphereGeometry args={[0.035, 16, 16]} />
-          <meshBasicMaterial color="#3f7d6a" />
-        </mesh>
-      </group>
-      <group ref={orbitTwo} rotation={[1.18, 0.12, -0.6]}>
-        <mesh>
-          <torusGeometry args={[1.56, 0.009, 8, 160]} />
-          <meshBasicMaterial color="#c0a396" opacity={0.6} transparent />
-        </mesh>
-        <mesh position={[-1.56, 0, 0]}>
-          <sphereGeometry args={[0.025, 14, 14]} />
+      <group ref={orbitA} rotation={[0.55, 0.15, 0.2]}>
+        <primitive object={ringA} />
+        <mesh position={[1.92, 0, 0]}>
+          <sphereGeometry args={[0.028, 16, 16]} />
           <meshBasicMaterial color="#b06a55" />
         </mesh>
       </group>
-      <group ref={particleGroup}>
-        <points>
-          <bufferGeometry>
-            <bufferAttribute attach="attributes-position" args={[particlePositions, 3]} />
-          </bufferGeometry>
-          <pointsMaterial
-            color="#7f9c8d"
-            depthWrite={false}
-            opacity={0.58}
-            ref={particleMaterial}
-            size={0.023}
-            transparent
-          />
-        </points>
+
+      <group ref={orbitB} rotation={[1.05, -0.2, -0.35]}>
+        <primitive object={ringB} />
+        <mesh position={[0, 1.12, 0]}>
+          <sphereGeometry args={[0.016, 12, 12]} />
+          <meshBasicMaterial color="#3f7d6a" />
+        </mesh>
       </group>
-      <mesh ref={pulseMesh} visible={false}>
-        <torusGeometry args={[1.43, 0.014, 8, 180]} />
-        <meshBasicMaterial
-          color="#3f7d6a"
-          depthWrite={false}
-          opacity={0}
-          ref={pulseMaterial}
-          transparent
-        />
-      </mesh>
+
+      <group ref={orbitC} rotation={[0.2, 0.4, 0.1]}>
+        <primitive object={ringC} />
+      </group>
     </group>
   );
 }
 
+function createOrbitLine(
+  radiusX: number,
+  radiusY: number,
+  segments: number,
+  color: string,
+  opacity: number,
+) {
+  const positions: number[] = [];
+  for (let i = 0; i <= segments; i += 1) {
+    const angle = (i / segments) * Math.PI * 2;
+    positions.push(Math.cos(angle) * radiusX, Math.sin(angle) * radiusY, 0);
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  return new Line(
+    geometry,
+    new LineBasicMaterial({ color, transparent: true, opacity, depthWrite: false }),
+  );
+}
+
+/** 更纤细的月牙轮廓：外弧饱满、内弧收得干净 */
 function createCrescentShape() {
-  const outerRadius = 1.42;
-  const innerRadius = 1.28;
-  const innerOffset = 0.68;
+  const outerRadius = 1.28;
+  const innerRadius = 1.02;
+  const innerOffset = 0.52;
   const intersectionX = (outerRadius ** 2 - innerRadius ** 2 + innerOffset ** 2) / (2 * innerOffset);
-  const outerAngle = Math.acos(intersectionX / outerRadius);
-  const innerAngle = Math.acos((intersectionX - innerOffset) / innerRadius);
+  const outerAngle = Math.acos(MathUtils.clamp(intersectionX / outerRadius, -1, 1));
+  const innerAngle = Math.acos(MathUtils.clamp((intersectionX - innerOffset) / innerRadius, -1, 1));
   const shape = new Shape();
 
   shape.absarc(0, 0, outerRadius, outerAngle, Math.PI * 2 - outerAngle, false);

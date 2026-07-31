@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
-import { listPublicArticles, type ArticleListItem } from "@/lib/api/articles";
+import type { ArticleListItem } from "@/lib/api/articles";
 import { SectionIntro } from "@/components/home/sectionIntro";
-import { fadeUp, stagger, viewport } from "@/components/home/motionConfig";
+import { fadeUp, stagger } from "@/components/home/motionConfig";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
@@ -32,36 +31,23 @@ function mapArticleToNote(article: ArticleListItem) {
   };
 }
 
-export function LabNotes() {
-  const [notes, setNotes] = useState<ReturnType<typeof mapArticleToNote>[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    listPublicArticles({ page: 1, page_size: 10 })
-      .then((result) => {
-        setNotes(result.items.map(mapArticleToNote));
-      })
-      .catch(() => {
-        setNotes([]);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+export function LabNotes({ articles }: { articles: ArticleListItem[] }) {
+  const notes = articles.map(mapArticleToNote);
 
   return (
-    <motion.section className="lab-section lab-shell" initial="hidden" variants={stagger} viewport={viewport} whileInView="visible">
+    <motion.section
+      animate="visible"
+      className="lab-section lab-shell"
+      initial="hidden"
+      variants={stagger}
+    >
       <SectionIntro
         description="在公开构建系统和私下修订过程中的田野笔记。"
         index="04 / 日志"
         title="笔记"
       />
       <div className="lab-note-timeline">
-        {loading ? (
-          <motion.p className="lab-note-empty" variants={fadeUp}>
-            加载中…
-          </motion.p>
-        ) : notes.length === 0 ? (
+        {notes.length === 0 ? (
           <motion.p className="lab-note-empty" variants={fadeUp}>
             暂无笔记，去后台发布第一篇文章吧。
           </motion.p>
