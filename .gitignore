@@ -24,6 +24,7 @@ coverage.out
 # Runtime data
 data/*
 !data/.gitkeep
+!data/conf.ini.example
 
 # Node / Next.js
 node_modules/

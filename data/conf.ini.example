@@ -1,0 +1,17 @@
+[server]
+name = "CrescentLab"
+host = "0.0.0.0"
+port = 8091
+
+[frontend]
+enabled = true
+dev_url = "http://localhost:3000"
+
+[database]
+driver = "postgres"
+dsn = "postgres://postgres:aaaaaaa@localhost:5432/crescent_lab?sslmode=disable"
+
+[auth]
+jwt_secret = ""
+access_ttl = "2h"
+refresh_ttl = "168h"
