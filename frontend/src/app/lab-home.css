@@ -85,6 +85,34 @@
   backdrop-filter: blur(18px) saturate(1.08);
 }
 
+.lab-header-article {
+  border-bottom-color: rgba(231, 237, 229, 0.12);
+  background: #07110f;
+  box-shadow: none;
+}
+
+.lab-header-article .lab-brand,
+.lab-header-article .lab-tab {
+  color: rgba(241, 243, 236, 0.72);
+}
+
+.lab-header-article .lab-tab:hover {
+  background: rgba(231, 237, 229, 0.08);
+  color: #ffffff;
+}
+
+.lab-header-article .lab-tab-active {
+  background: rgba(139, 199, 174, 0.13);
+  color: #a8dbc4;
+}
+
+.lab-header-article .lab-crescent-mark { border-color: #a8dbc4; }
+.lab-header-article .lab-crescent-mark::after { background: #07110f; }
+
+.lab-home .article-hero-copy h1 {
+  color: #faf9f2;
+}
+
 .lab-header-inner {
   min-height: 68px;
   display: grid;

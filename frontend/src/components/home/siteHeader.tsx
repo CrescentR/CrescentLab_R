@@ -12,9 +12,10 @@ function isActiveTab(pathname: string, href: string): boolean {
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const isArticle = pathname.startsWith("/articles/");
 
   return (
-    <header className="lab-header">
+    <header className={isArticle ? "lab-header lab-header-article" : "lab-header"}>
       <div className="lab-shell lab-header-inner">
         <Link className="lab-brand" href="/">
           <span aria-hidden="true" className="lab-crescent-mark" />
