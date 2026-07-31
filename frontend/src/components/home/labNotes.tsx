@@ -1,21 +1,19 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, CalendarDays, Clock3 } from "lucide-react";
 import { motion } from "motion/react";
 import type { ArticleListItem } from "@/lib/api/articles";
-import { SectionIntro } from "@/components/home/sectionIntro";
 import { fadeUp, stagger } from "@/components/home/motionConfig";
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-
-  if (diffDays === 0) return "今天";
-  if (diffDays === 1) return "昨天";
-  if (diffDays < 7) return `${diffDays} 天前`;
-  return date.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+  return date.toLocaleDateString("zh-CN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
 
 function mapArticleToNote(article: ArticleListItem) {
@@ -24,10 +22,9 @@ function mapArticleToNote(article: ArticleListItem) {
     slug: article.slug,
     title: article.title,
     excerpt: article.excerpt || "暂无摘要",
-    category: article.status === "published" ? "Engineering Notes" : article.status,
-    status: article.status,
+    coverUrl: article.cover_url,
     updatedAt: formatDate(article.published_at || article.updated_at),
-    readTime: `${article.reading_time_minutes || 1} min`,
+    readTime: `${article.reading_time_minutes || 1} 分钟阅读`,
   };
 }
 
@@ -41,31 +38,43 @@ export function LabNotes({ articles }: { articles: ArticleListItem[] }) {
       initial="hidden"
       variants={stagger}
     >
-      <SectionIntro
-        description="在公开构建系统和私下修订过程中的田野笔记。"
-        index="04 / 日志"
-        title="笔记"
-      />
-      <div className="lab-note-timeline">
+      <motion.header className="lab-notes-header" variants={fadeUp}>
+        <p className="lab-mono">NOTES &amp; ESSAYS</p>
+        <h1>笔记</h1>
+        <p>记录开发实践、产品思考，以及那些值得被完整写下来的过程。</p>
+      </motion.header>
+      <div className="lab-note-list">
         {notes.length === 0 ? (
           <motion.p className="lab-note-empty" variants={fadeUp}>
             暂无笔记，去后台发布第一篇文章吧。
           </motion.p>
         ) : (
           notes.map((note) => (
-            <motion.article className="lab-note-row" key={note.id} variants={fadeUp}>
-              <div className="lab-note-date lab-mono">
-                <span />
-                {note.updatedAt}
-              </div>
-              <div className="lab-note-copy">
-                <p className="lab-mono">{note.category}</p>
-                <h3>{note.title}</h3>
-                <p>{note.excerpt}</p>
-              </div>
-              <a aria-label={`阅读 ${note.title}`} href={`/articles/${note.slug}`}>
-                <ArrowUpRight size={17} />
-              </a>
+            <motion.article className="lab-note-card" key={note.id} variants={fadeUp}>
+              <Link aria-label={`阅读 ${note.title}`} href={`/articles/${note.slug}`}>
+                <div className="lab-note-copy">
+                  <div className="lab-note-meta">
+                    <span><CalendarDays aria-hidden="true" size={14} />{note.updatedAt}</span>
+                    <span><Clock3 aria-hidden="true" size={14} />{note.readTime}</span>
+                  </div>
+                  <h2>{note.title}</h2>
+                  <p>{note.excerpt}</p>
+                  <span className="lab-note-read-more">
+                    阅读全文 <ArrowRight aria-hidden="true" size={15} />
+                  </span>
+                </div>
+                {note.coverUrl && (
+                  <div className="lab-note-cover">
+                    <Image
+                      alt=""
+                      fill
+                      sizes="(max-width: 640px) 100vw, 260px"
+                      src={note.coverUrl}
+                      unoptimized
+                    />
+                  </div>
+                )}
+              </Link>
             </motion.article>
           ))
         )}
