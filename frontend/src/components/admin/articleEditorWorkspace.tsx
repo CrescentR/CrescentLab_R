@@ -9,6 +9,7 @@ import {
   Loader2,
   Save,
   Send,
+  Trash2,
 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -17,6 +18,8 @@ import { useToast } from "@/components/ui/toast";
 import { TipTapEditor } from "@/components/admin/tiptapEditor";
 import {
   createAdminArticle,
+  deleteAdminArticle,
+  getAdminArticle,
   updateAdminArticle,
   publishAdminArticle,
   previewArticle,
@@ -58,15 +61,61 @@ function generateRandomSlug(): string {
   return result;
 }
 
-export function ArticleEditorWorkspace() {
+type ArticleEditorWorkspaceProps = {
+  initialArticleId?: number | null;
+  onBack?: () => void;
+};
+
+export function ArticleEditorWorkspace({
+  initialArticleId = null,
+  onBack,
+}: ArticleEditorWorkspaceProps) {
   const { push } = useToast();
   const [form, setForm] = useState<ArticleFormState>(NEW_ARTICLE_TEMPLATE);
-  const [articleId, setArticleId] = useState<number | null>(null);
-  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [articleId, setArticleId] = useState<number | null>(initialArticleId);
+  const [status, setStatus] = useState<"draft" | "published" | "archived" | "scheduled">("draft");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isLoading, setIsLoading] = useState(Boolean(initialArticleId));
+  const [isDeleting, setIsDeleting] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!initialArticleId) {
+      setIsLoading(false);
+      return;
+    }
+    if (loadedIdRef.current === initialArticleId) return;
+    let active = true;
+    setIsLoading(true);
+    getAdminArticle(initialArticleId)
+      .then((detail) => {
+        if (!active) return;
+        loadedIdRef.current = detail.id;
+        setArticleId(detail.id);
+        setStatus(detail.status);
+        setForm({
+          title: detail.title,
+          slug: detail.slug,
+          excerpt: detail.excerpt || "",
+          content_html: detail.content_html || "<p></p>",
+          cover_url: detail.cover_url || "",
+        });
+      })
+      .catch((err) => {
+        if (!active) return;
+        push(extractErrorMessage(err, "加载文章失败"), "error");
+        onBack?.();
+      })
+      .finally(() => {
+        if (active) setIsLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [initialArticleId, onBack, push]);
 
   const updateField = useCallback(<K extends keyof ArticleFormState>(key: K, value: ArticleFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -94,12 +143,12 @@ export function ArticleEditorWorkspace() {
     try {
       if (articleId) {
         const result = await updateAdminArticle(articleId, buildApiInput());
-        setStatus(result.status as "draft" | "published");
+        setStatus(result.status);
         push("草稿已保存", "success");
       } else {
         const result = await createAdminArticle(buildApiInput());
         setArticleId(result.id);
-        setStatus(result.status as "draft" | "published");
+        setStatus(result.status);
         push("文章已创建", "success");
       }
       setSaveStatus("saved");
@@ -132,7 +181,7 @@ export function ArticleEditorWorkspace() {
         cover_url: form.cover_url,
         source_format: "tiptap",
       });
-      setStatus(result.status as "draft" | "published");
+      setStatus(result.status);
       push("文章已发布", "success");
     } catch (err) {
       push(extractErrorMessage(err, "发布失败"), "error");
@@ -140,6 +189,21 @@ export function ArticleEditorWorkspace() {
       setIsPublishing(false);
     }
   }, [articleId, buildApiInput, form, push]);
+
+  const handleDelete = useCallback(async () => {
+    if (!articleId) return;
+    if (!confirm("确定要删除这篇文章吗？删除后可在回收逻辑完善前视为不可恢复。")) return;
+    setIsDeleting(true);
+    try {
+      await deleteAdminArticle(articleId);
+      push("文章已删除", "success");
+      onBack?.();
+    } catch (err) {
+      push(extractErrorMessage(err, "删除失败"), "error");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [articleId, onBack, push]);
 
   const handlePreview = useCallback(async () => {
     setIsPreviewing(true);
@@ -224,17 +288,32 @@ export function ArticleEditorWorkspace() {
     };
   }, [form, articleId, handleSave]);
 
+  if (isLoading) {
+    return (
+      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center bg-[var(--background-soft)] text-[var(--muted)]">
+        <Loader2 className="animate-spin" size={22} />
+        <span className="ml-3 font-lab-mono text-sm">正在加载文章…</span>
+      </main>
+    );
+  }
+
   return (
     <main className="flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--background-soft)] lg:h-[calc(100dvh-4rem)] lg:min-h-[700px] lg:overflow-hidden">
       <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 shadow-[0_1px_0_var(--border-soft)] md:px-6">
         <div className="flex min-w-0 items-center gap-4">
-          <ButtonLink className="hidden md:inline-flex" href="/admin" icon={<ArrowLeft size={15} />} variant="ghost">
-            Back
-          </ButtonLink>
+          {onBack ? (
+            <Button className="hidden md:inline-flex" icon={<ArrowLeft size={15} />} variant="ghost" onClick={onBack}>
+              返回列表
+            </Button>
+          ) : (
+            <ButtonLink className="hidden md:inline-flex" href="/admin/postManagement" icon={<ArrowLeft size={15} />} variant="ghost">
+              返回列表
+            </ButtonLink>
+          )}
           <span className="h-6 w-px bg-[var(--border-soft)]" />
           <div className="min-w-0">
             <span className="block font-lab-mono text-xs font-medium uppercase text-[var(--muted)]">
-              {status === "published" ? "Published" : "Draft"}
+              {statusLabel(status)}
             </span>
             <strong className="block truncate font-lab-mono text-sm text-[var(--text-strong)]">
               {form.title || "Untitled Article"}
@@ -260,6 +339,17 @@ export function ArticleEditorWorkspace() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {articleId && (
+            <Button
+              className="hidden sm:inline-flex"
+              disabled={isDeleting}
+              icon={isDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+              variant="secondary"
+              onClick={handleDelete}
+            >
+              删除
+            </Button>
+          )}
           <Button
             className="hidden sm:inline-flex"
             disabled={isPreviewing}
@@ -329,8 +419,8 @@ export function ArticleEditorWorkspace() {
             <div>
               <span className="font-lab-mono text-xs text-[var(--muted)]">Status</span>
               <div className="mt-2 flex flex-wrap gap-2">
-                <Badge tone={status === "draft" ? "amber" : "neutral"}>
-                  {status === "draft" ? "Draft" : "Published"}
+                <Badge tone={status === "draft" ? "amber" : status === "published" ? "green" : "neutral"}>
+                  {statusLabel(status)}
                 </Badge>
                 {form.excerpt && <Badge tone="cyan">{form.excerpt.length} chars</Badge>}
               </div>
@@ -348,4 +438,17 @@ export function ArticleEditorWorkspace() {
       </section>
     </main>
   );
+}
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case "published":
+      return "Published";
+    case "archived":
+      return "Archived";
+    case "scheduled":
+      return "Scheduled";
+    default:
+      return "Draft";
+  }
 }
