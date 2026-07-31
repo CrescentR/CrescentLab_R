@@ -1,0 +1,175 @@
+.root {
+  --lunar-light: #24745f;
+  --lunar-main: #17634f;
+  --lunar-dark: #0d483a;
+  --orbit-primary: #2a7a64;
+  --orbit-secondary: #7f948a;
+  --orbit-accent: #c98768;
+  --lx: 0px;
+  --ly: 0px;
+
+  position: relative;
+  width: min(100%, 560px);
+  aspect-ratio: 1;
+  margin-inline: auto;
+  overflow: visible;
+  pointer-events: auto;
+  user-select: none;
+  background: transparent;
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.crescentShift {
+  translate: var(--lx) var(--ly);
+  will-change: translate;
+}
+
+.crescent {
+  transform-origin: 186px 200px;
+  filter:
+    drop-shadow(0 14px 24px rgba(18, 73, 59, 0.16))
+    drop-shadow(0 3px 6px rgba(18, 73, 59, 0.12));
+  animation:
+    lunar-float 8s ease-in-out infinite,
+    lunar-breathe 8.5s ease-in-out infinite,
+    lunar-sway 9s ease-in-out infinite;
+  will-change: transform;
+}
+
+.orbitPrimary {
+  transform-box: view-box;
+  transform-origin: 198px 200px;
+  animation: orbit-rotate 30s linear infinite;
+  animation-delay: -11s;
+  translate: calc(var(--lx) * 0.35) calc(var(--ly) * 0.28);
+  will-change: transform, translate;
+}
+
+.orbitSecondary {
+  transform-box: view-box;
+  transform-origin: 198px 200px;
+  animation: orbit-rotate-reverse 44s linear infinite;
+  animation-delay: -23s;
+  translate: calc(var(--lx) * 0.2) calc(var(--ly) * 0.16);
+  will-change: transform, translate;
+}
+
+.orbitAccent {
+  transform-box: view-box;
+  transform-origin: 198px 200px;
+  animation: orbit-rotate 52s linear infinite;
+  animation-delay: -31s;
+  translate: calc(var(--lx) * 0.45) calc(var(--ly) * 0.32);
+  will-change: transform, translate;
+}
+
+.accentStroke {
+  stroke-opacity: 0.3;
+}
+
+.nodePrimary {
+  filter: drop-shadow(0 1px 2px rgba(13, 72, 58, 0.28));
+}
+
+.nodeAccent {
+  opacity: 0.82;
+}
+
+@keyframes lunar-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 -2.5px;
+  }
+}
+
+@keyframes lunar-breathe {
+  0%,
+  100% {
+    scale: 1;
+  }
+  50% {
+    scale: 1.012;
+  }
+}
+
+@keyframes lunar-sway {
+  0%,
+  100% {
+    rotate: -0.45deg;
+  }
+  50% {
+    rotate: 0.45deg;
+  }
+}
+
+@keyframes orbit-rotate {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes orbit-rotate-reverse {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+
+.motionOff .crescent,
+.motionOff .orbitPrimary,
+.motionOff .orbitSecondary,
+.motionOff .orbitAccent {
+  animation: none;
+}
+
+.motionOff .crescentShift,
+.motionOff .orbitPrimary,
+.motionOff .orbitSecondary,
+.motionOff .orbitAccent {
+  translate: 0 0;
+}
+
+@media (max-width: 980px) {
+  .root {
+    width: min(88vw, 460px);
+  }
+
+  .orbitSecondary {
+    opacity: 0.85;
+  }
+}
+
+@media (max-width: 640px) {
+  .root {
+    width: min(82vw, 360px);
+    pointer-events: none;
+  }
+
+  .orbitAccent {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .crescent,
+  .orbitPrimary,
+  .orbitSecondary,
+  .orbitAccent {
+    animation: none;
+  }
+
+  .crescentShift,
+  .orbitPrimary,
+  .orbitSecondary,
+  .orbitAccent {
+    translate: 0 0;
+  }
+}

@@ -5,7 +5,7 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import BlurText from "@/components/BlurText";
 import { fadeUp, scaleIn, stagger } from "@/components/home/motionConfig";
-import { CrescentCore } from "@/components/home/crescentCore";
+import { LunarOrbit } from "@/components/home/lunar-orbit/LunarOrbit";
 
 export function LabHero() {
   return (
@@ -45,18 +45,11 @@ export function LabHero() {
 
       <motion.div
         animate="visible"
-        aria-label="Crescent Lab 月牙核心"
         className="lab-hero-visual"
         initial="hidden"
         variants={scaleIn}
       >
-        <div className="lab-core-glow" />
-        <div className="lab-core-ring lab-core-ring-a" />
-        <div className="lab-core-ring lab-core-ring-b" />
-        <div className="lab-core-ring lab-core-ring-c" />
-        <CrescentCore />
-        <span className="lab-core-label lab-core-label-top lab-mono">CORE / 00</span>
-        <span className="lab-core-label lab-core-label-bottom lab-mono">月球进程在线</span>
+        <LunarOrbit />
       </motion.div>
     </section>
   );
