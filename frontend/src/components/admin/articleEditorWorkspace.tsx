@@ -77,21 +77,19 @@ export function ArticleEditorWorkspace({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
-  const [isLoading, setIsLoading] = useState(Boolean(initialArticleId));
+  const [isLoading, setIsLoading] = useState(() => Boolean(initialArticleId));
   const [isDeleting, setIsDeleting] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!initialArticleId) {
-      setIsLoading(false);
-      return;
-    }
+    if (!initialArticleId) return;
     if (loadedIdRef.current === initialArticleId) return;
     let active = true;
-    setIsLoading(true);
-    getAdminArticle(initialArticleId)
-      .then((detail) => {
+    void (async () => {
+      setIsLoading(true);
+      try {
+        const detail = await getAdminArticle(initialArticleId);
         if (!active) return;
         loadedIdRef.current = detail.id;
         setArticleId(detail.id);
@@ -103,15 +101,14 @@ export function ArticleEditorWorkspace({
           content_html: detail.content_html || "<p></p>",
           cover_url: detail.cover_url || "",
         });
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!active) return;
         push(extractErrorMessage(err, "加载文章失败"), "error");
         onBack?.();
-      })
-      .finally(() => {
+      } finally {
         if (active) setIsLoading(false);
-      });
+      }
+    })();
     return () => {
       active = false;
     };
