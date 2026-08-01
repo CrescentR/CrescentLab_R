@@ -33,6 +33,7 @@ services:
     volumes:
       - ./default_files/conf.postgres.ini:/app/data/conf.ini:ro
       - project_artifacts:/app/data/project-artifacts
+      - storage_keys:/app/data/storage
 
   frontend:
     build:
@@ -54,3 +55,4 @@ services:
 volumes:
   postgres_data:
   project_artifacts:
+  storage_keys:

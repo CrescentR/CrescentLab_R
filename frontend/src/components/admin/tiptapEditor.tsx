@@ -30,15 +30,18 @@ import {
   LinkIcon,
   List,
   ListOrdered,
+  Loader2,
   Minus,
   Quote,
   Redo2,
   RemoveFormatting,
   Strikethrough,
   Table2,
+  Paperclip,
   UnderlineIcon,
   Undo2,
 } from "lucide-react";
+import { uploadStorageFile } from "@/lib/api/storage";
 
 export type EditorDocument = {
   html: string;
@@ -65,6 +68,7 @@ type ToolbarButton = {
 
 export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange, onSave }: TipTapEditorProps) {
   const [focusMode, setFocusMode] = useState(false);
+  const [uploading, setUploading] = useState<"image" | "file" | null>(null);
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -150,14 +154,14 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
           { label: "插入表格", icon: Table2, onClick: () => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() },
           { label: "分隔线", icon: Minus, onClick: () => editor.chain().focus().setHorizontalRule().run() },
           {
-            label: "插入图片",
-            icon: ImageIcon,
-            onClick: () => {
-              const src = window.prompt("图片 URL");
-              if (!src) return;
-              const alt = window.prompt("图片替代文本（便于无障碍访问）") || "";
-              editor.chain().focus().setImage({ src, alt }).run();
-            },
+            label: uploading === "image" ? "图片上传中" : "上传图片",
+            icon: uploading === "image" ? Loader2 : ImageIcon,
+            onClick: () => document.getElementById("editor-image-upload")?.click(),
+          },
+          {
+            label: uploading === "file" ? "附件上传中" : "上传附件",
+            icon: uploading === "file" ? Loader2 : Paperclip,
+            onClick: () => document.getElementById("editor-file-upload")?.click(),
           },
           {
             label: "插入链接",
@@ -179,6 +183,39 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
 
   return (
     <div className={`flex h-full flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface)] shadow-[var(--shadow-tight)] ${focusMode ? "fixed inset-4 z-50" : ""}`}>
+      <input
+        accept="image/*"
+        className="hidden"
+        disabled={uploading !== null}
+        id="editor-image-upload"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file || !editor) return;
+          setUploading("image");
+          void uploadStorageFile(file)
+            .then((uploaded) => editor.chain().focus().setImage({ src: uploaded.url, alt: file.name }).run())
+            .catch((error) => window.alert(error instanceof Error ? error.message : "图片上传失败"))
+            .finally(() => setUploading(null));
+        }}
+        type="file"
+      />
+      <input
+        className="hidden"
+        disabled={uploading !== null}
+        id="editor-file-upload"
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (!file || !editor) return;
+          setUploading("file");
+          void uploadStorageFile(file)
+            .then((uploaded) => editor.chain().focus().insertContent(`<a href="${uploaded.url}">${escapeHTML(file.name)}</a>`).run())
+            .catch((error) => window.alert(error instanceof Error ? error.message : "附件上传失败"))
+            .finally(() => setUploading(null));
+        }}
+        type="file"
+      />
       {editor && (
         <BubbleMenu editor={editor}>
           <div className="flex rounded-lg border border-[var(--border-soft)] bg-[var(--surface)] p-1 shadow-lg">
@@ -205,6 +242,16 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
       </footer>
     </div>
   );
+}
+
+function escapeHTML(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;",
+  })[character] || character);
 }
 
 function EditorButton({ button }: { button: ToolbarButton }) {

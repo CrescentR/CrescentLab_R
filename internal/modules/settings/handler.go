@@ -18,7 +18,7 @@ func NewHandler(repo *Repository) *Handler {
 
 func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/settings", h.list)
-	group.PUT("/settings", h.upsertBatch)
+	group.POST("/settings", h.upsertBatch)
 }
 
 type settingResponse struct {

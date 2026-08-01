@@ -127,6 +127,8 @@ CREATE TABLE storage_policies (
   base_url TEXT,
   root_prefix TEXT NOT NULL DEFAULT '',
   public_read BOOLEAN NOT NULL DEFAULT false,
+  force_path_style BOOLEAN NOT NULL DEFAULT false,
+  is_default BOOLEAN NOT NULL DEFAULT false,
   config JSONB NOT NULL DEFAULT '{}'::jsonb,
   secrets_ciphertext JSONB NOT NULL DEFAULT '{}'::jsonb,
   status TEXT NOT NULL DEFAULT 'active',
@@ -135,7 +137,7 @@ CREATE TABLE storage_policies (
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at TIMESTAMPTZ,
-  CHECK (type IN ('local', 'onedrive', 'aliyun_oss', 'aws_s3', 'tencent_cos', 'qiniu', 'custom')),
+  CHECK (type IN ('local', 'onedrive', 'aliyun_oss', 'aws_s3', 'cloudflare_r2', 's3_compatible', 'tencent_cos', 'qiniu', 'custom')),
   CHECK (status IN ('active', 'disabled', 'error'))
 );
 
@@ -1125,6 +1127,7 @@ CREATE INDEX idx_storage_oauth_policy ON storage_oauth_accounts (storage_policy_
 CREATE INDEX idx_files_parent_id ON files (parent_id);
 CREATE INDEX idx_files_owner_id ON files (owner_id);
 CREATE INDEX idx_files_storage_policy_id ON files (storage_policy_id);
+CREATE UNIQUE INDEX ux_storage_policies_default ON storage_policies (is_default) WHERE is_default = true AND deleted_at IS NULL;
 CREATE INDEX idx_file_entities_file_id ON file_entities (file_id);
 CREATE INDEX idx_file_entities_entity_id ON file_entities (entity_id);
 CREATE INDEX idx_file_metadata_file_id ON file_metadata (file_id);

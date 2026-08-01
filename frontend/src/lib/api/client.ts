@@ -202,6 +202,13 @@ function toApiError(payload: unknown, status: number): ApiError {
       status,
     };
   }
+  if (payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") {
+    return {
+      code: "REQUEST_FAILED",
+      message: payload.error,
+      status,
+    };
+  }
   return {
     code: "INTERNAL_ERROR",
     message: `请求失败（${status}）`,

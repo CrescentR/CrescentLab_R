@@ -14,7 +14,7 @@ func TestHandlerUpsertBatchAndList(t *testing.T) {
 	router := newSettingsTestRouter(t)
 
 	body := []byte(`{"settings":[{"scope":"site","group_key":"branding","key":"siteLogoUrl","value":"https://example.com/logo.svg","value_type":"string","is_public":true,"is_encrypted":false,"description":"站点标志"}]}`)
-	putReq := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(body))
+	putReq := httptest.NewRequest(http.MethodPost, "/api/admin/settings", bytes.NewReader(body))
 	putReq.Header.Set("Content-Type", "application/json")
 	putRec := httptest.NewRecorder()
 	router.ServeHTTP(putRec, putReq)
@@ -42,7 +42,7 @@ func TestHandlerRejectsInvalidSettingValue(t *testing.T) {
 	router := newSettingsTestRouter(t)
 
 	body := []byte(`{"settings":[{"scope":"site","group_key":"branding","key":"siteLogoUrl","value":{,"value_type":"json","is_public":true,"is_encrypted":false}]}`)
-	req := httptest.NewRequest(http.MethodPut, "/api/admin/settings", bytes.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/admin/settings", bytes.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)

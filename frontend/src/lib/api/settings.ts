@@ -35,6 +35,6 @@ export async function saveAdminSettings(settings: AdminSetting[]) {
   return apiJson<AdminSettingsResponse>("/api/admin/settings", {
     body: JSON.stringify({ settings }),
     headers: { "Content-Type": "application/json" },
-    method: "PUT",
+    method: "POST",
   });
 }

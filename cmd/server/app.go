@@ -13,6 +13,7 @@ import (
 	observatorymodule "CrescentLab_R/internal/modules/observatory"
 	projectsmodule "CrescentLab_R/internal/modules/projects"
 	settingsmodule "CrescentLab_R/internal/modules/settings"
+	storagemodule "CrescentLab_R/internal/modules/storage"
 	usersmodule "CrescentLab_R/internal/modules/users"
 	"CrescentLab_R/internal/platform/config"
 	"CrescentLab_R/internal/platform/database"
@@ -93,12 +94,23 @@ func (a *App) Run() error {
 	}
 	projectsHandler := projectsmodule.NewHandler(projectsRepo)
 	projectsHandler.RegisterArtifactRoutes(engine.Group("/api"))
+	storageKey, err := storagemodule.LoadOrCreateKey("data/storage/storage.key")
+	if err != nil {
+		return err
+	}
+	storageRepo := storagemodule.NewRepository(db.SQL(), db.Driver(), storageKey)
+	if err := storageRepo.EnsureSchema(context.Background()); err != nil {
+		return err
+	}
+	storageHandler := storagemodule.NewHandler(storageRepo)
+	storageHandler.RegisterPublicRoutes(engine.Group(""))
 
 	// 管理接口（需认证 + 管理员）
 	adminGroup := engine.Group("/api/admin")
 	adminGroup.Use(middleware.RequireAuth(authService), middleware.RequireAdmin())
 	authHandler.RegisterAdminRoutes(adminGroup)
 	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
+	storageHandler.RegisterAdminRoutes(adminGroup)
 	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
 	projectsHandler.RegisterAdminRoutes(adminGroup)
 	observatorymodule.NewHandler(observatorymodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
