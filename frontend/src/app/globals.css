@@ -61,18 +61,29 @@
   margin-top: 0.9em;
 }
 
-.tiptap-editor table {
+.tiptap-editor .tableWrapper {
+  position: relative;
+  width: 100%;
+  overflow-x: auto;
+  margin: 1.4em 0;
+}
+
+.tiptap-editor table,
+.tiptap-editor .tiptap-table {
   border-collapse: collapse;
   table-layout: fixed;
   width: 100%;
+  overflow: hidden;
 }
 
 .tiptap-editor th,
 .tiptap-editor td {
+  position: relative;
   border: 1px solid var(--border-soft);
   min-width: 7rem;
   padding: 0.65rem 0.75rem;
   vertical-align: top;
+  box-sizing: border-box;
 }
 
 .tiptap-editor th {
@@ -112,12 +123,29 @@
   padding: 0.6rem 1rem;
 }
 
+.tiptap-editor .selectedCell {
+  position: relative;
+}
+
 .tiptap-editor .selectedCell::after {
-  background: var(--blue-soft);
-  content: "";
-  inset: 0;
-  pointer-events: none;
   position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  content: "";
+  background: rgba(57, 120, 100, 0.14);
+  border: 1px solid rgba(57, 120, 100, 0.35);
+  border-radius: 2px;
+}
+
+.tiptap-editor .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(57, 120, 100, 0.45);
+  pointer-events: none;
 }
 
 :root[data-theme="dark"] {
@@ -1358,12 +1386,24 @@ a:focus-visible {
   font-size: inherit;
 }
 
-.tiptap-editor code {
-  background: var(--surface-field);
-  padding: 2px 6px;
-  border-radius: 4px;
+.tiptap-editor :not(pre) > code,
+.tiptap-editor code.tiptap-inline-code {
+  border: 1px solid rgba(57, 120, 100, 0.22);
+  border-radius: 6px;
+  background: rgba(57, 120, 100, 0.12);
+  color: #1f5c4a;
+  padding: 0.12em 0.42em;
   font-size: 0.9em;
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.tiptap-editor .tiptap-codeblock pre {
+  background: transparent;
+  color: inherit;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 0;
 }
 
 .tiptap-editor a {
@@ -1583,10 +1623,12 @@ a:focus-visible {
   font-size: inherit;
 }
 
-.article-content code {
-  background: var(--surface-field);
-  padding: 2px 6px;
-  border-radius: 4px;
+.article-content :not(pre) > code {
+  border: 1px solid rgba(57, 120, 100, 0.22);
+  border-radius: 6px;
+  background: rgba(57, 120, 100, 0.12);
+  color: #1f5c4a;
+  padding: 0.12em 0.42em;
   font-size: 0.9em;
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
 }
