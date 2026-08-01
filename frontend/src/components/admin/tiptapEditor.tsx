@@ -39,6 +39,7 @@ import {
   UnderlineIcon,
   Undo2,
 } from "lucide-react";
+import { InsertImageModal } from "@/components/admin/insertImageModal";
 
 export type EditorDocument = {
   html: string;
@@ -65,13 +66,14 @@ type ToolbarButton = {
 
 export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange, onSave }: TipTapEditorProps) {
   const [focusMode, setFocusMode] = useState(false);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit,
       CharacterCount,
-      Image.configure({ allowBase64: false }),
+      Image.configure({ allowBase64: true }),
       Link.configure({ openOnClick: false, autolink: true, defaultProtocol: "https" }),
-      Placeholder.configure({ placeholder: "输入 / 开始创作，或从工具栏插入内容块…" }),
+      Placeholder.configure({ placeholder: "从这里开始写作，或使用上方工具栏插入内容…" }),
       Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
@@ -98,7 +100,7 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
     },
     editorProps: {
       attributes: {
-        class: "tiptap-editor focus:outline-none min-h-[520px] px-6 py-8 text-[var(--text)] leading-8 md:px-12",
+        class: "tiptap-editor focus:outline-none min-h-[520px] mx-auto w-full max-w-[720px] px-5 py-10 text-[var(--text)] leading-8 md:px-8",
       },
       handleKeyDown: (_view, event) => {
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "s") {
@@ -152,12 +154,7 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
           {
             label: "插入图片",
             icon: ImageIcon,
-            onClick: () => {
-              const src = window.prompt("图片 URL");
-              if (!src) return;
-              const alt = window.prompt("图片替代文本（便于无障碍访问）") || "";
-              editor.chain().focus().setImage({ src, alt }).run();
-            },
+            onClick: () => setImageModalOpen(true),
           },
           {
             label: "插入链接",
@@ -178,31 +175,38 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
     : [];
 
   return (
-    <div className={`flex h-full flex-col overflow-hidden rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface)] shadow-[var(--shadow-tight)] ${focusMode ? "fixed inset-4 z-50" : ""}`}>
+    <div className={`tiptap-shell flex h-full flex-col overflow-hidden ${focusMode ? "fixed inset-4 z-50" : ""}`}>
       {editor && (
         <BubbleMenu editor={editor}>
-          <div className="flex rounded-lg border border-[var(--border-soft)] bg-[var(--surface)] p-1 shadow-lg">
+          <div className="flex rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-1.5 shadow-lg">
             {buttons[2].slice(0, 4).map((button) => (
               <EditorButton button={button} key={button.label} />
             ))}
           </div>
         </BubbleMenu>
       )}
-      <div className="flex flex-wrap items-center gap-1 border-b border-[var(--border-soft)] bg-[var(--surface-glass)] px-3 py-2 backdrop-blur-xl">
+      <div className="tiptap-toolbar flex flex-wrap items-center justify-center gap-1.5 border-b border-[var(--border-soft)] bg-[var(--surface-glass)] px-4 py-3 backdrop-blur-xl">
         {buttons.map((group, index) => (
-          <div className="flex items-center gap-1" key={index}>
-            {index > 0 && <span className="mx-1 h-5 w-px bg-[var(--border-soft)]" />}
+          <div className="flex items-center gap-1.5" key={index}>
+            {index > 0 && <span className="mx-1.5 h-7 w-px bg-[var(--border-soft)]" />}
             {group.map((button) => <EditorButton button={button} key={button.label} />)}
           </div>
         ))}
       </div>
-      <div className="flex-1 overflow-y-auto bg-[var(--surface)]">
+      <div className="tiptap-canvas flex-1 overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
-      <footer className="flex items-center justify-between border-t border-[var(--border-soft)] px-4 py-2 font-lab-mono text-[11px] text-[var(--muted)]">
-        <span>Ctrl/⌘ + S 保存 · 支持粘贴富文本</span>
-        <span>{editor?.storage.characterCount.characters() ?? 0} 字符</span>
+      <footer className="flex items-center justify-between border-t border-[var(--border-soft)] px-5 py-2.5 text-xs text-[var(--muted)]">
+        <span>Ctrl / ⌘ + S 保存 · 支持粘贴富文本</span>
+        <span>{editor?.storage.characterCount.characters() ?? 0} 字</span>
       </footer>
+      <InsertImageModal
+        open={imageModalOpen}
+        onClose={() => setImageModalOpen(false)}
+        onInsert={({ src, alt }) => {
+          editor?.chain().focus().setImage({ src, alt }).run();
+        }}
+      />
     </div>
   );
 }
@@ -213,9 +217,9 @@ function EditorButton({ button }: { button: ToolbarButton }) {
     <button
       aria-label={button.label}
       title={button.label}
-      className={`grid size-8 place-items-center rounded transition-colors ${
+      className={`tiptap-tool-btn grid place-items-center rounded-xl transition-colors ${
         button.isActive?.()
-          ? "bg-[var(--blue-soft)] text-[var(--blue)]"
+          ? "is-active bg-[var(--teal-soft)] text-[var(--teal)]"
           : "text-[var(--muted)] hover:bg-[var(--surface-field)] hover:text-[var(--text-strong)]"
       }`}
       onClick={(event) => {
@@ -224,7 +228,7 @@ function EditorButton({ button }: { button: ToolbarButton }) {
       }}
       type="button"
     >
-      <Icon size={15} />
+      <Icon size={18} strokeWidth={1.9} />
     </button>
   );
 }

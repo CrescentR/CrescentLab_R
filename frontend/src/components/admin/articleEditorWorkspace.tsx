@@ -15,6 +15,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { CoverImageField } from "@/components/admin/coverImageField";
 import { TipTapEditor } from "@/components/admin/tiptapEditor";
 import {
   createAdminArticle,
@@ -213,7 +214,7 @@ export function ArticleEditorWorkspace({
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${form.title || "文章预览"}</title>
+  <title>${form.title || "文章预览"} — Crescent Lab</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -295,9 +296,9 @@ export function ArticleEditorWorkspace({
   }
 
   return (
-    <main className="flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--background-soft)] lg:h-[calc(100dvh-4rem)] lg:min-h-[700px] lg:overflow-hidden">
-      <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 shadow-[0_1px_0_var(--border-soft)] md:px-6">
-        <div className="flex min-w-0 items-center gap-4">
+    <main className="article-editor flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--background-soft)] lg:h-[calc(100dvh-4rem)] lg:min-h-[700px] lg:overflow-hidden">
+      <header className="article-editor-header flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 md:px-6">
+        <div className="flex min-w-0 items-center gap-3">
           {onBack ? (
             <Button className="hidden md:inline-flex" icon={<ArrowLeft size={15} />} variant="ghost" onClick={onBack}>
               返回列表
@@ -307,21 +308,19 @@ export function ArticleEditorWorkspace({
               返回列表
             </ButtonLink>
           )}
-          <span className="h-6 w-px bg-[var(--border-soft)]" />
+          <span className="hidden h-6 w-px bg-[var(--border-soft)] md:block" />
           <div className="min-w-0">
-            <span className="block font-lab-mono text-xs font-medium uppercase text-[var(--muted)]">
-              {statusLabel(status)}
-            </span>
-            <strong className="block truncate font-lab-mono text-sm text-[var(--text-strong)]">
-              {form.title || "Untitled Article"}
+            <span className="block text-xs font-medium text-[var(--muted)]">{statusLabel(status)}</span>
+            <strong className="block truncate text-sm text-[var(--text-strong)]">
+              {form.title || "未命名文章"}
             </strong>
           </div>
         </div>
-        <div className="hidden items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-raised)] px-3 py-1.5 font-lab-mono text-xs text-[var(--muted)] md:flex">
+        <div className="hidden items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs text-[var(--muted)] md:flex">
           {saveStatus === "saving" ? (
             <>
               <Loader2 size={12} className="animate-spin" />
-              保存中...
+              保存中…
             </>
           ) : saveStatus === "saved" ? (
             <>
@@ -354,7 +353,7 @@ export function ArticleEditorWorkspace({
             variant="secondary"
             onClick={handlePreview}
           >
-            Preview
+            预览
           </Button>
           <Button
             disabled={saveStatus === "saving"}
@@ -362,7 +361,7 @@ export function ArticleEditorWorkspace({
             variant="secondary"
             onClick={handleSave}
           >
-            Save Draft
+            保存草稿
           </Button>
           <Button
             disabled={isPublishing}
@@ -370,62 +369,65 @@ export function ArticleEditorWorkspace({
             variant="primary"
             onClick={handlePublish}
           >
-            Publish
+            发布
           </Button>
         </div>
       </header>
 
-      <section className="grid min-h-0 flex-1 bg-[var(--background-soft)] lg:grid-cols-[304px_minmax(0,1fr)]">
-        <aside className="hidden overflow-y-auto border-r border-[var(--border-soft)] bg-[var(--surface)] lg:block">
-          <div className="border-b border-[var(--border-soft)] px-5 py-4">
-            <h2 className="font-lab-mono text-sm font-medium uppercase text-[var(--text)]">Metadata</h2>
+      <section className="grid min-h-0 flex-1 bg-[var(--background-soft)] lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="article-editor-aside hidden overflow-y-auto lg:block">
+          <div className="article-meta-head">
+            <h2>元数据</h2>
+            <p>完善标题、封面与摘要，帮助读者更快理解这篇笔记。</p>
           </div>
-          <div className="space-y-5 p-5">
+          <div className="article-meta-stack">
             <Field
-              label="Title"
+              className="article-meta-field"
+              inputClassName="article-meta-input"
+              label="标题"
+              placeholder="给文章起一个清晰的标题"
               value={form.title}
               onChange={(v) => updateField("title", v)}
             />
-            <div>
-              <span className="flex items-center justify-between font-lab-mono text-xs font-medium text-[var(--muted)]">
-                <span>URL Slug</span>
+            <div className="article-meta-field">
+              <span className="article-meta-label-row">
+                <span>链接别名</span>
                 <button
-                  className="text-[var(--blue)] hover:underline"
+                  className="article-meta-link-btn"
                   onClick={() => updateField("slug", generateRandomSlug())}
                   type="button"
                 >
                   重新生成
                 </button>
               </span>
-              <span className="field-surface mt-2 block w-full rounded-[var(--radius)] px-4 py-3 font-lab-mono text-sm text-[var(--text-strong)]">
-                {form.slug}
-              </span>
+              <span className="article-meta-slug">{form.slug}</span>
             </div>
+            <CoverImageField value={form.cover_url} onChange={(v) => updateField("cover_url", v)} />
             <Field
-              label="Cover Image URL"
-              value={form.cover_url}
-              onChange={(v) => updateField("cover_url", v)}
-            />
-            <Field
-              label="Excerpt"
-              meta={<span className="text-[var(--muted-low)]">{form.excerpt.length}/500</span>}
+              className="article-meta-field"
+              inputClassName="article-meta-input article-meta-textarea"
+              label="摘要"
+              meta={<span className="article-meta-counter">{form.excerpt.length}/500</span>}
               multiline
+              placeholder="一两句话概括文章要点，用于列表与分享预览"
               value={form.excerpt}
               onChange={(v) => updateField("excerpt", v.slice(0, 500))}
             />
-            <div>
-              <span className="font-lab-mono text-xs text-[var(--muted)]">Status</span>
-              <div className="mt-2 flex flex-wrap gap-2">
+            <div className="article-meta-field">
+              <span className="article-meta-label-row">
+                <span>状态</span>
+              </span>
+              <div className="article-meta-status">
                 <Badge tone={status === "draft" ? "amber" : status === "published" ? "green" : "neutral"}>
                   {statusLabel(status)}
                 </Badge>
-                {form.excerpt && <Badge tone="cyan">{form.excerpt.length} chars</Badge>}
+                {form.excerpt && <Badge tone="cyan">{form.excerpt.length} 字</Badge>}
               </div>
             </div>
           </div>
         </aside>
 
-        <div className="min-h-0 overflow-auto bg-[var(--background-soft)] p-4 md:p-6">
+        <div className="article-editor-main min-h-0 overflow-hidden p-3 md:p-5">
           <TipTapEditor
             content={form.content_html}
             onChange={(html) => updateField("content_html", html)}
@@ -440,12 +442,12 @@ export function ArticleEditorWorkspace({
 function statusLabel(status: string): string {
   switch (status) {
     case "published":
-      return "Published";
+      return "已发布";
     case "archived":
-      return "Archived";
+      return "已归档";
     case "scheduled":
-      return "Scheduled";
+      return "定时发布";
     default:
-      return "Draft";
+      return "草稿";
   }
 }

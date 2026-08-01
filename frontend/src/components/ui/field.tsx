@@ -8,15 +8,28 @@ type FieldProps = {
   multiline?: boolean;
   meta?: ReactNode;
   className?: string;
+  inputClassName?: string;
   disabled?: boolean;
+  placeholder?: string;
 };
 
-export function Field({ label, value, onChange, multiline = false, meta, className, disabled = false }: FieldProps) {
+export function Field({
+  label,
+  value,
+  onChange,
+  multiline = false,
+  meta,
+  className,
+  inputClassName,
+  disabled = false,
+  placeholder,
+}: FieldProps) {
   const fieldClassName = cn(
     "field-surface block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none transition-[border-color,background-color,box-shadow]",
     "focus:border-[var(--blue)] focus:bg-[var(--surface)] focus:shadow-[0_0_0_3px_var(--blue-soft)]",
     disabled && "cursor-not-allowed opacity-60",
     multiline && "min-h-28 leading-6",
+    inputClassName,
   );
 
   return (
@@ -27,9 +40,21 @@ export function Field({ label, value, onChange, multiline = false, meta, classNa
       </span>
       {onChange ? (
         multiline ? (
-          <textarea className={fieldClassName} disabled={disabled} onChange={(event) => onChange(event.target.value)} value={value} />
+          <textarea
+            className={fieldClassName}
+            disabled={disabled}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            value={value}
+          />
         ) : (
-          <input className={fieldClassName} disabled={disabled} onChange={(event) => onChange(event.target.value)} value={value} />
+          <input
+            className={fieldClassName}
+            disabled={disabled}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            value={value}
+          />
         )
       ) : (
         <span className={fieldClassName}>{value}</span>
