@@ -32,11 +32,31 @@ type Policy struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+// PolicyInput separates writable secrets from Policy so API responses can keep
+// using json:"-" without preventing request binding.
+type PolicyInput struct {
+	Policy
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+	ClientSecret    string `json:"client_secret"`
+}
+
+func (input PolicyInput) policy() Policy {
+	policy := input.Policy
+	policy.AccessKeyID = input.AccessKeyID
+	policy.SecretAccessKey = input.SecretAccessKey
+	policy.ClientSecret = input.ClientSecret
+	return policy
+}
+
 func (p *Policy) normalize() {
 	p.Name = strings.TrimSpace(p.Name)
 	p.Type = strings.TrimSpace(p.Type)
 	p.Bucket = strings.TrimSpace(p.Bucket)
 	p.Endpoint = strings.TrimRight(strings.TrimSpace(p.Endpoint), "/")
+	if p.Endpoint != "" && !strings.HasPrefix(p.Endpoint, "https://") && !strings.HasPrefix(p.Endpoint, "http://") {
+		p.Endpoint = "https://" + p.Endpoint
+	}
 	p.Region = strings.TrimSpace(p.Region)
 	if p.Region == "" {
 		p.Region = "us-east-1"

@@ -17,6 +17,7 @@ import {
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
 import { type ArticleDetail } from "@/lib/api/articles";
+import { highlightCodeBlocks } from "@/lib/codeHighlight";
 
 type ArticleDetailContentProps = {
   article: ArticleDetail;
@@ -76,6 +77,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     const content = contentRef.current;
     if (!content) return;
 
+    highlightCodeBlocks(content);
     const elements = Array.from(content.querySelectorAll<HTMLHeadingElement>("h1, h2, h3"));
 
     const observer = new IntersectionObserver(

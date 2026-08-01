@@ -26,6 +26,7 @@ import {
   previewArticle,
   type ArticleInput,
 } from "@/lib/api/articles";
+import { highlightCodeBlocks } from "@/lib/codeHighlight";
 
 type ArticleFormState = {
   title: string;
@@ -234,6 +235,23 @@ export function ArticleEditorWorkspace({
     code { background: #f3f4f6; padding: 2px 6px; border-radius: 3px; font-size: 0.9em; }
     pre { background: #1e293b; color: #e2e8f0; padding: 16px; border-radius: 8px; overflow-x: auto; }
     pre code { background: transparent; color: inherit; padding: 0; }
+    .article-codeblock { overflow: hidden; margin: 1.5em 0; border: 1px solid #d8ddd9; border-radius: 12px; background: #1e293b; }
+    .article-codeblock-header { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; min-height: 44px; border-bottom: 1px solid #d8ddd9; background: #f1f2ed; padding: 7px 11px; }
+    .article-codeblock-dots { display: inline-flex; gap: 5px; }
+    .article-codeblock-dots i { width: 9px; height: 9px; border-radius: 50%; background: #ff5f57; }
+    .article-codeblock-dots i:nth-child(2) { background: #febc2e; }
+    .article-codeblock-dots i:nth-child(3) { background: #28c840; }
+    .article-codeblock-language { color: #526159; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+    .article-codeblock-copy { border: 1px solid #d8ddd9; border-radius: 7px; background: #fff; color: #526159; cursor: pointer; padding: 5px 9px; }
+    .article-codeblock pre { margin: 0; border-radius: 0; }
+    .hljs-comment, .hljs-quote { color: #94a3b8; font-style: italic; }
+    .hljs-keyword, .hljs-selector-tag, .hljs-doctag { color: #d8b4fe; font-weight: 600; }
+    .hljs-string, .hljs-regexp, .hljs-addition { color: #86efac; }
+    .hljs-number, .hljs-literal, .hljs-symbol { color: #fdba74; }
+    .hljs-title, .hljs-title.class_, .hljs-title.function_, .hljs-section { color: #7dd3fc; font-weight: 600; }
+    .hljs-built_in, .hljs-type, .hljs-variable.language_ { color: #67e8f9; }
+    .hljs-attr, .hljs-property, .hljs-selector-class, .hljs-selector-id { color: #fcd34d; }
+    .hljs-tag, .hljs-name, .hljs-meta { color: #fda4af; }
     blockquote { border-left: 4px solid #3b82f6; margin: 1em 0; padding: 0.5em 1em; background: #f0f7ff; }
     img { max-width: 100%; height: auto; border-radius: 8px; }
     a { color: #3b82f6; }
@@ -263,6 +281,7 @@ export function ArticleEditorWorkspace({
 </body>
 </html>`);
         previewWindow.document.close();
+        highlightCodeBlocks(previewWindow.document);
       }
       push(`预览已生成（${result.word_count} 字，约 ${result.reading_time_minutes} 分钟阅读）`, "info");
     } catch (err) {

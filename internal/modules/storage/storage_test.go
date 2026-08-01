@@ -1,12 +1,16 @@
 package storage
 
 import (
+	"bytes"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/gin-gonic/gin"
 	_ "modernc.org/sqlite"
 )
 
@@ -109,6 +113,50 @@ func TestRepositoryMaintainsSingleDefaultPolicy(t *testing.T) {
 		if policy.ID == second.ID {
 			t.Fatal("deleted policy remained visible")
 		}
+	}
+}
+
+func TestCreatePolicyBindsSecretsWithoutReturningThem(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+
+	repo := NewRepository(db, "sqlite")
+	if err := repo.EnsureSchema(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+
+	router := gin.New()
+	NewHandler(repo).RegisterAdminRoutes(router.Group("/api/admin"))
+	body, err := json.Marshal(map[string]any{
+		"name":              "r2",
+		"type":              "cloudflare_r2",
+		"bucket":            "media",
+		"endpoint":          "storage.example.com",
+		"region":            "us-east-1",
+		"root_prefix":       "uploads",
+		"access_key_id":     "test-access-key",
+		"secret_access_key": "test-secret-key",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	request := httptest.NewRequest(http.MethodPost, "/api/admin/storage/policies", bytes.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+
+	if response.Code != http.StatusCreated {
+		t.Fatalf("expected policy creation to succeed, got status %d: %s", response.Code, response.Body.String())
+	}
+	if strings.Contains(response.Body.String(), "test-access-key") ||
+		strings.Contains(response.Body.String(), "test-secret-key") {
+		t.Fatal("storage credentials leaked in policy response")
 	}
 }
 

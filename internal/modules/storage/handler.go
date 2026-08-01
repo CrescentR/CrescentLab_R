@@ -53,12 +53,12 @@ func (h *Handler) listPolicies(c *gin.Context) {
 }
 
 func (h *Handler) createPolicy(c *gin.Context) {
-	var policy Policy
-	if err := c.ShouldBindJSON(&policy); err != nil {
+	var input PolicyInput
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
 		return
 	}
-	created, err := h.repo.Create(c.Request.Context(), policy)
+	created, err := h.repo.Create(c.Request.Context(), input.policy())
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -72,11 +72,12 @@ func (h *Handler) updatePolicy(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "存储策略 ID 无效"})
 		return
 	}
-	var policy Policy
-	if err := c.ShouldBindJSON(&policy); err != nil {
+	var input PolicyInput
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
 		return
 	}
+	policy := input.policy()
 	policy.ID = id
 	updated, err := h.repo.Update(c.Request.Context(), policy)
 	if err != nil {
