@@ -9,14 +9,18 @@ import {
   Loader2,
   Save,
   Send,
+  Trash2,
 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/toast";
+import { CoverImageField } from "@/components/admin/coverImageField";
 import { TipTapEditor } from "@/components/admin/tiptapEditor";
 import {
   createAdminArticle,
+  deleteAdminArticle,
+  getAdminArticle,
   updateAdminArticle,
   publishAdminArticle,
   previewArticle,
@@ -58,15 +62,58 @@ function generateRandomSlug(): string {
   return result;
 }
 
-export function ArticleEditorWorkspace() {
+type ArticleEditorWorkspaceProps = {
+  initialArticleId?: number | null;
+  onBack?: () => void;
+};
+
+export function ArticleEditorWorkspace({
+  initialArticleId = null,
+  onBack,
+}: ArticleEditorWorkspaceProps) {
   const { push } = useToast();
   const [form, setForm] = useState<ArticleFormState>(NEW_ARTICLE_TEMPLATE);
-  const [articleId, setArticleId] = useState<number | null>(null);
-  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [articleId, setArticleId] = useState<number | null>(initialArticleId);
+  const [status, setStatus] = useState<"draft" | "published" | "archived" | "scheduled">("draft");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
+  const [isLoading, setIsLoading] = useState(() => Boolean(initialArticleId));
+  const [isDeleting, setIsDeleting] = useState(false);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadedIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!initialArticleId) return;
+    if (loadedIdRef.current === initialArticleId) return;
+    let active = true;
+    void (async () => {
+      setIsLoading(true);
+      try {
+        const detail = await getAdminArticle(initialArticleId);
+        if (!active) return;
+        loadedIdRef.current = detail.id;
+        setArticleId(detail.id);
+        setStatus(detail.status);
+        setForm({
+          title: detail.title,
+          slug: detail.slug,
+          excerpt: detail.excerpt || "",
+          content_html: detail.content_html || "<p></p>",
+          cover_url: detail.cover_url || "",
+        });
+      } catch (err) {
+        if (!active) return;
+        push(extractErrorMessage(err, "加载文章失败"), "error");
+        onBack?.();
+      } finally {
+        if (active) setIsLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [initialArticleId, onBack, push]);
 
   const updateField = useCallback(<K extends keyof ArticleFormState>(key: K, value: ArticleFormState[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -94,12 +141,12 @@ export function ArticleEditorWorkspace() {
     try {
       if (articleId) {
         const result = await updateAdminArticle(articleId, buildApiInput());
-        setStatus(result.status as "draft" | "published");
+        setStatus(result.status);
         push("草稿已保存", "success");
       } else {
         const result = await createAdminArticle(buildApiInput());
         setArticleId(result.id);
-        setStatus(result.status as "draft" | "published");
+        setStatus(result.status);
         push("文章已创建", "success");
       }
       setSaveStatus("saved");
@@ -132,7 +179,7 @@ export function ArticleEditorWorkspace() {
         cover_url: form.cover_url,
         source_format: "tiptap",
       });
-      setStatus(result.status as "draft" | "published");
+      setStatus(result.status);
       push("文章已发布", "success");
     } catch (err) {
       push(extractErrorMessage(err, "发布失败"), "error");
@@ -140,6 +187,21 @@ export function ArticleEditorWorkspace() {
       setIsPublishing(false);
     }
   }, [articleId, buildApiInput, form, push]);
+
+  const handleDelete = useCallback(async () => {
+    if (!articleId) return;
+    if (!confirm("确定要删除这篇文章吗？删除后可在回收逻辑完善前视为不可恢复。")) return;
+    setIsDeleting(true);
+    try {
+      await deleteAdminArticle(articleId);
+      push("文章已删除", "success");
+      onBack?.();
+    } catch (err) {
+      push(extractErrorMessage(err, "删除失败"), "error");
+    } finally {
+      setIsDeleting(false);
+    }
+  }, [articleId, onBack, push]);
 
   const handlePreview = useCallback(async () => {
     setIsPreviewing(true);
@@ -152,7 +214,7 @@ export function ArticleEditorWorkspace() {
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${form.title || "文章预览"}</title>
+  <title>${form.title || "文章预览"} — Crescent Lab</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -224,28 +286,41 @@ export function ArticleEditorWorkspace() {
     };
   }, [form, articleId, handleSave]);
 
+  if (isLoading) {
+    return (
+      <main className="flex min-h-[calc(100dvh-4rem)] items-center justify-center bg-[var(--background-soft)] text-[var(--muted)]">
+        <Loader2 className="animate-spin" size={22} />
+        <span className="ml-3 font-lab-mono text-sm">正在加载文章…</span>
+      </main>
+    );
+  }
+
   return (
-    <main className="flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--background-soft)] lg:h-[calc(100dvh-4rem)] lg:min-h-[700px] lg:overflow-hidden">
-      <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 shadow-[0_1px_0_var(--border-soft)] md:px-6">
-        <div className="flex min-w-0 items-center gap-4">
-          <ButtonLink className="hidden md:inline-flex" href="/admin" icon={<ArrowLeft size={15} />} variant="ghost">
-            Back
-          </ButtonLink>
-          <span className="h-6 w-px bg-[var(--border-soft)]" />
+    <main className="article-editor flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--background-soft)] lg:h-[calc(100dvh-4rem)] lg:min-h-[700px] lg:overflow-hidden">
+      <header className="article-editor-header flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 md:px-6">
+        <div className="flex min-w-0 items-center gap-3">
+          {onBack ? (
+            <Button className="hidden md:inline-flex" icon={<ArrowLeft size={15} />} variant="ghost" onClick={onBack}>
+              返回列表
+            </Button>
+          ) : (
+            <ButtonLink className="hidden md:inline-flex" href="/admin/postManagement" icon={<ArrowLeft size={15} />} variant="ghost">
+              返回列表
+            </ButtonLink>
+          )}
+          <span className="hidden h-6 w-px bg-[var(--border-soft)] md:block" />
           <div className="min-w-0">
-            <span className="block font-lab-mono text-xs font-medium uppercase text-[var(--muted)]">
-              {status === "published" ? "Published" : "Draft"}
-            </span>
-            <strong className="block truncate font-lab-mono text-sm text-[var(--text-strong)]">
-              {form.title || "Untitled Article"}
+            <span className="block text-xs font-medium text-[var(--muted)]">{statusLabel(status)}</span>
+            <strong className="block truncate text-sm text-[var(--text-strong)]">
+              {form.title || "未命名文章"}
             </strong>
           </div>
         </div>
-        <div className="hidden items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-raised)] px-3 py-1.5 font-lab-mono text-xs text-[var(--muted)] md:flex">
+        <div className="hidden items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-raised)] px-3 py-1.5 text-xs text-[var(--muted)] md:flex">
           {saveStatus === "saving" ? (
             <>
               <Loader2 size={12} className="animate-spin" />
-              保存中...
+              保存中…
             </>
           ) : saveStatus === "saved" ? (
             <>
@@ -260,6 +335,17 @@ export function ArticleEditorWorkspace() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {articleId && (
+            <Button
+              className="hidden sm:inline-flex"
+              disabled={isDeleting}
+              icon={isDeleting ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
+              variant="secondary"
+              onClick={handleDelete}
+            >
+              删除
+            </Button>
+          )}
           <Button
             className="hidden sm:inline-flex"
             disabled={isPreviewing}
@@ -267,7 +353,7 @@ export function ArticleEditorWorkspace() {
             variant="secondary"
             onClick={handlePreview}
           >
-            Preview
+            预览
           </Button>
           <Button
             disabled={saveStatus === "saving"}
@@ -275,7 +361,7 @@ export function ArticleEditorWorkspace() {
             variant="secondary"
             onClick={handleSave}
           >
-            Save Draft
+            保存草稿
           </Button>
           <Button
             disabled={isPublishing}
@@ -283,62 +369,65 @@ export function ArticleEditorWorkspace() {
             variant="primary"
             onClick={handlePublish}
           >
-            Publish
+            发布
           </Button>
         </div>
       </header>
 
-      <section className="grid min-h-0 flex-1 bg-[var(--background-soft)] lg:grid-cols-[304px_minmax(0,1fr)]">
-        <aside className="hidden overflow-y-auto border-r border-[var(--border-soft)] bg-[var(--surface)] lg:block">
-          <div className="border-b border-[var(--border-soft)] px-5 py-4">
-            <h2 className="font-lab-mono text-sm font-medium uppercase text-[var(--text)]">Metadata</h2>
+      <section className="grid min-h-0 flex-1 bg-[var(--background-soft)] lg:grid-cols-[300px_minmax(0,1fr)]">
+        <aside className="article-editor-aside hidden overflow-y-auto lg:block">
+          <div className="article-meta-head">
+            <h2>元数据</h2>
+            <p>完善标题、封面与摘要，帮助读者更快理解这篇笔记。</p>
           </div>
-          <div className="space-y-5 p-5">
+          <div className="article-meta-stack">
             <Field
-              label="Title"
+              className="article-meta-field"
+              inputClassName="article-meta-input"
+              label="标题"
+              placeholder="给文章起一个清晰的标题"
               value={form.title}
               onChange={(v) => updateField("title", v)}
             />
-            <div>
-              <span className="flex items-center justify-between font-lab-mono text-xs font-medium text-[var(--muted)]">
-                <span>URL Slug</span>
+            <div className="article-meta-field">
+              <span className="article-meta-label-row">
+                <span>链接别名</span>
                 <button
-                  className="text-[var(--blue)] hover:underline"
+                  className="article-meta-link-btn"
                   onClick={() => updateField("slug", generateRandomSlug())}
                   type="button"
                 >
                   重新生成
                 </button>
               </span>
-              <span className="field-surface mt-2 block w-full rounded-[var(--radius)] px-4 py-3 font-lab-mono text-sm text-[var(--text-strong)]">
-                {form.slug}
-              </span>
+              <span className="article-meta-slug">{form.slug}</span>
             </div>
+            <CoverImageField value={form.cover_url} onChange={(v) => updateField("cover_url", v)} />
             <Field
-              label="Cover Image URL"
-              value={form.cover_url}
-              onChange={(v) => updateField("cover_url", v)}
-            />
-            <Field
-              label="Excerpt"
-              meta={<span className="text-[var(--muted-low)]">{form.excerpt.length}/500</span>}
+              className="article-meta-field"
+              inputClassName="article-meta-input article-meta-textarea"
+              label="摘要"
+              meta={<span className="article-meta-counter">{form.excerpt.length}/500</span>}
               multiline
+              placeholder="一两句话概括文章要点，用于列表与分享预览"
               value={form.excerpt}
               onChange={(v) => updateField("excerpt", v.slice(0, 500))}
             />
-            <div>
-              <span className="font-lab-mono text-xs text-[var(--muted)]">Status</span>
-              <div className="mt-2 flex flex-wrap gap-2">
-                <Badge tone={status === "draft" ? "amber" : "neutral"}>
-                  {status === "draft" ? "Draft" : "Published"}
+            <div className="article-meta-field">
+              <span className="article-meta-label-row">
+                <span>状态</span>
+              </span>
+              <div className="article-meta-status">
+                <Badge tone={status === "draft" ? "amber" : status === "published" ? "green" : "neutral"}>
+                  {statusLabel(status)}
                 </Badge>
-                {form.excerpt && <Badge tone="cyan">{form.excerpt.length} chars</Badge>}
+                {form.excerpt && <Badge tone="cyan">{form.excerpt.length} 字</Badge>}
               </div>
             </div>
           </div>
         </aside>
 
-        <div className="min-h-0 overflow-auto bg-[var(--background-soft)] p-4 md:p-6">
+        <div className="article-editor-main min-h-0 overflow-hidden p-3 md:p-5">
           <TipTapEditor
             content={form.content_html}
             onChange={(html) => updateField("content_html", html)}
@@ -348,4 +437,17 @@ export function ArticleEditorWorkspace() {
       </section>
     </main>
   );
+}
+
+function statusLabel(status: string): string {
+  switch (status) {
+    case "published":
+      return "已发布";
+    case "archived":
+      return "已归档";
+    case "scheduled":
+      return "定时发布";
+    default:
+      return "草稿";
+  }
 }

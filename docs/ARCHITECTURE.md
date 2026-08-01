@@ -2,11 +2,7 @@
 
 ## 当前阶段
 
-<<<<<<< HEAD
-本仓库当前已完成整体框架、前端信息架构、基础工具选型、项目边界、PostgreSQL 首版数据库设计，以及后台设置模块的首条 API 链路。认证协议、文件上传协议暂不设计。
-=======
 本仓库已完成构建基线、安全门禁和认证流程。管理员可通过登录页以真实身份进入后台，所有 `/api/admin/*` 接口受 JWT 中间件保护。健康检查、统一错误响应和请求超时已就绪；GitHub Actions 构建流程暂时移除，待项目完善后恢复。
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 
 ## 技术选型
 
@@ -18,16 +14,10 @@
 | 图标 | lucide-react | 统一后台操作图标 |
 | 客户端状态 | Zustand | 侧栏、弹窗、局部 UI 状态 |
 | 服务端状态 | TanStack Query | 后续 API 接入后的缓存、重试、失效控制 |
-<<<<<<< HEAD
-| HTTP 客户端 | Axios | 后台设置接口已接入，后续集中拦截器、认证刷新、错误归一化 |
-| 后端入口 | Go | 已接入配置、日志、数据库、健康检查和后台设置 API |
-| 数据库 | PostgreSQL / SQLite | PostgreSQL 为首版完整结构；SQLite 用于本地开发，当前覆盖后台设置表；均不做自动 migration |
-=======
 | HTTP 客户端 | fetch（封装在 `lib/api/client.ts`） | 认证拦截器、自动刷新、错误归一化 |
 | 后端框架 | Gin | 路由、中间件、JSON 序列化 |
 | 认证 | JWT (HS256) + bcrypt | access token 2h、refresh token 7d、退出撤销 |
 | 数据库 | SQLite / PostgreSQL | 手动导入 schema，不做自动 migration |
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 
 ## 认证流程
 
@@ -79,11 +69,7 @@ frontend/src/
 │   ├── layout/          # 公开页布局组件
 │   └── ui/              # Button、Panel、Badge、Field 等基础组件
 ├── lib/
-<<<<<<< HEAD
-│   ├── api/             # API 客户端边界，后台设置接口已接入
-=======
 │   ├── api/             # API 客户端（认证拦截器、token 管理）
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 │   ├── mockData.ts      # 静态演示数据
 │   └── utils.ts
 ├── store/               # Zustand store
@@ -132,13 +118,6 @@ frontend/src/
 
 ## 后续接入顺序
 
-<<<<<<< HEAD
-1. 完善后台设置模块的数据校验、前端保存反馈和本地联调流程
-2. 认证与用户系统
-3. 文章编辑器接入 Tiptap 与文章 API
-4. 文件上传与媒体管理
-5. 评论、统计、SEO 等后续模块
-=======
 1. ~~配置系统与日志~~ ✅ 已完成
 2. ~~Gin 路由壳与健康检查~~ ✅ 已完成
 3. ~~基于 schema 落数据库访问层~~ ✅ 已完成（users、content、settings）
@@ -146,4 +125,3 @@ frontend/src/
 5. 文章编辑器接入 Tiptap 与文章 API（阶段 02）
 6. 媒体管理与文件上传（阶段 03）
 7. 评论审核与通知系统（阶段 04）
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1

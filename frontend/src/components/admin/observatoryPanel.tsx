@@ -1,11 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   BookOpen,
   ChevronRight,
-  CircleDot,
   Code2,
   Flame,
   Lightbulb,
@@ -17,6 +16,7 @@ import {
 import {
   createObservatoryNote,
   deleteObservatoryNote,
+  getObservatoryNote,
   listObservatoryNotes,
   updateObservatoryNote,
   type NoteStatus,
@@ -69,6 +69,29 @@ export function ObservatoryPanel() {
   const [filterStatus, setFilterStatus] = useState<NoteStatus | "">("");
   const [searchQuery, setSearchQuery] = useState("");
   const [saving, setSaving] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      setLoading(true);
+      try {
+        const params: ObservatoryListParams = { page_size: 50 };
+        if (filterType) params.note_type = filterType;
+        if (filterStatus) params.status = filterStatus;
+        if (searchQuery) params.search = searchQuery;
+        const result = await listObservatoryNotes(params);
+        if (active) setNotes(result.items);
+      } catch (err) {
+        if (active) push(extractErrorMessage(err, "加载观测台笔记失败"), "error");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [filterType, filterStatus, searchQuery, push]);
 
   const fetchNotes = useCallback(async () => {
     setLoading(true);
@@ -86,24 +109,30 @@ export function ObservatoryPanel() {
     }
   }, [filterType, filterStatus, searchQuery, push]);
 
-  useEffect(() => {
-    fetchNotes();
-  }, [fetchNotes]);
-
   function handleNewNote() {
     setEditing({ ...emptyForm });
     setEditingId(null);
   }
 
-  function handleEditNote(note: (typeof notes)[number]) {
-    setEditing({
-      title: note.title,
-      content_md: "",
-      tags: note.tags.join(", "),
-      note_type: note.note_type,
-      status: note.status,
-    });
+  async function handleEditNote(note: (typeof notes)[number]) {
+    setLoadingDetail(true);
     setEditingId(note.id);
+    try {
+      const detail = await getObservatoryNote(note.id);
+      setEditing({
+        title: detail.title,
+        content_md: detail.content_md || "",
+        tags: detail.tags.join(", "),
+        note_type: detail.note_type,
+        status: detail.status,
+      });
+    } catch (err) {
+      push(extractErrorMessage(err, "加载笔记详情失败"), "error");
+      setEditingId(null);
+      setEditing(null);
+    } finally {
+      setLoadingDetail(false);
+    }
   }
 
   async function handleSave() {
@@ -203,6 +232,12 @@ export function ObservatoryPanel() {
             </div>
           </Panel>
         </header>
+
+        {loadingDetail && (
+          <Panel className="lab-card p-6 font-lab-mono text-sm text-[var(--muted)]">
+            正在加载笔记详情…
+          </Panel>
+        )}
 
         {editing && (
           <Panel className="lab-card p-6">
@@ -328,7 +363,7 @@ export function ObservatoryPanel() {
   );
 }
 
-function FilterPill({ children, active, onClick }: { children: React.ReactNode; active: boolean; onClick: () => void }) {
+function FilterPill({ children, active, onClick }: { children: ReactNode; active: boolean; onClick: () => void }) {
   return (
     <button
       className={cn(

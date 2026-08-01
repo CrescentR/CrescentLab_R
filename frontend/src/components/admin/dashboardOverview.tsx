@@ -7,15 +7,13 @@ import {
   Boxes,
   CalendarClock,
   DatabaseZap,
-  Eye,
   FileText,
   Flame,
   Gauge,
+  HardDrive,
   Image,
-  MessageSquare,
   ShieldCheck,
   Sparkles,
-  Users,
 } from "lucide-react";
 import { adminMetrics, articleSummaries, contentPipeline, labActivities } from "@/lib/mockData";
 import { getAuthUser } from "@/lib/api/client";
@@ -25,9 +23,9 @@ import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 
 const quickActions = [
-  { label: "新建文章", href: "/admin/postManagement/new", icon: FileText, tone: "cyan" },
+  { label: "新建文章", href: "/admin/postManagement", icon: FileText, tone: "cyan" },
   { label: "项目管理", href: "/admin/projects", icon: Flame, tone: "amber" },
-  { label: "观测台", href: "/admin/observatory", icon: Eye, tone: "green" },
+  { label: "存储策略", href: "/admin/storage", icon: HardDrive, tone: "cyan" },
   { label: "媒体库", href: "/admin/media", icon: Image, tone: "amber" },
 ] as const;
 

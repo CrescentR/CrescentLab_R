@@ -6,10 +6,12 @@ import {
   ArrowLeft,
   BookOpen,
   CircleHelp,
+  Construction,
   Eye,
   FileText,
   Flame,
   Gauge,
+  HardDrive,
   Home,
   Image,
   LogOut,
@@ -33,10 +35,12 @@ import { buttonPress, fadeUp, stagger, transitionFast } from "@/components/home/
 
 const navItems = [
   { href: "/admin", label: "仪表盘", icon: Gauge, tone: "cyan" },
-  { href: "/admin/postManagement/new", label: "内容", icon: FileText, tone: "purple" },
+  { href: "/admin/postManagement", label: "内容", icon: FileText, tone: "purple" },
   { href: "/admin/projects", label: "项目", icon: Flame, tone: "amber" },
   { href: "/admin/observatory", label: "观测台", icon: Eye, tone: "green" },
+  { href: "/admin/builds", label: "构建中", icon: Construction, tone: "cyan" },
   { href: "/admin/media", label: "媒体", icon: Image, tone: "amber" },
+  { href: "/admin/storage", label: "存储", icon: HardDrive, tone: "cyan" },
   { href: "/admin/comments", label: "评论", icon: MessageSquare, tone: "green" },
   { href: "/admin/users", label: "用户", icon: Users, tone: "rose" },
   { href: "/admin/plugins", label: "插件", icon: BookOpen, tone: "cyan" },
@@ -105,7 +109,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 </ButtonLink>
               </motion.div>
               <motion.div variants={fadeUp}>
-                <ButtonLink href="/admin/postManagement/new" icon={<PenLine size={15} />} variant="primary">
+                <ButtonLink href="/admin/postManagement" icon={<PenLine size={15} />} variant="primary">
                   新建
                 </ButtonLink>
               </motion.div>

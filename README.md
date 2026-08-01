@@ -1,17 +1,5 @@
 # CrescentLab_R
 
-<<<<<<< HEAD
-CrescentLab_R 是一个自托管博客 / CMS 的开发骨架。当前阶段参考了 Figma 原型和 `AGENTS/docs/DEVELOPMENT_PLAN.md`，优先完成前端框架、后台信息架构、基础工具选型、Go 项目边界、数据库首版设计和后台设置模块的首条 API 链路。
-
-## 已完成
-
-- Go 入口、直观的模块化后端目录、健康检查与后台设置 API
-- Next.js App Router 前端工程
-- 公开首页框架与后台 Admin Shell
-- 文章编辑器、用户权限、站点设置三个 Figma 方向页面
-- Tailwind CSS 4 设计 token、基础 UI 组件、静态 mock 数据
-- README、架构文档、目录结构文档、数据库设计文档、PostgreSQL/SQLite SQL、`.gitignore`、`Makefile`
-=======
 CrescentLab_R 是一个自托管博客 / CMS。当前阶段已完成构建基线、安全门禁和认证流程，管理员可通过登录页以真实身份进入后台，所有 `/api/admin/*` 接口受 JWT 中间件保护。
 
 ## 已完成
@@ -27,7 +15,6 @@ CrescentLab_R 是一个自托管博客 / CMS。当前阶段已完成构建基线
 - 登录页 `/login`，AdminShell 权限检查真实 token，退出按钮
 - 前端 API 客户端（`frontend/src/lib/api/client.ts`）：封装 fetch、自动携带 token、刷新拦截器
 - SQLite 与 PostgreSQL 双数据库支持，手动导入 schema
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 
 ## 技术栈
 
@@ -37,14 +24,9 @@ CrescentLab_R 是一个自托管博客 / CMS。当前阶段已完成构建基线
 | 样式 | Tailwind CSS 4、CSS Variables |
 | 图标 | lucide-react |
 | 状态 | Zustand、TanStack Query |
-<<<<<<< HEAD
-| 请求 | Axios，后台设置接口已接入 |
-| 后端 | Go 1.26，后续接 Gin、Ent、Viper |
-=======
 | 请求 | Axios / fetch，前端 API 客户端封装认证拦截器 |
 | 后端 | Go 1.26、Gin、JWT（HS256）、bcrypt |
 | 数据库 | SQLite / PostgreSQL，手动导入 schema |
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 
 ## 快速开始
 
@@ -53,10 +35,6 @@ CrescentLab_R 是一个自托管博客 / CMS。当前阶段已完成构建基线
 **SQLite（默认，适合开发）：**
 
 ```bash
-<<<<<<< HEAD
-# 后端壳
-make db-sqlite-init
-=======
 mkdir -p data
 sqlite3 data/crescentlab.db < database/sqlite/schema.sql
 ```
@@ -95,7 +73,6 @@ jwt_secret = "your-secret-here"
 
 ```bash
 # 后端
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 go run main.go
 
 # 前端
@@ -180,17 +157,8 @@ npm run dev
 ├── internal/platform/          # 数据库、HTTP、日志、存储、搜索、任务等平台能力
 ├── internal/shared/            # 鉴权、事件、ID、Markdown、安全、校验等共享能力
 ├── frontend/                   # Next.js 前端
-<<<<<<< HEAD
-├── docs/ARCHITECTURE.md        # 当前架构说明
-├── docs/PROJECT_STRUCTURE.md   # 当前项目目录设计
-├── docs/DATABASE_SCHEMA.md     # PostgreSQL 首版库表设计
-├── database/postgres/schema.sql # 手动导入的 PostgreSQL 建表 SQL
-├── database/sqlite/schema.sql   # 本地开发用 SQLite SQL，当前覆盖设置表
-├── AGENTS/docs/                # 原始开发计划文档
-=======
 ├── database/sqlite/schema.sql  # SQLite 建表 SQL
 ├── database/postgres/schema.sql # PostgreSQL 建表 SQL
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
 ├── default_files/conf.ini      # 默认配置模板
 ├── docs/ARCHITECTURE.md        # 架构说明
 ├── docs/PROJECT_STRUCTURE.md   # 项目目录设计
@@ -200,9 +168,6 @@ npm run dev
 
 ## API 接口
 
-<<<<<<< HEAD
-本阶段仍以框架、前端页面和数据库设计为主，但已打通后台设置模块的首条真实 API 链路。`frontend/src/lib/api/` 按模块逐步补齐；后端业务代码会按 `internal/modules/<module>/` 继续落地。数据库只提供手动导入 SQL，不做启动时自动建表或自动迁移。
-=======
 | 接口 | 用途 | 权限 |
 |---|---|---|
 | `POST /api/auth/login` | 管理员登录 | 公开 |
@@ -213,9 +178,8 @@ npm run dev
 | `GET /api/articles` | 公开文章列表 | 公开 |
 | `GET /api/articles/:slug` | 公开文章详情 | 公开 |
 | `GET /api/admin/settings` | 读取站点设置 | 需认证 + 管理员 |
-| `PUT /api/admin/settings` | 保存站点设置 | 需认证 + 管理员 |
+| `POST /api/admin/settings` | 保存站点设置 | 需认证 + 管理员 |
 | `GET /api/admin/articles` | 后台文章列表 | 需认证 + 管理员 |
 | `POST /api/admin/articles` | 创建文章 | 需认证 + 管理员 |
-| `PUT /api/admin/articles/:id` | 更新文章 | 需认证 + 管理员 |
-| `DELETE /api/admin/articles/:id` | 删除文章 | 需认证 + 管理员 |
->>>>>>> ad0214ce9124674a2d6e524156875fe03b4cd6a1
+| `POST /api/admin/articles/:id` | 更新文章 | 需认证 + 管理员 |
+| `POST /api/admin/articles/:id/delete` | 删除文章 | 需认证 + 管理员 |
