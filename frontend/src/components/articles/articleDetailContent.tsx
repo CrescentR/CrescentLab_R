@@ -15,9 +15,13 @@ import {
   Text,
 } from "lucide-react";
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
-import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { type ArticleDetail } from "@/lib/api/articles";
-import { highlightCodeBlocks } from "@/lib/codeHighlight";
+import { bindArticleCodeCopy, highlightArticleHtml } from "@/lib/codeHighlight";
+
+const subscribeNoop = () => () => {};
+const getClientSnapshot = () => true;
+const getServerSnapshot = () => false;
 
 type ArticleDetailContentProps = {
   article: ArticleDetail;
@@ -61,6 +65,11 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
   const articleRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const articleDocument = useMemo(() => buildArticleDocument(article.content_html), [article.content_html]);
+  const isClient = useSyncExternalStore(subscribeNoop, getClientSnapshot, getServerSnapshot);
+  const contentHtml = useMemo(
+    () => (isClient ? highlightArticleHtml(articleDocument.html) : articleDocument.html),
+    [articleDocument.html, isClient],
+  );
   const [activeHeading, setActiveHeading] = useState(articleDocument.headings[0]?.id || "");
   const [fontScale, setFontScale] = useState(1);
   const [bookmarked, setBookmarked] = useState(false);
@@ -77,7 +86,8 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     const content = contentRef.current;
     if (!content) return;
 
-    highlightCodeBlocks(content);
+    bindArticleCodeCopy(content.ownerDocument, content);
+
     const elements = Array.from(content.querySelectorAll<HTMLHeadingElement>("h1, h2, h3"));
 
     const observer = new IntersectionObserver(
@@ -90,7 +100,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
 
     elements.forEach((heading) => observer.observe(heading));
     return () => observer.disconnect();
-  }, [articleDocument.html]);
+  }, [contentHtml]);
 
   function showFeedback(message: string) {
     setFeedback(message);
@@ -220,7 +230,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
               viewport={{ amount: 0.08, once: true }}
               whileInView={{ opacity: 1, y: 0 }}
             >
-              <div dangerouslySetInnerHTML={{ __html: articleDocument.html }} />
+              <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
             </motion.div>
 
             <footer className="article-footer">

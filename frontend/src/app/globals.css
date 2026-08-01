@@ -2173,18 +2173,19 @@ a:focus-visible {
   gap: 6px;
 }
 
-.article-detail-v2 .article-content .article-codeblock-dots i {
+.article-detail-v2 .article-content .article-codeblock-dot {
+  display: block;
   width: 10px;
   height: 10px;
   border-radius: 50%;
   background: #ff5f57;
 }
 
-.article-detail-v2 .article-content .article-codeblock-dots i:nth-child(2) {
+.article-detail-v2 .article-content .article-codeblock-dot:nth-child(2) {
   background: #febc2e;
 }
 
-.article-detail-v2 .article-content .article-codeblock-dots i:nth-child(3) {
+.article-detail-v2 .article-content .article-codeblock-dot:nth-child(3) {
   background: #28c840;
 }
 
@@ -2220,7 +2221,7 @@ a:focus-visible {
   box-shadow: none;
 }
 
-.article-detail-v2 .article-content code {
+.article-detail-v2 .article-content :not(pre) > code {
   border-radius: 5px;
   background: #e8e8de;
   padding: 2px 6px;
@@ -2228,6 +2229,29 @@ a:focus-visible {
   font-family: "JetBrains Mono", Consolas, monospace;
   font-size: 0.86em;
 }
+
+.article-detail-v2 .article-content pre .hljs-comment,
+.article-detail-v2 .article-content pre .hljs-quote { color: #9aa69e; font-style: italic; }
+.article-detail-v2 .article-content pre .hljs-keyword,
+.article-detail-v2 .article-content pre .hljs-selector-tag,
+.article-detail-v2 .article-content pre .hljs-doctag { color: #d8b4fe; font-weight: 650; }
+.article-detail-v2 .article-content pre .hljs-string,
+.article-detail-v2 .article-content pre .hljs-regexp,
+.article-detail-v2 .article-content pre .hljs-addition { color: #86efac; }
+.article-detail-v2 .article-content pre .hljs-number,
+.article-detail-v2 .article-content pre .hljs-literal,
+.article-detail-v2 .article-content pre .hljs-symbol { color: #fdba74; }
+.article-detail-v2 .article-content pre .hljs-title,
+.article-detail-v2 .article-content pre .hljs-title.class_,
+.article-detail-v2 .article-content pre .hljs-title.function_,
+.article-detail-v2 .article-content pre .hljs-section { color: #7dd3fc; font-weight: 650; }
+.article-detail-v2 .article-content pre .hljs-built_in,
+.article-detail-v2 .article-content pre .hljs-type { color: #67e8f9; }
+.article-detail-v2 .article-content pre .hljs-attr,
+.article-detail-v2 .article-content pre .hljs-property { color: #fcd34d; }
+.article-detail-v2 .article-content pre .hljs-tag,
+.article-detail-v2 .article-content pre .hljs-name,
+.article-detail-v2 .article-content pre .hljs-meta { color: #fda4af; }
 
 .article-detail-v2 .article-content img {
   max-width: 100%;

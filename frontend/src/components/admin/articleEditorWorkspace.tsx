@@ -238,9 +238,9 @@ export function ArticleEditorWorkspace({
     .article-codeblock { overflow: hidden; margin: 1.5em 0; border: 1px solid #d8ddd9; border-radius: 12px; background: #1e293b; }
     .article-codeblock-header { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; min-height: 44px; border-bottom: 1px solid #d8ddd9; background: #f1f2ed; padding: 7px 11px; }
     .article-codeblock-dots { display: inline-flex; gap: 5px; }
-    .article-codeblock-dots i { width: 9px; height: 9px; border-radius: 50%; background: #ff5f57; }
-    .article-codeblock-dots i:nth-child(2) { background: #febc2e; }
-    .article-codeblock-dots i:nth-child(3) { background: #28c840; }
+    .article-codeblock-dot { display: block; width: 9px; height: 9px; border-radius: 50%; background: #ff5f57; }
+    .article-codeblock-dot:nth-child(2) { background: #febc2e; }
+    .article-codeblock-dot:nth-child(3) { background: #28c840; }
     .article-codeblock-language { color: #526159; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
     .article-codeblock-copy { border: 1px solid #d8ddd9; border-radius: 7px; background: #fff; color: #526159; cursor: pointer; padding: 5px 9px; }
     .article-codeblock pre { margin: 0; border-radius: 0; }
