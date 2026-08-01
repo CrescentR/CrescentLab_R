@@ -29,7 +29,7 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { Panel } from "@/components/ui/panel";
 import { cn } from "@/lib/utils";
 import { backgroundImageStyle, siteBranding } from "@/lib/site-settings";
-import { getAuthUser, isAuthenticated, logout, type AuthUser } from "@/lib/api/client";
+import { getCurrentUser, isAuthenticated, logout, type AuthUser } from "@/lib/api/client";
 import { useUiStore } from "@/store/uiStore";
 import { buttonPress, fadeUp, stagger, transitionFast } from "@/components/home/motionConfig";
 
@@ -55,15 +55,21 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
-    const storedUser = getAuthUser();
-    if (!isAuthenticated() || !storedUser) {
-      setAuthChecked(true);
+    if (!isAuthenticated()) {
       router.replace("/login");
       return;
     }
 
-    setUser(storedUser);
-    setAuthChecked(true);
+    void getCurrentUser()
+      .then((currentUser) => {
+        if (!currentUser.is_admin) {
+          router.replace("/");
+          return;
+        }
+        setUser(currentUser);
+      })
+      .catch(() => router.replace("/login"))
+      .finally(() => setAuthChecked(true));
   }, [router]);
 
   async function handleLogout() {

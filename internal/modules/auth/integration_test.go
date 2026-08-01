@@ -96,6 +96,43 @@ func TestAuthFlow_LoginAccessLogout(t *testing.T) {
 	}
 }
 
+// TestAuthFlow_MemberRegistrationAndAdminDenial 验证普通用户可注册登录但不能访问管理员接口。
+func TestAuthFlow_MemberRegistrationAndAdminDenial(t *testing.T) {
+	engine := setupAuthTestEngine(t)
+	registerResp := doJSON(t, engine, http.MethodPost, "/api/auth/register", map[string]string{
+		"username": "reader_01", "nickname": "读者", "password": "reader-password-123",
+	})
+	if registerResp.Code != http.StatusCreated {
+		t.Fatalf("register status = %d, body = %s", registerResp.Code, registerResp.Body.String())
+	}
+	var tokens struct {
+		AccessToken string `json:"access_token"`
+		User        struct {
+			IsAdmin bool `json:"is_admin"`
+		} `json:"user"`
+	}
+	if err := json.Unmarshal(registerResp.Body.Bytes(), &tokens); err != nil {
+		t.Fatalf("unmarshal register response: %v", err)
+	}
+	if tokens.AccessToken == "" || tokens.User.IsAdmin {
+		t.Fatal("registered member must receive a non-admin access token")
+	}
+	meResp := doRequest(t, engine, http.MethodGet, "/api/auth/me", "Bearer "+tokens.AccessToken, nil)
+	if meResp.Code != http.StatusOK {
+		t.Fatalf("me status = %d, body = %s", meResp.Code, meResp.Body.String())
+	}
+	adminResp := doRequest(t, engine, http.MethodGet, "/api/admin/settings", "Bearer "+tokens.AccessToken, nil)
+	if adminResp.Code != http.StatusForbidden {
+		t.Fatalf("member admin status = %d, want %d", adminResp.Code, http.StatusForbidden)
+	}
+	loginResp := doJSON(t, engine, http.MethodPost, "/api/auth/login", map[string]string{
+		"username": "reader_01", "password": "reader-password-123",
+	})
+	if loginResp.Code != http.StatusOK {
+		t.Fatalf("member login status = %d, body = %s", loginResp.Code, loginResp.Body.String())
+	}
+}
+
 // TestAuthFlow_ChangePassword 验证修改密码主链路：
 // 成功修改 → 旧密码失效 → 新密码可登录。
 func TestAuthFlow_ChangePassword(t *testing.T) {

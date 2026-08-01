@@ -17,6 +17,7 @@ import {
 import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { type ArticleDetail } from "@/lib/api/articles";
+import { ArticleComments } from "@/components/articles/articleComments";
 import { bindArticleCodeCopy, highlightArticleHtml } from "@/lib/codeHighlight";
 
 const subscribeNoop = () => () => {};
@@ -246,6 +247,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
                 <ArrowLeft aria-hidden="true" size={15} />返回全部笔记
               </Link>
             </footer>
+            <ArticleComments allowComment={article.allow_comment} articleId={article.id} />
           </main>
 
           <aside aria-label="阅读工具" className="article-tools">

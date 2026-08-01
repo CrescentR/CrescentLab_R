@@ -9,6 +9,7 @@ import (
 	"time"
 
 	authmodule "CrescentLab_R/internal/modules/auth"
+	commentsmodule "CrescentLab_R/internal/modules/comments"
 	contentmodule "CrescentLab_R/internal/modules/content"
 	observatorymodule "CrescentLab_R/internal/modules/observatory"
 	projectsmodule "CrescentLab_R/internal/modules/projects"
@@ -84,6 +85,11 @@ func (a *App) Run() error {
 	tokenRepo := authmodule.NewRepository(db.SQL(), db.Driver())
 	authHandler := authmodule.NewHandler(authService, userRepo, tokenRepo, a.log)
 	authHandler.RegisterRoutes(engine.Group("/api"))
+	commentsHandler := commentsmodule.NewHandler(commentsmodule.NewRepository(db.SQL(), db.Driver()), userRepo)
+	commentsHandler.RegisterPublicRoutes(engine.Group("/api"))
+	authenticatedGroup := engine.Group("/api")
+	authenticatedGroup.Use(middleware.RequireAuth(authService))
+	commentsHandler.RegisterAuthenticatedRoutes(authenticatedGroup)
 
 	// 公开文章接口（不需认证）
 	contentRepo := contentmodule.NewRepository(db.SQL(), db.Driver())
@@ -114,6 +120,7 @@ func (a *App) Run() error {
 	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
 	projectsHandler.RegisterAdminRoutes(adminGroup)
 	observatorymodule.NewHandler(observatorymodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
+	commentsHandler.RegisterAdminRoutes(adminGroup)
 
 	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())
 

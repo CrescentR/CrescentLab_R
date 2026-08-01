@@ -27,10 +27,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      await login(username.trim(), password);
-      router.replace("/admin");
+      const user = await login(username.trim(), password);
+      router.replace(user.is_admin ? "/admin" : "/");
     } catch (err) {
-      const message = err instanceof Error ? err.message : "登录失败，请稍后重试";
+      const message = typeof err === "object" && err && "message" in err ? String(err.message) : "登录失败，请稍后重试";
       setError(message);
     } finally {
       setLoading(false);
@@ -110,7 +110,7 @@ export default function LoginPage() {
             <ArrowLeft size={14} />
             返回前台
           </Link>
-          <span className="lab-mono login-meta">CORE / 00 · UTC+08:00</span>
+          <Link className="login-back-link" href="/register">注册账号</Link>
         </motion.div>
       </motion.div>
     </main>

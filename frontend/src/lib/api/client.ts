@@ -82,6 +82,25 @@ export async function login(username: string, password: string): Promise<AuthUse
   return data.user;
 }
 
+export async function register(username: string, nickname: string, password: string): Promise<AuthUser> {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, nickname, password }),
+  });
+  const payload = await res.json().catch(() => null);
+  if (!res.ok) throw toApiError(payload, res.status);
+  const data = payload as { access_token: string; refresh_token: string; user: AuthUser };
+  setTokens(data.access_token, data.refresh_token, data.user);
+  return data.user;
+}
+
+export async function getCurrentUser(): Promise<AuthUser> {
+  const user = await apiJson<AuthUser>("/api/auth/me");
+  localStorage.setItem(USER_KEY, JSON.stringify(user));
+  return user;
+}
+
 let refreshPromise: Promise<string> | null = null;
 
 export async function refreshAccessToken(): Promise<string> {

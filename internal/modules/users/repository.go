@@ -9,11 +9,9 @@ import (
 	"time"
 )
 
-// Hexo 博客表结构适配
-// Hexo users 表字段: id, deleted_at, created_at, updated_at, username, password_hash,
-// nickname, avatar_url, email, website, last_login_at, status(text), group_id
 const userColumns = `id, group_id, username, email, password_hash, nickname,
-avatar_url, website, status, last_login_at, created_at, updated_at, deleted_at`
+avatar_url, website, status, is_system, last_login_at, last_login_ip,
+created_at, updated_at, deleted_at`
 
 type Repository struct {
 	db     *sql.DB
@@ -32,15 +30,40 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (User, error
 	if r == nil || r.db == nil {
 		return User{}, errors.New("users repository database is nil")
 	}
-	return User{}, errors.New("create user not supported for Hexo schema")
+	status := input.Status
+	if status == "" {
+		status = StatusPending
+	}
+	query := `INSERT INTO users
+(group_id, username, username_key, email, email_key, password_hash, nickname, status, is_system)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	args := []any{input.GroupID, input.Username, input.UsernameKey, input.Email, input.EmailKey,
+		input.PasswordHash, input.Nickname, status, input.IsSystem}
+	if r.driver == "postgres" {
+		query += ` RETURNING id`
+		query = postgresPlaceholders(query)
+		var id int64
+		if err := r.db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
+			return User{}, fmt.Errorf("create user: %w", err)
+		}
+		return r.GetByID(ctx, id)
+	}
+	result, err := r.db.ExecContext(ctx, query, args...)
+	if err != nil {
+		return User{}, fmt.Errorf("create user: %w", err)
+	}
+	id, err := result.LastInsertId()
+	if err != nil {
+		return User{}, fmt.Errorf("create user id: %w", err)
+	}
+	return r.GetByID(ctx, id)
 }
 
 func (r *Repository) GetByUsernameKey(ctx context.Context, usernameKey string) (User, error) {
 	if r == nil || r.db == nil {
 		return User{}, errors.New("users repository database is nil")
 	}
-	// Hexo 表用 username 字段，不区分大小写匹配
-	query := "SELECT " + userColumns + " FROM users WHERE LOWER(username) = LOWER(?) AND deleted_at IS NULL"
+	query := "SELECT " + userColumns + " FROM users WHERE username_key = ? AND deleted_at IS NULL"
 	if r.driver == "postgres" {
 		query = "SELECT " + userColumns + " FROM users WHERE LOWER(username) = LOWER($1) AND deleted_at IS NULL"
 	}
@@ -51,7 +74,11 @@ func (r *Repository) GetByEmailKey(ctx context.Context, emailKey string) (User, 
 	if r == nil || r.db == nil {
 		return User{}, errors.New("users repository database is nil")
 	}
-	return User{}, errors.New("get by email not supported for Hexo schema")
+	query := "SELECT " + userColumns + " FROM users WHERE email_key = ? AND deleted_at IS NULL"
+	if r.driver == "postgres" {
+		query = "SELECT " + userColumns + " FROM users WHERE email_key = $1 AND deleted_at IS NULL"
+	}
+	return scanUser(r.db.QueryRowContext(ctx, query, emailKey), "get user by email")
 }
 
 func (r *Repository) GetByID(ctx context.Context, id int64) (User, error) {
@@ -87,8 +114,11 @@ func (r *Repository) UpdateLastLogin(ctx context.Context, id int64, lastLoginAt 
 	if r == nil || r.db == nil {
 		return errors.New("users repository database is nil")
 	}
-	query := `UPDATE users SET last_login_at = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND deleted_at IS NULL`
-	result, err := r.db.ExecContext(ctx, query, lastLoginAt, id)
+	query := `UPDATE users SET last_login_at = ?, last_login_ip = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL`
+	if r.driver == "postgres" {
+		query = `UPDATE users SET last_login_at = $1, last_login_ip = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $3 AND deleted_at IS NULL`
+	}
+	result, err := r.db.ExecContext(ctx, query, lastLoginAt, lastLoginIP, id)
 	if err != nil {
 		return fmt.Errorf("update user last login: %w", err)
 	}
@@ -103,7 +133,10 @@ func (r *Repository) UpdateLastLogin(ctx context.Context, id int64, lastLoginAt 
 }
 
 func (r *Repository) getByID(ctx context.Context, id int64, operation string) (User, error) {
-	query := "SELECT " + userColumns + " FROM users WHERE id = $1 AND deleted_at IS NULL"
+	query := "SELECT " + userColumns + " FROM users WHERE id = ? AND deleted_at IS NULL"
+	if r.driver == "postgres" {
+		query = "SELECT " + userColumns + " FROM users WHERE id = $1 AND deleted_at IS NULL"
+	}
 	return scanUser(r.db.QueryRowContext(ctx, query, id), operation)
 }
 
@@ -120,7 +153,7 @@ func scanUser(scanner userScanner, operation string) (User, error) {
 	if err := scanner.Scan(
 		&user.ID, &user.GroupID, &user.Username, &email,
 		&user.PasswordHash, &user.Nickname, &avatar, &website,
-		&status, &user.LastLoginAt, &user.CreatedAt,
+		&status, &user.IsSystem, &user.LastLoginAt, &user.LastLoginIP, &user.CreatedAt,
 		&user.UpdatedAt, &user.DeletedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -129,10 +162,8 @@ func scanUser(scanner userScanner, operation string) (User, error) {
 		return User{}, fmt.Errorf("%s: %w", operation, err)
 	}
 
-	if status.Valid && status.String == "active" {
-		user.Status = StatusActive
-	} else {
-		user.Status = StatusDisabled
+	if status.Valid {
+		user.Status = Status(status.String)
 	}
 
 	if user.GroupID.Valid && user.GroupID.Int64 == 1 {
@@ -144,4 +175,11 @@ func scanUser(scanner userScanner, operation string) (User, error) {
 	user.AvatarURL = avatar
 	user.Website = website
 	return user, nil
+}
+
+func postgresPlaceholders(query string) string {
+	for index := 1; strings.Contains(query, "?"); index++ {
+		query = strings.Replace(query, "?", fmt.Sprintf("$%d", index), 1)
+	}
+	return query
 }

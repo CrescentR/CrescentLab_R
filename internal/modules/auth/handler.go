@@ -1,12 +1,15 @@
 package auth
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -30,9 +33,11 @@ func NewHandler(authService *auth.Service, userRepo *users.Repository, tokenRepo
 
 // RegisterRoutes 注册认证路由（公开接口）。
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
+	group.POST("/auth/register", h.register)
 	group.POST("/auth/login", h.login)
 	group.POST("/auth/refresh", h.refresh)
 	group.POST("/auth/logout", h.logout)
+	group.GET("/auth/me", middleware.RequireAuth(h.authService), h.me)
 }
 
 // RegisterAdminRoutes 注册需要管理员认证的路由。
@@ -58,7 +63,58 @@ type userInfo struct {
 	IsAdmin  bool   `json:"is_admin"`
 }
 
-// login 处理管理员登录请求。
+var usernamePattern = regexp.MustCompile(`^[a-zA-Z0-9_]{3,32}$`)
+
+type registerRequest struct {
+	Username string `json:"username"`
+	Nickname string `json:"nickname"`
+	Password string `json:"password"`
+}
+
+func (h *Handler) register(c *gin.Context) {
+	var req registerRequest
+	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError("请求格式错误"))
+		return
+	}
+	username := strings.TrimSpace(req.Username)
+	nickname := strings.TrimSpace(req.Nickname)
+	if !usernamePattern.MatchString(username) {
+		platformhttp.WriteError(c, platformhttp.ValidationError("用户名须为 3-32 位字母、数字或下划线"))
+		return
+	}
+	if nickname == "" || utf8.RuneCountInString(nickname) > 32 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("昵称须为 1-32 个字符"))
+		return
+	}
+	if len(req.Password) < 8 || len(req.Password) > 72 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("密码长度须为 8-72 位"))
+		return
+	}
+	if _, err := h.userRepo.GetByUsernameKey(c.Request.Context(), strings.ToLower(username)); err == nil {
+		platformhttp.WriteError(c, platformhttp.Conflict("用户名已存在"))
+		return
+	} else if !errors.Is(err, sql.ErrNoRows) {
+		platformhttp.WriteError(c, platformhttp.InternalError(""))
+		return
+	}
+	passwordHash, err := auth.HashPassword(req.Password)
+	if err != nil {
+		platformhttp.WriteError(c, platformhttp.InternalError(""))
+		return
+	}
+	user, err := h.userRepo.Create(c.Request.Context(), users.CreateInput{
+		Username: username, UsernameKey: strings.ToLower(username), PasswordHash: passwordHash,
+		Nickname: nickname, Status: users.StatusActive,
+	})
+	if err != nil {
+		platformhttp.WriteError(c, platformhttp.InternalError(""))
+		return
+	}
+	h.writeTokens(c, http.StatusCreated, user)
+}
+
+// login 处理普通用户和管理员登录请求。
 func (h *Handler) login(c *gin.Context) {
 	var req loginRequest
 	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
@@ -84,47 +140,40 @@ func (h *Handler) login(c *gin.Context) {
 		return
 	}
 
-	if !user.IsSystem {
-		platformhttp.WriteError(c, platformhttp.Forbidden("无管理员权限"))
-		return
-	}
-
 	if err := auth.VerifyPassword(user.PasswordHash, req.Password); err != nil {
 		platformhttp.WriteError(c, platformhttp.Unauthorized("用户名或密码错误"))
 		return
 	}
 
-	identity := auth.Identity{
-		UserID:   user.ID,
-		Username: user.Username,
-		IsAdmin:  true,
-	}
+	// 更新最后登录信息
+	_ = h.userRepo.UpdateLastLogin(c.Request.Context(), user.ID, time.Now(), c.ClientIP())
+	h.writeTokens(c, http.StatusOK, user)
+}
 
+func (h *Handler) writeTokens(c *gin.Context, status int, user users.User) {
+	identity := auth.Identity{UserID: user.ID, Username: user.Username, IsAdmin: user.IsSystem}
 	accessToken, err := h.authService.IssueAccessToken(identity)
 	if err != nil {
 		platformhttp.WriteError(c, platformhttp.InternalError(""))
 		return
 	}
-
 	refreshToken, err := h.authService.IssueRefreshToken(identity)
 	if err != nil {
 		platformhttp.WriteError(c, platformhttp.InternalError(""))
 		return
 	}
+	c.JSON(status, tokenResponse{AccessToken: accessToken, RefreshToken: refreshToken,
+		User: userInfo{ID: user.ID, Username: user.Username, Nickname: user.Nickname, IsAdmin: user.IsSystem}})
+}
 
-	// 更新最后登录信息
-	_ = h.userRepo.UpdateLastLogin(c.Request.Context(), user.ID, time.Now(), c.ClientIP())
-
-	c.JSON(http.StatusOK, tokenResponse{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		User: userInfo{
-			ID:       user.ID,
-			Username: user.Username,
-			Nickname: user.Nickname,
-			IsAdmin:  true,
-		},
-	})
+func (h *Handler) me(c *gin.Context) {
+	identity, _ := middleware.GetIdentity(c)
+	user, err := h.userRepo.GetByID(c.Request.Context(), identity.UserID)
+	if err != nil || user.Status != users.StatusActive {
+		platformhttp.WriteError(c, platformhttp.Unauthorized("登录状态已失效"))
+		return
+	}
+	c.JSON(http.StatusOK, userInfo{ID: user.ID, Username: user.Username, Nickname: user.Nickname, IsAdmin: user.IsSystem})
 }
 
 type refreshRequest struct {
