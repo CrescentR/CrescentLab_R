@@ -20,7 +20,8 @@ import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { ColorPickerMenu, toPickerHex } from "@/components/admin/colorPickerMenu";
 import { FancyCodeBlock } from "@/components/admin/fancyCodeBlock";
 import {
   AlignCenter,
@@ -89,6 +90,7 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
   const [tablePickerOpen, setTablePickerOpen] = useState(false);
   const [colorMenu, setColorMenu] = useState<"text" | "highlight" | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
+  const colorSelectionRef = useRef<{ from: number; to: number } | null>(null);
 
   const editor = useEditor({
     extensions: [
@@ -310,20 +312,23 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
             <IconBtn
               active={Boolean(editor.getAttributes("textStyle").color)}
               label="文字颜色"
-              onClick={() => setColorMenu((value) => (value === "text" ? null : "text"))}
+              onClick={() => {
+                rememberColorSelection(editor, colorSelectionRef);
+                setColorMenu((value) => (value === "text" ? null : "text"));
+              }}
             >
               <Palette size={18} strokeWidth={1.9} />
             </IconBtn>
             {colorMenu === "text" && (
-              <ColorPalette
+              <ColorPickerMenu
                 colors={TEXT_COLORS}
                 initialHex={toPickerHex(editor.getAttributes("textStyle").color, "#1c2821")}
                 mode="text"
                 onPick={(color) => {
-                  applyTextColor(editor, color);
+                  applyTextColor(editor, color, colorSelectionRef.current);
                 }}
                 onClear={() => {
-                  clearTextColor(editor);
+                  clearTextColor(editor, colorSelectionRef.current);
                   setColorMenu(null);
                 }}
               />
@@ -336,12 +341,15 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
                 Boolean(editor.getAttributes("textStyle").backgroundColor)
               }
               label="背景颜色"
-              onClick={() => setColorMenu((value) => (value === "highlight" ? null : "highlight"))}
+              onClick={() => {
+                rememberColorSelection(editor, colorSelectionRef);
+                setColorMenu((value) => (value === "highlight" ? null : "highlight"));
+              }}
             >
               <Highlighter size={18} strokeWidth={1.9} />
             </IconBtn>
             {colorMenu === "highlight" && (
-              <ColorPalette
+              <ColorPickerMenu
                 colors={HIGHLIGHT_COLORS}
                 initialHex={toPickerHex(
                   (editor.getAttributes("highlight").color as string) ||
@@ -350,10 +358,10 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
                 )}
                 mode="highlight"
                 onPick={(color) => {
-                  applyHighlightColor(editor, color);
+                  applyHighlightColor(editor, color, colorSelectionRef.current);
                 }}
                 onClear={() => {
-                  clearHighlightColor(editor);
+                  clearHighlightColor(editor, colorSelectionRef.current);
                   setColorMenu(null);
                 }}
               />
@@ -502,101 +510,36 @@ function ToolBtn({
   );
 }
 
-function ColorPalette({
-  colors,
-  initialHex,
-  mode,
-  onPick,
-  onClear,
-}: {
-  colors: string[];
-  initialHex: string;
-  mode: "text" | "highlight";
-  onPick: (color: string) => void;
-  onClear: () => void;
-}) {
-  const [hex, setHex] = useState(normalizeHex(initialHex));
-  const colorInputId = useId();
-  const safeHex = /^#[0-9a-fA-F]{6}$/.test(hex) ? hex : mode === "text" ? "#1c2821" : "#fff3bf";
-
-  function applyHex(value: string) {
-    const next = normalizeHex(value);
-    if (!/^#[0-9a-fA-F]{6}$/.test(next)) return;
-    setHex(next);
-    onPick(next);
-  }
-
-  return (
-    <div
-      className={`tiptap-color-menu tiptap-color-menu--${mode}`}
-      onMouseDown={(event) => {
-        const target = event.target as HTMLElement;
-        if (target.closest("input[type='text'], textarea")) return;
-        event.preventDefault();
-      }}
-    >
-      <div className="tiptap-color-grid">
-        {colors.map((color) => (
-          <button
-            aria-label={color}
-            className={`tiptap-color-swatch${safeHex.toLowerCase() === color.toLowerCase() ? " is-active" : ""}${isLightColor(color) ? " is-light" : ""}`}
-            key={color}
-            style={{ background: color }}
-            type="button"
-            onClick={() => applyHex(color)}
-          />
-        ))}
-      </div>
-
-      <div className="tiptap-color-custom">
-        <label className="tiptap-color-preview" htmlFor={colorInputId} title="打开色盘">
-          <span>色盘</span>
-          <span className="tiptap-color-preview-chip" style={{ background: safeHex }} />
-          <input
-            id={colorInputId}
-            type="color"
-            value={safeHex}
-            onChange={(event) => applyHex(event.target.value)}
-          />
-        </label>
-        <label className="tiptap-color-hex">
-          <span>十六进制</span>
-          <input
-            maxLength={7}
-            placeholder="#397864"
-            type="text"
-            value={hex}
-            onChange={(event) => setHex(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") applyHex(hex);
-            }}
-          />
-        </label>
-        <button className="tiptap-color-apply" type="button" onClick={() => applyHex(hex)}>
-          应用
-        </button>
-      </div>
-
-      <button className="tiptap-menu-clear" type="button" onClick={onClear}>
-        {mode === "highlight" ? "清除高亮" : "清除颜色"}
-      </button>
-    </div>
-  );
+function rememberColorSelection(
+  editor: Editor,
+  ref: { current: { from: number; to: number } | null },
+) {
+  const { from, to } = editor.state.selection;
+  ref.current = { from, to };
 }
 
-/** 空选区时扩展到当前文本节点，避免只清 storedMarks 而正文样式仍在 */
-function resolveColorRange(editor: Editor): { from: number; to: number } {
+/** 优先用打开色盘时保存的选区；空选区时扩展到当前文本节点 */
+function resolveColorRange(
+  editor: Editor,
+  saved: { from: number; to: number } | null,
+): { from: number; to: number } {
+  if (saved && saved.from !== saved.to) return saved;
+
   const { from, to, empty, $from } = editor.state.selection;
-  if (!empty) return { from, to };
+  const baseFrom = saved?.from ?? from;
+  const baseTo = saved?.to ?? to;
+  if (!empty || (saved && saved.from !== saved.to)) {
+    return { from: baseFrom, to: baseTo };
+  }
 
   const blockStart = $from.start();
-  let rangeFrom = from;
-  let rangeTo = from;
+  let rangeFrom = baseFrom;
+  let rangeTo = baseFrom;
   $from.parent.forEach((child: { isText: boolean; nodeSize: number }, offset: number) => {
     if (!child.isText) return;
     const start = blockStart + offset;
     const end = start + child.nodeSize;
-    if (from >= start && from <= end) {
+    if (baseFrom >= start && baseFrom <= end) {
       rangeFrom = start;
       rangeTo = end;
     }
@@ -604,27 +547,34 @@ function resolveColorRange(editor: Editor): { from: number; to: number } {
   return { from: rangeFrom, to: rangeTo };
 }
 
-function applyTextColor(editor: Editor, color: string) {
-  const range = resolveColorRange(editor);
+function applyTextColor(
+  editor: Editor,
+  color: string,
+  saved: { from: number; to: number } | null,
+) {
+  const range = resolveColorRange(editor, saved);
   editor.chain().focus().setTextSelection(range).setColor(color).run();
 }
 
-function clearTextColor(editor: Editor) {
-  const range = resolveColorRange(editor);
+function clearTextColor(editor: Editor, saved: { from: number; to: number } | null) {
+  const range = resolveColorRange(editor, saved);
   editor.chain().focus().setTextSelection(range).run();
   stripTextStyleAttribute(editor, "color");
 }
 
-function applyHighlightColor(editor: Editor, color: string) {
-  const range = resolveColorRange(editor);
+function applyHighlightColor(
+  editor: Editor,
+  color: string,
+  saved: { from: number; to: number } | null,
+) {
+  const range = resolveColorRange(editor, saved);
   editor.chain().focus().setTextSelection(range).run();
-  // 先去掉旧的 span 背景，再用 mark 高亮（避免链式命令内部 run 互相踩）
   stripTextStyleAttribute(editor, "backgroundColor");
   editor.commands.setHighlight({ color });
 }
 
-function clearHighlightColor(editor: Editor) {
-  const range = resolveColorRange(editor);
+function clearHighlightColor(editor: Editor, saved: { from: number; to: number } | null) {
+  const range = resolveColorRange(editor, saved);
   editor.chain().focus().setTextSelection(range).run();
   editor.commands.unsetHighlight();
   stripTextStyleAttribute(editor, "backgroundColor");
@@ -669,38 +619,6 @@ function stripTextStyleAttribute(editor: Editor, attribute: "color" | "backgroun
     dispatch(tr);
     return true;
   });
-}
-
-function normalizeHex(value: string): string {
-  const trimmed = value.trim();
-  if (/^[0-9a-fA-F]{6}$/.test(trimmed)) return `#${trimmed}`;
-  if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {
-    const [, r, g, b] = trimmed;
-    return `#${r}${r}${g}${g}${b}${b}`;
-  }
-  return trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
-}
-
-function toPickerHex(value: string | null | undefined, fallback: string): string {
-  if (!value) return fallback;
-  const normalized = normalizeHex(value);
-  if (/^#[0-9a-fA-F]{6}$/.test(normalized)) return normalized;
-  const rgb = value.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-  if (!rgb) return fallback;
-  const hex = rgb
-    .slice(1, 4)
-    .map((part) => Number(part).toString(16).padStart(2, "0"))
-    .join("");
-  return `#${hex}`;
-}
-
-function isLightColor(color: string): boolean {
-  const hex = normalizeHex(color).replace("#", "");
-  if (hex.length !== 6) return false;
-  const r = Number.parseInt(hex.slice(0, 2), 16);
-  const g = Number.parseInt(hex.slice(2, 4), 16);
-  const b = Number.parseInt(hex.slice(4, 6), 16);
-  return (r * 299 + g * 587 + b * 114) / 1000 > 210;
 }
 
 function TableSizePicker({ onPick }: { onPick: (rows: number, cols: number) => void }) {

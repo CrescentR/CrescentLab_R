@@ -4,8 +4,9 @@ import { common, createLowlight } from "lowlight";
 import { CodeBlockNodeView } from "@/components/admin/codeBlockNodeView";
 
 const lowlight = createLowlight(common);
-if (lowlight.registered("javascript") && !lowlight.registered("vue")) {
-  lowlight.registerAlias({ javascript: ["vue"] });
+if (lowlight.registered("xml") && !lowlight.registered("vue")) {
+  // Vue 单文件组件以模板结构为主，XML 语法比 JavaScript 更适合高亮标签与属性。
+  lowlight.registerAlias({ xml: ["vue"] });
 }
 
 export const FancyCodeBlock = CodeBlockLowlight.extend({

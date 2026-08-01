@@ -209,6 +209,8 @@
 }
 
 .tiptap-toolbar {
+  position: relative;
+  z-index: 40;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -282,6 +284,13 @@
 
 .tiptap-menu-wrap {
   position: relative;
+  z-index: 0;
+}
+
+/* 打开的下拉所在 wrap 抬高，避免后面的工具按钮（如表格）盖住色盘 */
+.tiptap-menu-wrap:has(.tiptap-color-menu),
+.tiptap-menu-wrap:has(.tiptap-table-picker) {
+  z-index: 90;
 }
 
 .tiptap-color-menu,
@@ -289,23 +298,24 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 50%;
-  z-index: 30;
+  z-index: 1;
   transform: translateX(-50%);
   border: 1px solid var(--border-soft);
-  border-radius: 14px;
+  border-radius: 16px;
   background: #fff;
-  box-shadow: 0 16px 40px rgba(35, 48, 39, 0.14);
+  box-shadow: 0 18px 44px rgba(35, 48, 39, 0.16);
   padding: 12px;
+  pointer-events: auto;
 }
 
 .tiptap-color-menu {
-  width: min(268px, calc(100vw - 48px));
+  width: min(280px, calc(100vw - 48px));
 }
 
 .tiptap-color-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 8px;
+  gap: 7px;
 }
 
 .tiptap-color-swatch {
@@ -329,55 +339,100 @@
   box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--teal);
 }
 
-.tiptap-color-custom {
+.tiptap-color-picker {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 8px;
-  align-items: end;
+  gap: 10px;
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border-soft);
 }
 
-.tiptap-color-preview,
-.tiptap-color-hex {
-  display: grid;
-  gap: 5px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
+.tiptap-color-sv {
+  position: relative;
+  width: 100%;
+  height: 140px;
+  border-radius: 12px;
+  cursor: crosshair;
+  touch-action: none;
+  background-image:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, transparent);
+  overflow: hidden;
 }
 
-.tiptap-color-preview {
-  position: relative;
+.tiptap-color-sv-thumb {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.tiptap-color-hue {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 12px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    #ff0000 0%,
+    #ffff00 17%,
+    #00ff00 33%,
+    #00ffff 50%,
+    #0000ff 67%,
+    #ff00ff 83%,
+    #ff0000 100%
+  );
+  outline: none;
   cursor: pointer;
 }
 
-.tiptap-color-preview-chip {
-  display: block;
-  width: 42px;
-  height: 34px;
+.tiptap-color-hue::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.tiptap-color-hue::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 3px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.tiptap-color-hex-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: 6px;
+  align-items: center;
+}
+
+.tiptap-color-hex-swatch {
+  width: 28px;
+  height: 28px;
   border: 1px solid var(--border-soft);
-  border-radius: 8px;
+  border-radius: 50%;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
-.tiptap-color-preview input[type="color"] {
-  position: absolute;
-  inset: 18px 0 0;
-  width: 42px;
-  height: 34px;
-  opacity: 0;
-  cursor: pointer;
-  border: 0;
-  padding: 0;
-}
-
-.tiptap-color-hex input {
+.tiptap-color-hex-input {
   width: 100%;
   height: 34px;
   border: 1px solid var(--border-soft);
-  border-radius: 8px;
+  border-radius: 10px;
   background: var(--surface-field);
   color: var(--text-strong);
   font: inherit;
@@ -388,18 +443,32 @@
   outline: none;
 }
 
-.tiptap-color-hex input:focus {
+.tiptap-color-hex-input:focus {
   border-color: rgba(57, 120, 100, 0.4);
   box-shadow: 0 0 0 3px rgba(57, 120, 100, 0.12);
 }
 
+.tiptap-color-copy,
 .tiptap-color-apply,
 .tiptap-menu-clear {
   border: 0;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   font: inherit;
   font-size: 12px;
+}
+
+.tiptap-color-copy {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  background: var(--surface-field);
+  color: var(--muted);
+}
+
+.tiptap-color-copy:hover {
+  color: var(--teal);
 }
 
 .tiptap-color-apply {
@@ -419,8 +488,11 @@
   margin-top: 10px;
   background: #f3f4f1;
   color: var(--muted);
-  padding: 8px 10px;
+  padding: 9px 10px;
   font-weight: 600;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
 }
 
 .tiptap-menu-clear:hover {
@@ -682,19 +754,106 @@
 }
 
 .tiptap-codeblock .hljs-comment,
-.tiptap-codeblock .hljs-quote { color: #6c757d; }
+.tiptap-codeblock .hljs-quote {
+  color: #7a847d;
+  font-style: italic;
+}
+
 .tiptap-codeblock .hljs-keyword,
-.tiptap-codeblock .hljs-selector-tag { color: #9c36b5; }
+.tiptap-codeblock .hljs-selector-tag,
+.tiptap-codeblock .hljs-doctag,
+.tiptap-codeblock .hljs-meta .hljs-keyword {
+  color: #8f3bb8;
+  font-weight: 650;
+}
+
 .tiptap-codeblock .hljs-string,
-.tiptap-codeblock .hljs-attr { color: #2b8a3e; }
+.tiptap-codeblock .hljs-regexp,
+.tiptap-codeblock .hljs-addition,
+.tiptap-codeblock .hljs-attribute {
+  color: #218739;
+}
+
 .tiptap-codeblock .hljs-number,
-.tiptap-codeblock .hljs-literal { color: #d9480f; }
+.tiptap-codeblock .hljs-literal,
+.tiptap-codeblock .hljs-symbol,
+.tiptap-codeblock .hljs-bullet {
+  color: #d05b15;
+}
+
 .tiptap-codeblock .hljs-title,
-.tiptap-codeblock .hljs-section { color: #1c7ed6; }
+.tiptap-codeblock .hljs-title.class_,
+.tiptap-codeblock .hljs-title.class_.inherited__,
+.tiptap-codeblock .hljs-title.function_,
+.tiptap-codeblock .hljs-section {
+  color: #1769aa;
+  font-weight: 650;
+}
+
 .tiptap-codeblock .hljs-built_in,
-.tiptap-codeblock .hljs-type { color: #0b7285; }
+.tiptap-codeblock .hljs-type,
+.tiptap-codeblock .hljs-variable.language_,
+.tiptap-codeblock .hljs-template-variable {
+  color: #087b83;
+}
+
+.tiptap-codeblock .hljs-attr,
+.tiptap-codeblock .hljs-property,
+.tiptap-codeblock .hljs-selector-attr,
+.tiptap-codeblock .hljs-selector-class,
+.tiptap-codeblock .hljs-selector-id {
+  color: #9b5715;
+}
+
+.tiptap-codeblock .hljs-tag,
+.tiptap-codeblock .hljs-name,
+.tiptap-codeblock .hljs-meta {
+  color: #b33a4b;
+}
+
+.tiptap-codeblock .hljs-params,
+.tiptap-codeblock .hljs-variable,
+.tiptap-codeblock .hljs-subst {
+  color: #34443a;
+}
+
+.tiptap-codeblock .hljs-deletion {
+  color: #c92a2a;
+  background: rgba(201, 42, 42, 0.08);
+}
+
+.tiptap-codeblock .hljs-emphasis {
+  font-style: italic;
+}
+
+.tiptap-codeblock .hljs-strong {
+  font-weight: 700;
+}
+
+/* 语言标识色用于快速区分代码块；语法颜色仍由 Lowlight token 决定。 */
+.tiptap-codeblock[data-language="javascript"],
+.tiptap-codeblock[data-language="typescript"] { --code-language-accent: #e0a800; }
+.tiptap-codeblock[data-language="vue"] { --code-language-accent: #42b883; }
+.tiptap-codeblock[data-language="python"] { --code-language-accent: #3572a5; }
+.tiptap-codeblock[data-language="java"] { --code-language-accent: #b07219; }
+.tiptap-codeblock[data-language="go"] { --code-language-accent: #00add8; }
+.tiptap-codeblock[data-language="rust"] { --code-language-accent: #b7410e; }
+.tiptap-codeblock[data-language="css"] { --code-language-accent: #563d7c; }
+.tiptap-codeblock[data-language="html"] { --code-language-accent: #e34c26; }
+.tiptap-codeblock[data-language="json"] { --code-language-accent: #6d7b70; }
+.tiptap-codeblock[data-language="bash"] { --code-language-accent: #4eaa25; }
+
+.tiptap-codeblock[data-language]:not([data-language="plaintext"]) {
+  border-top-color: var(--code-language-accent, var(--teal));
+}
+
+.tiptap-codeblock[data-language]:not([data-language="plaintext"]) .tiptap-codeblock-title {
+  color: var(--code-language-accent, var(--teal));
+}
 
 .tiptap-canvas {
+  position: relative;
+  z-index: 1;
   background:
     radial-gradient(circle at top, rgba(57, 120, 100, 0.04), transparent 40%),
     var(--surface);
