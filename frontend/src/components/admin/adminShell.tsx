@@ -88,52 +88,58 @@ export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--background)] text-[var(--text)]">
       <div className="flex min-h-screen">
-        <aside className="hidden w-72 shrink-0 border-r border-[var(--border-soft)] bg-[var(--surface-glass)] lg:flex lg:flex-col">
+        <aside className="admin-sidebar hidden w-72 shrink-0 border-r border-[var(--border-soft)] bg-[var(--surface-glass)] lg:flex lg:flex-col">
           <div className="px-5 py-6">
             <Link className="flex items-center gap-3" href="/admin">
               <span
                 aria-label="CrescentLab admin logo"
-                className="block size-11 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[length:20px_20px] bg-center bg-no-repeat"
+                className="block size-11 shrink-0 rounded-[var(--radius)] border border-[var(--border-soft)] bg-[length:20px_20px] bg-center bg-no-repeat"
                 role="img"
                 style={backgroundImageStyle(siteBranding.adminLogoUrl)}
               />
-              <span>
-                <span className="block font-lab-display text-xl font-bold text-[var(--text-strong)]">CrescentLab</span>
-                <span className="block font-lab-mono text-xs text-[var(--muted)]">后台控制台</span>
+              <span className="min-w-0">
+                <span className="block truncate font-lab-display text-xl font-bold leading-tight text-[var(--text-strong)]">
+                  CrescentLab
+                </span>
+                <span className="mt-0.5 block text-xs leading-snug text-[var(--muted)]">后台控制台</span>
               </span>
             </Link>
 
             <motion.div
               animate="visible"
-              className="mt-6 grid grid-cols-2 gap-2"
+              className="mt-6 flex gap-2"
               initial="hidden"
               variants={stagger}
             >
-              <motion.div variants={fadeUp}>
-                <ButtonLink href="/" icon={<ArrowLeft size={15} />} variant="secondary">
-                  返回前台
-                </ButtonLink>
+              <motion.div className="min-w-0 flex-1" variants={fadeUp}>
+                <Link
+                  className="admin-sidebar-action admin-sidebar-action-secondary"
+                  href="/"
+                >
+                  <ArrowLeft className="shrink-0" size={14} strokeWidth={2} />
+                  <span>返回前台</span>
+                </Link>
               </motion.div>
-              <motion.div variants={fadeUp}>
-                <ButtonLink href="/admin/postManagement" icon={<PenLine size={15} />} variant="primary">
-                  新建
-                </ButtonLink>
+              <motion.div className="min-w-0 flex-1" variants={fadeUp}>
+                <Link
+                  className="admin-sidebar-action admin-sidebar-action-primary"
+                  href="/admin/postManagement"
+                >
+                  <PenLine className="shrink-0" size={14} strokeWidth={2} />
+                  <span>新建</span>
+                </Link>
               </motion.div>
             </motion.div>
           </div>
 
-          <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-4">
+          <nav className="admin-sidebar-nav flex flex-1 flex-col gap-1.5 overflow-y-auto px-3 pb-2">
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = item.href === "/admin" ? pathname === item.href : pathname.startsWith(item.href);
 
               return (
                 <Link
-                  className={cn(
-                    "group relative flex h-12 items-center gap-3 rounded-[var(--radius)] px-4 font-lab-mono text-sm font-medium text-[var(--muted)] transition-colors",
-                    active && "text-[var(--text-strong)]",
-                    !active && "hover:bg-[var(--surface-field)] hover:text-[var(--text)]",
-                  )}
+                  className={cn("admin-sidebar-link", active && "is-active")}
                   href={item.href}
                   key={item.href}
                 >
@@ -144,9 +150,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
                       transition={transitionFast}
                     />
                   )}
-                  <Icon className="relative z-10" size={18} strokeWidth={2} />
-                  <span className="relative z-10 min-w-0 flex-1">{item.label}</span>
-                  <span className="relative z-10 size-1.5 rounded-full bg-[var(--border)] group-hover:bg-[var(--cyan)]" />
+                  <Icon className="relative z-10 shrink-0" size={17} strokeWidth={2} />
+                  <span className="relative z-10 min-w-0 flex-1 truncate">{item.label}</span>
+                  <span className="admin-sidebar-dot relative z-10 size-1.5 shrink-0 rounded-full bg-[var(--border)]" />
                 </Link>
               );
             })}

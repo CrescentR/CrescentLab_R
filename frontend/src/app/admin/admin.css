@@ -33,9 +33,227 @@
   line-height: 22px;
 }
 
+/* 侧栏：避免窄按钮中文换行溢出，并统一导航字阶 */
+.admin-sidebar-action {
+  display: inline-flex;
+  width: 100%;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+
+.admin-sidebar-action-secondary {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-strong);
+}
+
+.admin-sidebar-action-secondary:hover {
+  border-color: var(--text-strong);
+  background: var(--surface-raised);
+}
+
+.admin-sidebar-action-primary {
+  background: var(--blue);
+  color: #fff;
+  box-shadow: var(--shadow-tight);
+}
+
+.admin-sidebar-action-primary:hover {
+  background: var(--teal);
+}
+
+.admin-sidebar-link {
+  position: relative;
+  display: flex;
+  height: 44px;
+  align-items: center;
+  gap: 12px;
+  border-radius: var(--radius);
+  padding: 0 14px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.admin-sidebar-link:hover {
+  background: var(--surface-field);
+  color: var(--text);
+}
+
+.admin-sidebar-link.is-active {
+  color: var(--text-strong);
+}
+
+.admin-sidebar-link:hover .admin-sidebar-dot,
+.admin-sidebar-link.is-active .admin-sidebar-dot {
+  background: var(--cyan);
+}
+
 .admin-shell .tiptap-editor {
   font-size: 16px;
   line-height: 1.75;
+}
+
+/* 文章管理列表 */
+.article-admin-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.article-admin-item {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border-soft);
+  transition: background-color 160ms ease;
+}
+
+.article-admin-item:first-child {
+  border-top: 0;
+}
+
+.article-admin-item:hover {
+  background: var(--surface-field);
+}
+
+.article-admin-item-main {
+  min-width: 0;
+  flex: 1;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.article-admin-item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-admin-item-slug {
+  color: var(--muted-low);
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.article-admin-item-title {
+  margin: 8px 0 0;
+  overflow: hidden;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.article-admin-item-excerpt {
+  margin: 6px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.article-admin-item-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 8px 0 0;
+  color: var(--muted-low);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.article-admin-item-meta span + span::before {
+  display: inline-block;
+  margin: 0 8px;
+  color: var(--border);
+  content: "·";
+}
+
+.article-admin-item-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.article-admin-action {
+  display: inline-flex;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+
+.article-admin-action-delete {
+  border: 1px solid var(--border-soft);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.article-admin-action-delete:hover {
+  border-color: rgba(179, 82, 74, 0.35);
+  background: rgba(179, 82, 74, 0.08);
+  color: var(--danger);
+}
+
+.article-admin-action-edit {
+  border: 1px solid transparent;
+  background: var(--text-strong);
+  color: #fff;
+}
+
+.article-admin-action-edit:hover {
+  background: var(--teal);
+}
+
+@media (min-width: 768px) {
+  .article-admin-item {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px 22px;
+  }
+
+  .article-admin-item-actions {
+    align-self: center;
+  }
 }
 
 /* Observatory & Projects specific styles */

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
-  ChevronRight,
   FileText,
   PenLine,
   Pin,
@@ -214,53 +213,52 @@ export function ArticleWorkspace() {
               </Button>
             </div>
           ) : (
-            <ul className="divide-y divide-[var(--border-soft)]">
+            <ul className="article-admin-list">
               {articles.map((article) => (
-                <li key={article.id}>
-                  <div className="flex flex-col gap-3 px-5 py-4 transition-colors hover:bg-[var(--surface-field)] md:flex-row md:items-center md:justify-between">
+                <li className="article-admin-item" key={article.id}>
+                  <button
+                    className="article-admin-item-main"
+                    type="button"
+                    onClick={() => handleEdit(article)}
+                  >
+                    <div className="article-admin-item-tags">
+                      <Badge tone={statusTone(article.status)}>{statusLabel(article.status)}</Badge>
+                      {article.is_pinned && (
+                        <Badge tone="cyan">
+                          <Pin className="mr-1 inline" size={11} />
+                          置顶
+                        </Badge>
+                      )}
+                      <span className="article-admin-item-slug">/{article.slug}</span>
+                    </div>
+                    <h3 className="article-admin-item-title">{article.title || "未命名文章"}</h3>
+                    {article.excerpt ? (
+                      <p className="article-admin-item-excerpt">{article.excerpt}</p>
+                    ) : null}
+                    <p className="article-admin-item-meta">
+                      <span>更新 {formatDate(article.updated_at)}</span>
+                      {article.published_at ? <span>发布 {formatDate(article.published_at)}</span> : null}
+                      <span>{article.reading_time_minutes || 1} 分钟</span>
+                      <span>{article.view_count} 次阅读</span>
+                    </p>
+                  </button>
+                  <div className="article-admin-item-actions">
                     <button
-                      className="min-w-0 flex-1 text-left"
+                      className="article-admin-action article-admin-action-delete"
+                      type="button"
+                      onClick={() => handleDelete(article)}
+                    >
+                      <Trash2 size={14} strokeWidth={2} />
+                      删除
+                    </button>
+                    <button
+                      className="article-admin-action article-admin-action-edit"
                       type="button"
                       onClick={() => handleEdit(article)}
                     >
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Badge tone={statusTone(article.status)}>{statusLabel(article.status)}</Badge>
-                        {article.is_pinned && (
-                          <Badge tone="cyan">
-                            <Pin className="mr-1 inline" size={11} />
-                            置顶
-                          </Badge>
-                        )}
-                        <span className="font-lab-mono text-xs text-[var(--muted-low)]">/{article.slug}</span>
-                      </div>
-                      <h3 className="mt-2 truncate font-lab-display text-xl font-semibold text-[var(--text-strong)]">
-                        {article.title || "未命名文章"}
-                      </h3>
-                      <p className="mt-1 line-clamp-1 text-sm text-[var(--muted)]">
-                        {article.excerpt || "暂无摘要"}
-                      </p>
-                      <p className="mt-2 font-lab-mono text-xs text-[var(--muted-low)]">
-                        更新 {formatDate(article.updated_at)}
-                        {article.published_at ? ` · 发布 ${formatDate(article.published_at)}` : ""}
-                        {` · ${article.reading_time_minutes || 1} 分钟 · ${article.view_count} 次阅读`}
-                      </p>
+                      <PenLine size={14} strokeWidth={2} />
+                      编辑
                     </button>
-                    <div className="flex shrink-0 items-center gap-2">
-                      <Button
-                        icon={<Trash2 size={14} />}
-                        variant="secondary"
-                        onClick={() => handleDelete(article)}
-                      >
-                        删除
-                      </Button>
-                      <Button
-                        icon={<ChevronRight size={14} />}
-                        variant="primary"
-                        onClick={() => handleEdit(article)}
-                      >
-                        编辑
-                      </Button>
-                    </div>
                   </div>
                 </li>
               ))}
