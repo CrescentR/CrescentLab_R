@@ -51,7 +51,7 @@ export function NotesFeaturedCard({ article }: { article: ArticleListItem }) {
   const hasCover = Boolean(article.cover_url);
 
   return (
-    <motion.article className="nl-featured" variants={cardReveal}>
+    <motion.article animate="visible" className="nl-featured" variants={cardReveal}>
       <Link
         aria-label={`阅读 ${article.title}`}
         className={`nl-featured-link${hasCover ? " has-cover" : ""}`}
@@ -102,6 +102,7 @@ export function NotesMosaicCard({
 
   return (
     <motion.article
+      animate="visible"
       className={`nl-mosaic-card nl-mosaic-${size}${hasCover ? " has-cover" : ""}`}
       variants={cardReveal}
       whileHover={{ y: -6 }}
@@ -137,7 +138,7 @@ export function NotesStreamCard({ article }: { article: ArticleListItem }) {
   const hasCover = Boolean(article.cover_url);
 
   return (
-    <motion.article className="nl-stream-card" variants={cardReveal}>
+    <motion.article animate="visible" className="nl-stream-card" variants={cardReveal}>
       <Link
         aria-label={`阅读 ${article.title}`}
         className={`nl-stream-link${hasCover ? " has-cover" : ""}`}

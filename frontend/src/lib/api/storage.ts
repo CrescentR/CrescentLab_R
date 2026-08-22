@@ -40,10 +40,19 @@ export type UploadedStorageFile = {
   url: string;
   mime_type: string;
   size_bytes: number;
+  created_at?: string;
 };
 
 export function listStoragePolicies() {
   return apiJson<{ policies: StoragePolicy[] }>("/api/admin/storage/policies");
+}
+
+export function listStorageFiles(params: { mime_prefix?: string; limit?: number } = {}) {
+  const search = new URLSearchParams();
+  if (params.mime_prefix) search.set("mime_prefix", params.mime_prefix);
+  if (params.limit) search.set("limit", String(params.limit));
+  const suffix = search.size > 0 ? `?${search.toString()}` : "";
+  return apiJson<{ files: UploadedStorageFile[] }>(`/api/admin/storage/files${suffix}`);
 }
 
 export function createStoragePolicy(policy: StoragePolicyInput) {

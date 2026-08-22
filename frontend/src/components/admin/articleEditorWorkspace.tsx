@@ -128,9 +128,9 @@ export function ArticleEditorWorkspace({
       content_html: form.content_html,
       cover_url: form.cover_url,
       source_format: "tiptap",
-      status: "draft",
+      status,
     };
-  }, [form]);
+  }, [form, status]);
 
   const handleSave = useCallback(async () => {
     if (!form.title.trim()) {

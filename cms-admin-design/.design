@@ -1,0 +1,168 @@
+{
+  "version": "1.0",
+  "name": "CMS Admin",
+  "description": "Complete CMS admin interface design with Apple-inspired visual language",
+  "config": {
+    "designLibrary": {
+      "name": "苹果",
+      "id": "dl_builtin_apple",
+      "version": "",
+      "scope": "built-in-global",
+      "path": "c:\\Users\\CharlesForbit\\.trae-cn\\design_libraries\\dl_builtin_apple",
+      "versionSource": "metadata.json"
+    },
+    "defaultDeviceType": "desktop"
+  },
+  "data": [
+    {
+      "id": "page-login",
+      "type": "page",
+      "title": "Login",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/login.html",
+        "interactions": [
+          { "domId": "btn-login", "targetPageId": "page-dashboard" }
+        ]
+      },
+      "canvasData": { "x": 120, "y": 120, "group": 0 }
+    },
+    {
+      "id": "page-dashboard",
+      "type": "page",
+      "title": "Dashboard",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/dashboard.html",
+        "interactions": [
+          { "domId": "nav-posts", "targetPageId": "page-posts" },
+          { "domId": "nav-media", "targetPageId": "page-media" },
+          { "domId": "nav-comments", "targetPageId": "page-comments" },
+          { "domId": "nav-users", "targetPageId": "page-users" },
+          { "domId": "nav-settings", "targetPageId": "page-settings" },
+          { "domId": "btn-new-post", "targetPageId": "page-editor" }
+        ]
+      },
+      "canvasData": { "x": 560, "y": 120, "group": 0 }
+    },
+    {
+      "id": "page-posts",
+      "type": "page",
+      "title": "Posts",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/posts.html",
+        "interactions": [
+          { "domId": "nav-dashboard", "targetPageId": "page-dashboard" },
+          { "domId": "nav-media", "targetPageId": "page-media" },
+          { "domId": "nav-comments", "targetPageId": "page-comments" },
+          { "domId": "nav-users", "targetPageId": "page-users" },
+          { "domId": "nav-settings", "targetPageId": "page-settings" },
+          { "domId": "btn-new-post", "targetPageId": "page-editor" },
+          { "domId": "btn-edit-post", "targetPageId": "page-editor" }
+        ]
+      },
+      "canvasData": { "x": 1000, "y": 120, "group": 0 }
+    },
+    {
+      "id": "page-editor",
+      "type": "page",
+      "title": "Post Editor",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/editor.html",
+        "interactions": [
+          { "domId": "nav-dashboard", "targetPageId": "page-dashboard" },
+          { "domId": "nav-posts", "targetPageId": "page-posts" },
+          { "domId": "btn-save-draft", "targetPageId": "page-posts" },
+          { "domId": "btn-publish", "targetPageId": "page-posts" }
+        ]
+      },
+      "canvasData": { "x": 1440, "y": 120, "group": 0 }
+    },
+    {
+      "id": "page-media",
+      "type": "page",
+      "title": "Media Library",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/media.html",
+        "interactions": [
+          { "domId": "nav-dashboard", "targetPageId": "page-dashboard" },
+          { "domId": "nav-posts", "targetPageId": "page-posts" },
+          { "domId": "nav-comments", "targetPageId": "page-comments" },
+          { "domId": "nav-users", "targetPageId": "page-users" },
+          { "domId": "nav-settings", "targetPageId": "page-settings" }
+        ]
+      },
+      "canvasData": { "x": 120, "y": 720, "group": 0 }
+    },
+    {
+      "id": "page-comments",
+      "type": "page",
+      "title": "Comments",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/comments.html",
+        "interactions": [
+          { "domId": "nav-dashboard", "targetPageId": "page-dashboard" },
+          { "domId": "nav-posts", "targetPageId": "page-posts" },
+          { "domId": "nav-media", "targetPageId": "page-media" },
+          { "domId": "nav-users", "targetPageId": "page-users" },
+          { "domId": "nav-settings", "targetPageId": "page-settings" }
+        ]
+      },
+      "canvasData": { "x": 560, "y": 720, "group": 0 }
+    },
+    {
+      "id": "page-users",
+      "type": "page",
+      "title": "Users",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/users.html",
+        "interactions": [
+          { "domId": "nav-dashboard", "targetPageId": "page-dashboard" },
+          { "domId": "nav-posts", "targetPageId": "page-posts" },
+          { "domId": "nav-media", "targetPageId": "page-media" },
+          { "domId": "nav-comments", "targetPageId": "page-comments" },
+          { "domId": "nav-settings", "targetPageId": "page-settings" }
+        ]
+      },
+      "canvasData": { "x": 1000, "y": 720, "group": 0 }
+    },
+    {
+      "id": "page-settings",
+      "type": "page",
+      "title": "Settings",
+      "version": 1,
+      "createdAt": 1786248782,
+      "deviceType": "desktop",
+      "devMetadata": {
+        "htmlSrc": "pages/settings.html",
+        "interactions": [
+          { "domId": "nav-dashboard", "targetPageId": "page-dashboard" },
+          { "domId": "nav-posts", "targetPageId": "page-posts" },
+          { "domId": "nav-media", "targetPageId": "page-media" },
+          { "domId": "nav-comments", "targetPageId": "page-comments" },
+          { "domId": "nav-users", "targetPageId": "page-users" }
+        ]
+      },
+      "canvasData": { "x": 1440, "y": 720, "group": 0 }
+    }
+  ]
+}

@@ -2,18 +2,25 @@
 
 import { useCallback, useEffect, useState } from "react";
 import {
+  AppWindow,
   ArrowLeft,
   CheckCircle2,
   Clock,
   ExternalLink,
+  FileText,
   GitFork,
   Globe,
   History,
+  LayoutDashboard,
+  Link2,
   Loader2,
+  MonitorUp,
+  PackageOpen,
   Plus,
   Rocket,
   Save,
   Send,
+  Settings2,
   Upload,
   Trash2,
 } from "lucide-react";
@@ -36,6 +43,7 @@ import {
   type ProjectArtifact,
   type ProjectInput,
   type ProjectListItem,
+  type ProjectStatus,
 } from "@/lib/api/projects";
 
 type ProjectFormState = {
@@ -81,10 +89,10 @@ export function ProjectWorkspace() {
   const [activeView, setActiveView] = useState<"list" | "editor">("list");
   const [form, setForm] = useState<ProjectFormState>(emptyForm);
   const [projectId, setProjectId] = useState<number | null>(null);
-  const [status, setStatus] = useState<"draft" | "published">("draft");
+  const [status, setStatus] = useState<ProjectStatus>("draft");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saving, setSaving] = useState(false);
-  const [editorTab, setEditorTab] = useState<"content" | "releases">("content");
+  const [editorTab, setEditorTab] = useState<"overview" | "content" | "releases">("overview");
   const [artifacts, setArtifacts] = useState<ProjectArtifact[]>([]);
   const [artifactFile, setArtifactFile] = useState<File | null>(null);
   const [artifactLabel, setArtifactLabel] = useState("");
@@ -124,6 +132,9 @@ export function ProjectWorkspace() {
     setForm({ ...emptyForm, slug: generateSlug() });
     setProjectId(null);
     setStatus("draft");
+    setEditorTab("overview");
+    setArtifacts([]);
+    setPreviewArtifact(null);
     setActiveView("editor");
   }
 
@@ -142,10 +153,12 @@ export function ProjectWorkspace() {
         tech_stack: detail.tech_stack.join(", "),
       });
       setProjectId(detail.id);
-      setStatus(detail.status as "draft" | "published");
+      setStatus(detail.status);
+      setEditorTab("overview");
       setActiveView("editor");
       const releases = await listProjectArtifacts(detail.id);
       setArtifacts(releases.items);
+      setPreviewArtifact(releases.items.find((artifact) => artifact.is_published) ?? releases.items[0] ?? null);
     } catch (err) {
       push(extractErrorMessage(err, "加载项目详情失败"), "error");
     }
@@ -166,7 +179,7 @@ export function ProjectWorkspace() {
       cover_url: form.cover_url,
       repo_url: form.repo_url,
       demo_url: form.demo_url,
-      status: "draft",
+      status,
       tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
     };
   }
@@ -181,12 +194,12 @@ export function ProjectWorkspace() {
     try {
       if (projectId) {
         const result = await updateAdminProject(projectId, buildApiInput());
-        setStatus(result.status as "draft" | "published");
+        setStatus(result.status);
         push("项目已保存", "success");
       } else {
         const result = await createAdminProject(buildApiInput());
         setProjectId(result.id);
-        setStatus(result.status as "draft" | "published");
+        setStatus(result.status);
         push("项目已创建", "success");
       }
       setSaveStatus("saved");
@@ -224,7 +237,7 @@ export function ProjectWorkspace() {
         demo_url: form.demo_url,
         tech_stack: form.tech_stack.split(",").map((s) => s.trim()).filter(Boolean),
       });
-      setStatus(result.status as "draft" | "published");
+      setStatus(result.status);
       push("项目已发布", "success");
     } catch (err) {
       push(extractErrorMessage(err, "发布失败"), "error");
@@ -262,6 +275,7 @@ export function ProjectWorkspace() {
     try {
       const published = await publishProjectArtifact(projectId, artifact.id);
       setArtifacts((items) => items.map((item) => ({ ...item, is_published: item.id === published.id, published_at: item.id === published.id ? published.published_at : null })));
+      setPreviewArtifact(published);
       push(`已发布项目产物 v${published.version}`, "success");
     } catch (err) {
       push(extractErrorMessage(err, "发布产物失败"), "error");
@@ -281,110 +295,216 @@ export function ProjectWorkspace() {
 
   if (activeView === "editor") {
     return (
-      <main className="flex min-h-[calc(100dvh-4rem)] flex-col bg-[var(--background-soft)] lg:h-[calc(100dvh-4rem)] lg:min-h-[700px] lg:overflow-hidden">
-        <header className="flex min-h-16 shrink-0 items-center justify-between gap-4 border-b border-[var(--border-soft)] bg-[var(--surface)] px-4 md:px-6">
-          <div className="flex min-w-0 items-center gap-4">
-            <Button icon={<ArrowLeft size={15} />} variant="ghost" onClick={() => setActiveView("list")}>
-              Back
-            </Button>
-            <span className="h-6 w-px bg-[var(--border-soft)]" />
-            <div className="min-w-0">
-              <span className="block font-lab-mono text-xs font-medium uppercase text-[var(--muted)]">
-                {status === "published" ? "Published" : "Draft"}
-              </span>
-              <strong className="block truncate font-lab-mono text-sm text-[var(--text-strong)]">
-                {form.name || "Untitled Project"}
-              </strong>
+      <main className="project-cms-shell">
+        <header className="project-cms-header">
+          <div className="project-cms-title-group">
+            <button aria-label="返回项目列表" className="project-cms-back" onClick={() => setActiveView("list")} type="button">
+              <ArrowLeft size={18} />
+            </button>
+            <span className="project-cms-mark"><AppWindow size={20} /></span>
+            <div className="project-cms-title">
+              <span>CRESCENT CMS / PROJECTS</span>
+              <strong>{form.name || "未命名项目"}</strong>
             </div>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-[var(--border-soft)] bg-[var(--surface-raised)] px-3 py-1.5 font-lab-mono text-xs text-[var(--muted)] md:flex">
+
+          <div className="project-cms-save-state">
             {saveStatus === "saving" ? (
-              <><Loader2 size={12} className="animate-spin" />保存中...</>
+              <><Loader2 className="animate-spin" size={13} />正在保存</>
             ) : saveStatus === "saved" ? (
-              <><CheckCircle2 size={12} className="text-[var(--success)]" />已保存</>
+              <><CheckCircle2 size={13} />更改已保存</>
             ) : (
-              <><Clock size={12} />{projectId ? "等待保存" : "尚未保存"}</>
+              <><Clock size={13} />{projectId ? "等待保存" : "尚未创建"}</>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            <Button disabled={saving} icon={saving ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} variant="secondary" onClick={handleSave}>
-              Save
+
+          <div className="project-cms-actions">
+            <Button disabled={saving} icon={saving ? <Loader2 className="animate-spin" size={15} /> : <Save size={15} />} onClick={handleSave} variant="secondary">
+              保存项目
             </Button>
-            <Button disabled={saving} icon={saving ? <Loader2 size={15} className="animate-spin" /> : <Send size={15} />} variant="primary" onClick={handlePublish}>
-              Publish
+            <Button disabled={saving} icon={saving ? <Loader2 className="animate-spin" size={15} /> : <Send size={15} />} onClick={handlePublish} variant="primary">
+              发布项目
             </Button>
           </div>
         </header>
 
-        <section className="grid min-h-0 flex-1 bg-[var(--background-soft)] lg:grid-cols-[304px_minmax(0,1fr)]">
-          <aside className="hidden overflow-y-auto border-r border-[var(--border-soft)] bg-[var(--surface)] lg:block">
-            <div className="border-b border-[var(--border-soft)] px-5 py-4">
-              <h2 className="font-lab-mono text-sm font-medium uppercase text-[var(--text)]">Project Info</h2>
+        <section className="project-cms-workspace">
+          <aside className="project-cms-sidebar">
+            <div className="project-cms-sidebar-intro">
+              <span>PROJECT WORKSPACE</span>
+              <strong>项目发布中心</strong>
+              <p>管理公开资料、项目介绍与静态站点版本。</p>
             </div>
-            <div className="space-y-5 p-5">
-              <Field label="Name" value={form.name} onChange={(v) => updateField("name", v)} />
-              <Field label="Tagline" value={form.tagline} onChange={(v) => updateField("tagline", v)} />
-              <div>
-                <span className="flex items-center justify-between font-lab-mono text-xs font-medium text-[var(--muted)]">
-                  <span>URL Slug</span>
-                  <button className="text-[var(--blue)] hover:underline" type="button" onClick={() => updateField("slug", generateSlug())}>重新生成</button>
-                </span>
-                <span className="field-surface mt-2 block w-full rounded-[var(--radius)] px-4 py-3 font-lab-mono text-sm text-[var(--text-strong)]">
-                  {form.slug}
-                </span>
+
+            <nav aria-label="项目编辑模块" className="project-cms-nav">
+              <button className={editorTab === "overview" ? "is-active" : ""} onClick={() => setEditorTab("overview")} type="button">
+                <span><LayoutDashboard size={17} /></span>
+                <span><strong>项目概览</strong><small>资料与展示信息</small></span>
+              </button>
+              <button className={editorTab === "content" ? "is-active" : ""} onClick={() => setEditorTab("content")} type="button">
+                <span><FileText size={17} /></span>
+                <span><strong>展示内容</strong><small>项目介绍正文</small></span>
+              </button>
+              <button className={editorTab === "releases" ? "is-active" : ""} onClick={() => setEditorTab("releases")} type="button">
+                <span><Rocket size={17} /></span>
+                <span><strong>部署版本</strong><small>上传、预览与发布</small></span>
+              </button>
+            </nav>
+
+            <div className="project-cms-sidebar-status">
+              <div className="project-cms-status-line">
+                <span className={`project-cms-status-dot is-${status}`} />
+                <strong>{projectStatusLabel(status)}</strong>
               </div>
-              <Field label="Cover URL" value={form.cover_url} onChange={(v) => updateField("cover_url", v)} />
-              <Field label="Repository URL" value={form.repo_url} onChange={(v) => updateField("repo_url", v)} />
-              <Field label="Demo URL" value={form.demo_url} onChange={(v) => updateField("demo_url", v)} />
-              <Field label="Tech Stack" meta={<span className="font-lab-mono text-[10px] text-[var(--muted-low)]">comma separated</span>} value={form.tech_stack} onChange={(v) => updateField("tech_stack", v)} />
-              <Field label="Short Description" multiline value={form.description} onChange={(v) => updateField("description", v.slice(0, 500))} />
+              <dl>
+                <div><dt>站点标识</dt><dd>/{form.slug}</dd></div>
+                <div><dt>部署版本</dt><dd>{artifacts.length}</dd></div>
+              </dl>
+              {artifacts.some((artifact) => artifact.is_published) && (
+                <a href={`/api/p/${form.slug}/index.html`} rel="noopener noreferrer" target="_blank">
+                  打开线上站点 <ExternalLink size={14} />
+                </a>
+              )}
             </div>
           </aside>
 
-          <div className="flex min-h-0 flex-col overflow-auto bg-[var(--background-soft)] p-4 md:p-6">
-            <nav className="mb-4 flex w-fit gap-1 rounded-xl border border-[var(--border-soft)] bg-[var(--surface)] p-1">
-              <button className={`rounded-lg px-4 py-2 font-lab-mono text-xs ${editorTab === "content" ? "bg-[var(--blue-soft)] text-[var(--blue)]" : "text-[var(--muted)]"}`} onClick={() => setEditorTab("content")} type="button">内容编辑</button>
-              <button className={`rounded-lg px-4 py-2 font-lab-mono text-xs ${editorTab === "releases" ? "bg-[var(--blue-soft)] text-[var(--blue)]" : "text-[var(--muted)]"}`} onClick={() => setEditorTab("releases")} type="button">发布工作台</button>
-            </nav>
-            {editorTab === "content" ? (
-              <TipTapEditor content={form.content_html} onChange={(html) => updateField("content_html", html)} onSave={handleSave} />
-            ) : (
-              <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(420px,1.2fr)]">
-                <section className="space-y-4">
-                  <Panel className="p-5">
-                    <div className="flex items-start gap-3">
-                      <span className="grid size-10 place-items-center rounded-xl bg-[var(--blue-soft)] text-[var(--blue)]"><Upload size={18} /></span>
-                      <div>
-                        <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">上传静态站点</h2>
-                        <p className="mt-1 text-sm leading-6 text-[var(--muted)]">支持单文件 HTML，或根目录包含 index.html 的 ZIP。每次上传都会生成不可变版本。</p>
-                      </div>
-                    </div>
-                    <div className="mt-5 space-y-3">
-                      <Field label="版本说明" value={artifactLabel} onChange={setArtifactLabel} />
-                      <input accept=".html,.htm,.zip" className="block w-full rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] p-3 text-sm text-[var(--text)]" onChange={(event) => setArtifactFile(event.target.files?.[0] || null)} type="file" />
-                      <Button disabled={uploadingArtifact || !projectId} icon={uploadingArtifact ? <Loader2 className="animate-spin" size={15} /> : <Upload size={15} />} onClick={handleArtifactUpload} variant="primary">上传并预览</Button>
-                    </div>
-                  </Panel>
-                  <Panel className="overflow-hidden">
-                    <div className="flex items-center gap-2 border-b border-[var(--border-soft)] px-5 py-4"><History size={16} /><h2 className="font-lab-display font-semibold">版本历史</h2></div>
-                    {artifacts.length === 0 ? <p className="p-5 text-sm text-[var(--muted)]">尚未上传发布产物。</p> : artifacts.map((artifact) => (
-                      <div className="flex items-center gap-3 border-b border-[var(--border-soft)] px-5 py-4 last:border-0" key={artifact.id}>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2"><strong className="font-lab-mono text-sm">v{artifact.version}</strong>{artifact.is_published && <Badge tone="green">当前发布</Badge>}</div>
-                          <p className="mt-1 truncate text-xs text-[var(--muted)]">{artifact.label || artifact.source_type.toUpperCase()} · {(artifact.size_bytes / 1024).toFixed(1)} KB</p>
+          <div className="project-cms-canvas">
+            {editorTab === "overview" && (
+              <>
+                <header className="project-cms-page-heading">
+                  <div><span>01 / OVERVIEW</span><h1>项目概览</h1><p>配置项目在内容库中的身份、摘要与外部入口。</p></div>
+                  <Badge tone={status === "published" ? "green" : status === "archived" ? "neutral" : "amber"}>{projectStatusLabel(status)}</Badge>
+                </header>
+
+                <div className="project-cms-overview-grid">
+                  <div className="project-cms-stack">
+                    <section className="project-cms-panel">
+                      <div className="project-cms-panel-heading"><span><Settings2 size={17} /></span><div><h2>项目身份</h2><p>名称与标语会作为项目的第一层识别信息。</p></div></div>
+                      <div className="project-cms-form-grid">
+                        <Field label="项目名称" placeholder="例如：Crescent Console" value={form.name} onChange={(value) => updateField("name", value)} />
+                        <Field label="一句话标语" placeholder="说明项目解决什么问题" value={form.tagline} onChange={(value) => updateField("tagline", value)} />
+                        <div className="project-cms-slug-field">
+                          <span><span>站点标识</span><button onClick={() => updateField("slug", generateSlug())} type="button">重新生成</button></span>
+                          <code>/{form.slug}</code>
                         </div>
-                        {artifact.is_published && <a aria-label="打开已发布项目" className="grid size-8 place-items-center text-[var(--blue)]" href={`/api/p/${form.slug}/index.html`} rel="noopener noreferrer" target="_blank"><ExternalLink size={15} /></a>}
-                        <Button onClick={() => setPreviewArtifact(artifact)} variant="ghost">预览</Button>
-                        <Button icon={<Rocket size={14} />} onClick={() => handleArtifactPublish(artifact)} variant={artifact.is_published ? "secondary" : "primary"}>{artifact.is_published ? "重新发布" : "发布/回滚"}</Button>
+                        <Field label="技术栈" meta={<span>英文逗号分隔</span>} placeholder="Next.js, Go, PostgreSQL" value={form.tech_stack} onChange={(value) => updateField("tech_stack", value)} />
                       </div>
-                    ))}
-                  </Panel>
-                </section>
-                <Panel className="min-h-[620px] overflow-hidden">
-                  <div className="border-b border-[var(--border-soft)] px-5 py-4"><h2 className="font-lab-display font-semibold">隔离预览</h2><p className="mt-1 text-xs text-[var(--muted)]">脚本可运行，但不具备主站同源权限。</p></div>
-                  {previewArtifact ? <iframe className="h-[560px] w-full bg-white" sandbox="allow-scripts allow-forms allow-modals allow-popups" src={`/api/project-artifacts/${previewArtifact.public_id}/index.html`} title={`项目产物 v${previewArtifact.version} 预览`} /> : <div className="grid h-[560px] place-items-center text-sm text-[var(--muted)]">选择一个版本开始预览</div>}
-                </Panel>
-              </div>
+                    </section>
+
+                    <section className="project-cms-panel">
+                      <div className="project-cms-panel-heading"><span><FileText size={17} /></span><div><h2>项目摘要</h2><p>用于项目列表与快速了解，不替代完整介绍正文。</p></div></div>
+                      <Field label="简短描述" meta={<span>{form.description.length}/500</span>} multiline placeholder="概括目标、适用场景与核心价值" value={form.description} onChange={(value) => updateField("description", value.slice(0, 500))} />
+                    </section>
+
+                    <section className="project-cms-panel">
+                      <div className="project-cms-panel-heading"><span><Link2 size={17} /></span><div><h2>资源与入口</h2><p>连接代码仓库、产品演示与项目封面。</p></div></div>
+                      <div className="project-cms-form-grid">
+                        <Field label="封面地址" placeholder="https://..." value={form.cover_url} onChange={(value) => updateField("cover_url", value)} />
+                        <Field label="代码仓库" placeholder="https://github.com/..." value={form.repo_url} onChange={(value) => updateField("repo_url", value)} />
+                        <Field label="演示地址" placeholder="https://..." value={form.demo_url} onChange={(value) => updateField("demo_url", value)} />
+                      </div>
+                    </section>
+                  </div>
+
+                  <aside className="project-cms-preview-card">
+                    <div className={`project-cms-cover${form.cover_url ? " has-cover" : ""}`}>
+                      {form.cover_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img alt="项目封面预览" src={form.cover_url} />
+                      ) : (
+                        <AppWindow size={32} />
+                      )}
+                      <span>LIVE PROFILE</span>
+                    </div>
+                    <div className="project-cms-preview-copy">
+                      <div><Badge tone={status === "published" ? "green" : "amber"}>{projectStatusLabel(status)}</Badge><span>/{form.slug}</span></div>
+                      <h2>{form.name || "未命名项目"}</h2>
+                      <p>{form.tagline || "为项目补充一句清晰的价值说明。"}</p>
+                      <div className="project-cms-tech-list">
+                        {form.tech_stack.split(",").map((item) => item.trim()).filter(Boolean).map((item) => <span key={item}>{item}</span>)}
+                      </div>
+                    </div>
+                    <div className="project-cms-preview-links">
+                      <span><GitFork size={14} />{form.repo_url ? "已连接仓库" : "未连接仓库"}</span>
+                      <span><Globe size={14} />{form.demo_url ? "已设置演示" : "未设置演示"}</span>
+                    </div>
+                  </aside>
+                </div>
+              </>
+            )}
+
+            {editorTab === "content" && (
+              <>
+                <header className="project-cms-page-heading">
+                  <div><span>02 / CONTENT</span><h1>展示内容</h1><p>编排项目背景、能力说明与使用方式，形成完整的项目介绍。</p></div>
+                </header>
+                <div className="project-cms-content-note"><FileText size={16} /><span>此处内容用于项目介绍；静态站点文件与发布版本请前往“部署版本”。</span></div>
+                <div className="project-cms-editor-frame">
+                  <TipTapEditor content={form.content_html} onChange={(html) => updateField("content_html", html)} onSave={handleSave} />
+                </div>
+              </>
+            )}
+
+            {editorTab === "releases" && (
+              <>
+                <header className="project-cms-page-heading">
+                  <div><span>03 / DEPLOYMENTS</span><h1>部署版本</h1><p>上传静态站点产物，隔离预览后选择一个版本发布到线上。</p></div>
+                  {artifacts.some((artifact) => artifact.is_published) && <Badge tone="green">线上运行中</Badge>}
+                </header>
+
+                <div className="project-cms-release-summary">
+                  <div><span><MonitorUp size={17} /></span><small>线上状态</small><strong>{artifacts.some((artifact) => artifact.is_published) ? "已部署" : "未部署"}</strong></div>
+                  <div><span><PackageOpen size={17} /></span><small>版本总数</small><strong>{artifacts.length}</strong></div>
+                  <div><span><History size={17} /></span><small>预览版本</small><strong>{previewArtifact ? `v${previewArtifact.version}` : "—"}</strong></div>
+                </div>
+
+                <div className="project-cms-release-grid">
+                  <div className="project-cms-stack">
+                    <section className="project-cms-panel project-cms-upload-panel">
+                      <div className="project-cms-panel-heading"><span><Upload size={17} /></span><div><h2>创建新版本</h2><p>支持单文件 HTML，或根目录包含 index.html 的 ZIP。</p></div></div>
+                      {!projectId && <div className="project-cms-inline-notice">请先保存项目，再上传静态站点产物。</div>}
+                      <Field label="版本说明" placeholder="例如：重构登录流程与首页布局" value={artifactLabel} onChange={setArtifactLabel} />
+                      <label className="project-cms-file-input">
+                        <Upload size={20} />
+                        <span><strong>{artifactFile?.name || "选择 HTML 或 ZIP 文件"}</strong><small>每次上传都会生成不可变版本</small></span>
+                        <input accept=".html,.htm,.zip" onChange={(event) => setArtifactFile(event.target.files?.[0] || null)} type="file" />
+                      </label>
+                      <Button disabled={uploadingArtifact || !projectId} icon={uploadingArtifact ? <Loader2 className="animate-spin" size={15} /> : <Upload size={15} />} onClick={handleArtifactUpload} variant="primary">
+                        上传并打开预览
+                      </Button>
+                    </section>
+
+                    <section className="project-cms-panel project-cms-history-panel">
+                      <div className="project-cms-panel-heading"><span><History size={17} /></span><div><h2>版本历史</h2><p>选择任一版本预览、发布或回滚。</p></div></div>
+                      {artifacts.length === 0 ? (
+                        <div className="project-cms-empty-release"><PackageOpen size={24} /><span>尚未上传项目产物</span></div>
+                      ) : artifacts.map((artifact) => (
+                        <div className={`project-cms-release-row${previewArtifact?.id === artifact.id ? " is-previewing" : ""}`} key={artifact.id}>
+                          <span className="project-cms-version">v{artifact.version}</span>
+                          <div><div><strong>{artifact.label || `${artifact.source_type.toUpperCase()} 版本`}</strong>{artifact.is_published && <Badge tone="green">当前线上</Badge>}</div><p>{(artifact.size_bytes / 1024).toFixed(1)} KB · {new Date(artifact.created_at).toLocaleDateString("zh-CN")}</p></div>
+                          <div className="project-cms-release-actions">
+                            <Button onClick={() => setPreviewArtifact(artifact)} variant="ghost">预览</Button>
+                            <Button icon={<Rocket size={14} />} onClick={() => handleArtifactPublish(artifact)} variant={artifact.is_published ? "secondary" : "primary"}>{artifact.is_published ? "重新发布" : "发布/回滚"}</Button>
+                          </div>
+                        </div>
+                      ))}
+                    </section>
+                  </div>
+
+                  <section className="project-cms-browser-panel">
+                    <div className="project-cms-browser-bar">
+                      <div><i /><i /><i /></div>
+                      <span>{previewArtifact ? `/preview/v${previewArtifact.version}` : "/preview"}</span>
+                      {previewArtifact?.is_published && <a href={`/api/p/${form.slug}/index.html`} rel="noopener noreferrer" target="_blank"><ExternalLink size={14} />线上站点</a>}
+                    </div>
+                    {previewArtifact ? (
+                      <iframe sandbox="allow-scripts allow-forms allow-modals allow-popups" src={`/api/project-artifacts/${previewArtifact.public_id}/index.html`} title={`项目产物 v${previewArtifact.version} 预览`} />
+                    ) : (
+                      <div className="project-cms-browser-empty"><MonitorUp size={30} /><strong>隔离预览</strong><p>上传或选择一个版本后，在这里检查实际站点效果。</p></div>
+                    )}
+                  </section>
+                </div>
+              </>
             )}
           </div>
         </section>
@@ -496,6 +616,12 @@ export function ProjectWorkspace() {
       </div>
     </main>
   );
+}
+
+function projectStatusLabel(status: ProjectStatus): string {
+  if (status === "published") return "已发布";
+  if (status === "archived") return "已归档";
+  return "草稿";
 }
 
 function extractErrorMessage(err: unknown, fallback: string): string {

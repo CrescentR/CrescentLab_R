@@ -160,6 +160,48 @@ func TestCreatePolicyBindsSecretsWithoutReturningThem(t *testing.T) {
 	}
 }
 
+func TestRepositoryListsUploadedImageFiles(t *testing.T) {
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	repo := NewRepository(db, "sqlite")
+	if err := repo.EnsureSchema(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	policy, err := repo.Create(context.Background(), testPolicy("default", true))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.SaveFile(context.Background(), UploadedFile{
+		StoragePolicyID: policy.ID,
+		Name:            "cover.png",
+		ObjectKey:       "uploads/cover.png",
+		MIMEType:        "image/png",
+		SizeBytes:       12,
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.SaveFile(context.Background(), UploadedFile{
+		StoragePolicyID: policy.ID,
+		Name:            "notes.txt",
+		ObjectKey:       "uploads/notes.txt",
+		MIMEType:        "text/plain",
+		SizeBytes:       4,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	files, err := repo.ListFiles(context.Background(), "image/", 20)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 1 || files[0].Name != "cover.png" || files[0].URL != "/f/1" {
+		t.Fatalf("unexpected image list: %+v", files)
+	}
+}
+
 func testPolicy(name string, isDefault bool) Policy {
 	return Policy{
 		Name:            name,

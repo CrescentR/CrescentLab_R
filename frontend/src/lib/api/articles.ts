@@ -56,7 +56,9 @@ export type ArticleListParams = {
 };
 
 export function listPublicArticles(params: Omit<ArticleListParams, "status"> = {}) {
-  return apiJson<ArticleListResponse>(`/api/articles${toQueryString(params)}`);
+  return apiJson<ArticleListResponse>(`/api/articles${toQueryString(params)}`, {
+    cache: "no-store",
+  });
 }
 
 export function getPublicArticle(slug: string) {

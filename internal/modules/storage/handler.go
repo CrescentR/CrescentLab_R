@@ -35,6 +35,7 @@ func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.POST("/storage/policies/:id/default", h.setDefault)
 	group.POST("/storage/policies/:id/test", h.testPolicy)
 	group.POST("/storage/policies/:id/onedrive/authorize", h.authorizeOneDrive)
+	group.GET("/storage/files", h.listFiles)
 	group.POST("/storage/upload", h.upload)
 }
 
@@ -118,6 +119,16 @@ func (h *Handler) setDefault(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func (h *Handler) listFiles(c *gin.Context) {
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "48"))
+	files, err := h.repo.ListFiles(c.Request.Context(), c.Query("mime_prefix"), limit)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"files": files})
 }
 
 func (h *Handler) upload(c *gin.Context) {

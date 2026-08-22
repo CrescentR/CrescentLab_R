@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 )
 
 type Repository struct {
@@ -269,6 +272,91 @@ func (r *Repository) SaveFile(ctx context.Context, file UploadedFile) (UploadedF
 	}
 	file.ID, err = result.LastInsertId()
 	return file, err
+}
+
+func (r *Repository) ListFiles(ctx context.Context, mimePrefix string, limit int) ([]UploadedFile, error) {
+	if limit <= 0 || limit > 100 {
+		limit = 48
+	}
+	mimePrefix = strings.TrimSpace(mimePrefix)
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if r.driver == "postgres" {
+		if mimePrefix == "" {
+			rows, err = r.db.QueryContext(ctx, `
+SELECT id, COALESCE(storage_policy_id, 0), name, uri, COALESCE(mime_type, ''), size_bytes, created_at::text
+FROM files
+WHERE deleted_at IS NULL AND type = 'file'
+ORDER BY id DESC
+LIMIT $1`, limit)
+		} else {
+			rows, err = r.db.QueryContext(ctx, `
+SELECT id, COALESCE(storage_policy_id, 0), name, uri, COALESCE(mime_type, ''), size_bytes, created_at::text
+FROM files
+WHERE deleted_at IS NULL AND type = 'file' AND COALESCE(mime_type, '') LIKE $1
+ORDER BY id DESC
+LIMIT $2`, mimePrefix+"%", limit)
+		}
+	} else if mimePrefix == "" {
+		rows, err = r.db.QueryContext(ctx, `
+SELECT id, storage_policy_id, name, uri, mime_type, size_bytes, created_at
+FROM files
+ORDER BY id DESC
+LIMIT ?`, limit)
+	} else {
+		rows, err = r.db.QueryContext(ctx, `
+SELECT id, storage_policy_id, name, uri, mime_type, size_bytes, created_at
+FROM files
+WHERE mime_type LIKE ?
+ORDER BY id DESC
+LIMIT ?`, mimePrefix+"%", limit)
+	}
+	if err != nil {
+		return nil, fmt.Errorf("list files: %w", err)
+	}
+	defer rows.Close()
+
+	files := make([]UploadedFile, 0)
+	for rows.Next() {
+		var file UploadedFile
+		var createdAt flexibleTime
+		if err := rows.Scan(&file.ID, &file.StoragePolicyID, &file.Name, &file.ObjectKey, &file.MIMEType, &file.SizeBytes, &createdAt); err != nil {
+			return nil, err
+		}
+		file.CreatedAt = createdAt.String()
+		file.URL = "/f/" + strconv.FormatInt(file.ID, 10)
+		files = append(files, file)
+	}
+	return files, rows.Err()
+}
+
+type flexibleTime struct {
+	raw string
+}
+
+func (t *flexibleTime) Scan(value any) error {
+	if value == nil {
+		t.raw = ""
+		return nil
+	}
+	switch v := value.(type) {
+	case time.Time:
+		t.raw = v.UTC().Format(time.RFC3339)
+	case string:
+		t.raw = v
+	case []byte:
+		t.raw = string(v)
+	default:
+		t.raw = fmt.Sprint(v)
+	}
+	return nil
+}
+
+func (t flexibleTime) String() string {
+	return t.raw
 }
 
 func (r *Repository) File(ctx context.Context, id int64) (UploadedFile, Policy, error) {

@@ -64,5 +64,7 @@ CREATE TABLE IF NOT EXISTS files (
 	if err != nil {
 		return fmt.Errorf("ensure storage schema: %w", err)
 	}
+	// 旧库可能缺 created_at；忽略已存在时的报错
+	_, _ = r.db.ExecContext(ctx, `ALTER TABLE files ADD COLUMN created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP`)
 	return nil
 }

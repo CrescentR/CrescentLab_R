@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import {
   BookOpen,
   Feather,
@@ -44,29 +44,39 @@ const fadeUp = {
   },
 };
 
-type NotesExperienceProps = {
-  initialArticles: ArticleListItem[];
-  initialPage: number;
-  total: number;
-  totalPages: number;
-};
-
-export function NotesExperience({
-  initialArticles,
-  initialPage,
-  total,
-  totalPages,
-}: NotesExperienceProps) {
+export function NotesExperience() {
   const reduceMotion = useReducedMotion();
-  const [articles, setArticles] = useState(initialArticles);
-  const [page, setPage] = useState(initialPage);
-  const [pages, setPages] = useState(totalPages);
-  const [totalCount, setTotalCount] = useState(total);
+  const [articles, setArticles] = useState<ArticleListItem[]>([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
   const [filter, setFilter] = useState<NotesFilter>("all");
   const [view, setView] = useState<NotesView>("mosaic");
   const [query, setQuery] = useState("");
+  const [loadingArticles, setLoadingArticles] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const result = await listPublicArticles({ page: 1, page_size: PAGE_SIZE });
+        if (!active) return;
+        setArticles(result.items);
+        setPage(result.page);
+        setPages(result.total_pages);
+        setTotalCount(result.total);
+      } catch {
+        if (active) setLoadError("加载文章失败，请刷新页面重试");
+      } finally {
+        if (active) setLoadingArticles(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const summary = useMemo(() => summarizeNotes(articles), [articles]);
   const featured = useMemo(() => {
@@ -159,7 +169,18 @@ export function NotesExperience({
           </div>
         </motion.div>
 
-        {articles.length === 0 ? (
+        {loadingArticles ? (
+          <motion.div className="nl-empty" variants={fadeUp}>
+            <LoaderCircle aria-hidden="true" className="nl-spin" size={28} />
+            <h2>正在读取笔记</h2>
+          </motion.div>
+        ) : loadError && articles.length === 0 ? (
+          <motion.div className="nl-empty" variants={fadeUp}>
+            <Feather aria-hidden="true" size={28} />
+            <h2>笔记加载失败</h2>
+            <p>{loadError}</p>
+          </motion.div>
+        ) : articles.length === 0 ? (
           <motion.div className="nl-empty" variants={fadeUp}>
             <Feather aria-hidden="true" size={28} />
             <h2>还没有笔记</h2>
