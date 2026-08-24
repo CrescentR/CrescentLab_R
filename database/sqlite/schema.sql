@@ -230,12 +230,45 @@ CREATE TABLE IF NOT EXISTS observatory_notes (
   title TEXT NOT NULL,
   content_md TEXT NOT NULL DEFAULT '',
   content_html TEXT NOT NULL DEFAULT '',
+  question TEXT NOT NULL DEFAULT '',
+  observation TEXT NOT NULL DEFAULT '',
+  conclusion TEXT NOT NULL DEFAULT '',
+  next_step TEXT NOT NULL DEFAULT '',
   tags TEXT NOT NULL DEFAULT '[]',
   note_type TEXT NOT NULL DEFAULT 'fragment',
   status TEXT NOT NULL DEFAULT 'active',
+  visibility TEXT NOT NULL DEFAULT 'private',
+  is_featured INTEGER NOT NULL DEFAULT 0,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
   CHECK (note_type IN ('fragment', 'failure', 'idea', 'tool_idea', 'tech_debt')),
-  CHECK (status IN ('active', 'resolved', 'abandoned'))
+  CHECK (status IN ('active', 'resolved', 'abandoned')),
+  CHECK (visibility IN ('public', 'private'))
 );
+
+CREATE TABLE IF NOT EXISTS builds (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  public_id TEXT UNIQUE,
+  name TEXT NOT NULL,
+  slug TEXT NOT NULL,
+  one_liner TEXT NOT NULL DEFAULT '',
+  stage TEXT NOT NULL DEFAULT 'prototype',
+  round_goal TEXT NOT NULL DEFAULT '',
+  latest_progress TEXT NOT NULL DEFAULT '',
+  next_step TEXT NOT NULL DEFAULT '',
+  detail_url TEXT,
+  demo_url TEXT,
+  repo_url TEXT,
+  status TEXT NOT NULL DEFAULT 'draft',
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  progressed_at DATETIME,
+  published_at DATETIME,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  deleted_at DATETIME,
+  CHECK (stage IN ('prototype', 'development', 'validating', 'beta', 'paused')),
+  CHECK (status IN ('draft', 'published', 'archived'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_builds_slug_active ON builds (slug) WHERE deleted_at IS NULL;

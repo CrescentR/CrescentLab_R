@@ -26,6 +26,9 @@ func NewRepository(db *sql.DB, driver ...string) *Repository {
 	return &Repository{db: db, driver: d}
 }
 
+const noteListColumns = `id, title, question, observation, conclusion, next_step, tags, note_type, status, visibility, is_featured, created_at, updated_at`
+const noteDetailColumns = `id, public_id, title, content_md, content_html, question, observation, conclusion, next_step, tags, note_type, status, visibility, is_featured, created_at, updated_at`
+
 func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, error) {
 	if r == nil || r.db == nil {
 		return ListResult{}, errors.New("observatory repository database is nil")
@@ -34,9 +37,13 @@ func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, e
 	page := filter.normalizedPage()
 	pageSize := filter.normalizedPageSize()
 	where, args := buildWhereClause(filter)
+	order := " ORDER BY updated_at DESC"
+	if filter.Visibility == NoteVisibilityPublic {
+		order = " ORDER BY is_featured DESC, updated_at DESC"
+	}
 
 	countQuery := "SELECT COUNT(*) FROM observatory_notes" + where
-	listQuery := "SELECT id, title, tags, note_type, status, created_at, updated_at FROM observatory_notes" + where + " ORDER BY updated_at DESC LIMIT ? OFFSET ?"
+	listQuery := "SELECT " + noteListColumns + " FROM observatory_notes" + where + order + " LIMIT ? OFFSET ?"
 
 	if r.driver == "postgres" {
 		countQuery = convertPlaceholders(countQuery)
@@ -92,10 +99,14 @@ func buildWhereClause(filter ListFilter) (string, []any) {
 		where = append(where, "note_type = ?")
 		args = append(args, string(filter.NoteType))
 	}
+	if filter.Visibility != "" {
+		where = append(where, "visibility = ?")
+		args = append(args, string(filter.Visibility))
+	}
 	if strings.TrimSpace(filter.Search) != "" {
-		where = append(where, "(title LIKE ? OR content_md LIKE ?)")
+		where = append(where, "(title LIKE ? OR question LIKE ? OR observation LIKE ? OR content_md LIKE ?)")
 		pattern := "%" + filter.Search + "%"
-		args = append(args, pattern, pattern)
+		args = append(args, pattern, pattern, pattern, pattern)
 	}
 
 	return " WHERE " + strings.Join(where, " AND "), args
@@ -106,7 +117,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (Note, error) {
 		return Note{}, errors.New("observatory repository database is nil")
 	}
 
-	query := "SELECT id, public_id, title, content_md, content_html, tags, note_type, status, created_at, updated_at FROM observatory_notes WHERE id = ? AND deleted_at IS NULL"
+	query := "SELECT " + noteDetailColumns + " FROM observatory_notes WHERE id = ? AND deleted_at IS NULL"
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
 	}
@@ -122,15 +133,6 @@ func (r *Repository) Create(ctx context.Context, input CreateInput, renderedHTML
 		return Note{}, err
 	}
 
-	noteType := input.NoteType
-	if noteType == "" {
-		noteType = string(NoteTypeFragment)
-	}
-	status := input.Status
-	if status == "" {
-		status = string(NoteStatusActive)
-	}
-
 	tagsJSON, err := json.Marshal(input.Tags)
 	if err != nil {
 		return Note{}, fmt.Errorf("marshal tags: %w", err)
@@ -139,18 +141,19 @@ func (r *Repository) Create(ctx context.Context, input CreateInput, renderedHTML
 	query := createNoteQuery(r.driver)
 	args := []any{
 		input.Title, input.ContentMD, renderedHTML,
-		string(tagsJSON), noteType, status,
+		input.Question, input.Observation, input.Conclusion, input.NextStep,
+		string(tagsJSON), input.NoteType, input.Status, input.Visibility, input.IsFeatured,
 	}
 
 	var id int64
 	if r.driver == "postgres" {
 		if err := r.db.QueryRowContext(ctx, query, args...).Scan(&id); err != nil {
-			return Note{}, fmt.Errorf("create observatory note: %w", err)
+			return Note{}, normalizeNoteWriteError("create observatory note", err)
 		}
 	} else {
 		result, err := r.db.ExecContext(ctx, query, args...)
 		if err != nil {
-			return Note{}, fmt.Errorf("create observatory note: %w", err)
+			return Note{}, normalizeNoteWriteError("create observatory note", err)
 		}
 		id, err = result.LastInsertId()
 		if err != nil {
@@ -169,15 +172,6 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput, re
 		return Note{}, err
 	}
 
-	noteType := input.NoteType
-	if noteType == "" {
-		noteType = string(NoteTypeFragment)
-	}
-	status := input.Status
-	if status == "" {
-		status = string(NoteStatusActive)
-	}
-
 	tagsJSON, err := json.Marshal(input.Tags)
 	if err != nil {
 		return Note{}, fmt.Errorf("marshal tags: %w", err)
@@ -185,7 +179,8 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput, re
 
 	query := `UPDATE observatory_notes
 SET title = ?, content_md = ?, content_html = ?,
-    tags = ?, note_type = ?, status = ?,
+    question = ?, observation = ?, conclusion = ?, next_step = ?,
+    tags = ?, note_type = ?, status = ?, visibility = ?, is_featured = ?,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = ? AND deleted_at IS NULL`
 	if r.driver == "postgres" {
@@ -194,9 +189,10 @@ WHERE id = ? AND deleted_at IS NULL`
 
 	result, err := r.db.ExecContext(ctx, query,
 		input.Title, input.ContentMD, renderedHTML,
-		string(tagsJSON), noteType, status, id)
+		input.Question, input.Observation, input.Conclusion, input.NextStep,
+		string(tagsJSON), input.NoteType, input.Status, input.Visibility, input.IsFeatured, id)
 	if err != nil {
-		return Note{}, fmt.Errorf("update observatory note: %w", err)
+		return Note{}, normalizeNoteWriteError("update observatory note", err)
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
@@ -234,7 +230,10 @@ func (r *Repository) SoftDelete(ctx context.Context, id int64) error {
 }
 
 func createNoteQuery(driver string) string {
-	query := "INSERT INTO observatory_notes (title, content_md, content_html, tags, note_type, status) VALUES (?, ?, ?, ?, ?, ?)"
+	query := `INSERT INTO observatory_notes (
+  title, content_md, content_html, question, observation, conclusion, next_step,
+  tags, note_type, status, visibility, is_featured
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	if driver == "postgres" {
 		return convertPlaceholders(query) + " RETURNING id"
 	}
@@ -244,12 +243,15 @@ func createNoteQuery(driver string) string {
 func scanNoteRow(row *sql.Row) (Note, error) {
 	var note Note
 	var tagsRaw string
-	var noteType, status string
+	var noteType, status, visibility string
+	var publicID sql.NullString
+	var featured bool
 
 	if err := row.Scan(
-		&note.ID, &note.PublicID, &note.Title,
+		&note.ID, &publicID, &note.Title,
 		&note.ContentMD, &note.ContentHTML,
-		&tagsRaw, &noteType, &status,
+		&note.Question, &note.Observation, &note.Conclusion, &note.NextStep,
+		&tagsRaw, &noteType, &status, &visibility, &featured,
 		&note.CreatedAt, &note.UpdatedAt,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -258,10 +260,16 @@ func scanNoteRow(row *sql.Row) (Note, error) {
 		return Note{}, fmt.Errorf("scan observatory note: %w", err)
 	}
 
+	note.PublicID = publicID.String
 	note.NoteType = NoteType(noteType)
 	note.Status = NoteStatus(status)
+	note.Visibility = NoteVisibility(visibility)
+	note.IsFeatured = featured
 	if tagsRaw != "" {
 		_ = json.Unmarshal([]byte(tagsRaw), &note.Tags)
+	}
+	if note.Tags == nil {
+		note.Tags = []string{}
 	}
 
 	return note, nil
@@ -270,17 +278,23 @@ func scanNoteRow(row *sql.Row) (Note, error) {
 func scanNoteListItem(scanner interface{ Scan(dest ...any) error }) (NoteListItem, error) {
 	var item NoteListItem
 	var tagsRaw string
+	var featured bool
 
 	if err := scanner.Scan(
-		&item.ID, &item.Title, &tagsRaw,
-		&item.NoteType, &item.Status,
+		&item.ID, &item.Title,
+		&item.Question, &item.Observation, &item.Conclusion, &item.NextStep,
+		&tagsRaw, &item.NoteType, &item.Status, &item.Visibility, &featured,
 		&item.CreatedAt, &item.UpdatedAt,
 	); err != nil {
 		return NoteListItem{}, err
 	}
 
+	item.IsFeatured = featured
 	if tagsRaw != "" {
 		_ = json.Unmarshal([]byte(tagsRaw), &item.Tags)
+	}
+	if item.Tags == nil {
+		item.Tags = []string{}
 	}
 
 	return item, nil
@@ -311,5 +325,3 @@ func normalizeNoteWriteError(operation string, err error) error {
 	}
 	return fmt.Errorf("%s: %w", operation, err)
 }
-
-

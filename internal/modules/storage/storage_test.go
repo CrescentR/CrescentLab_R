@@ -160,6 +160,43 @@ func TestCreatePolicyBindsSecretsWithoutReturningThem(t *testing.T) {
 	}
 }
 
+func TestCreatePolicyRejectsLocalType(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	db, err := sql.Open("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	db.SetMaxOpenConns(1)
+	repo := NewRepository(db, "sqlite")
+	if err := repo.EnsureSchema(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	router := gin.New()
+	NewHandler(repo).RegisterAdminRoutes(router.Group("/api/admin"))
+	body, err := json.Marshal(map[string]any{
+		"name":              "disk",
+		"type":              "local",
+		"bucket":            "media",
+		"endpoint":          "https://storage.example.com",
+		"access_key_id":     "key",
+		"secret_access_key": "secret",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	request := httptest.NewRequest(http.MethodPost, "/api/admin/storage/policies", bytes.NewReader(body))
+	request.Header.Set("Content-Type", "application/json")
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+	if response.Code != http.StatusBadRequest {
+		t.Fatalf("expected local storage to be rejected, got %d: %s", response.Code, response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "不支持的存储类型") {
+		t.Fatalf("unexpected rejection body: %s", response.Body.String())
+	}
+}
+
 func TestRepositoryListsUploadedImageFiles(t *testing.T) {
 	db, err := sql.Open("sqlite", ":memory:")
 	if err != nil {

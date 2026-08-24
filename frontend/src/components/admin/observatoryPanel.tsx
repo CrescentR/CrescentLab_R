@@ -6,7 +6,6 @@ import {
   BookOpen,
   ChevronRight,
   Code2,
-  Flame,
   Lightbulb,
   Plus,
   Search,
@@ -21,31 +20,45 @@ import {
   updateObservatoryNote,
   type NoteStatus,
   type NoteType,
+  type NoteVisibility,
   type ObservatoryListParams,
 } from "@/lib/api/observatory";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Field } from "@/components/ui/field";
 import { Panel } from "@/components/ui/panel";
 import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 type NoteFormData = {
   title: string;
+  question: string;
+  observation: string;
+  conclusion: string;
+  next_step: string;
   content_md: string;
   tags: string;
   note_type: NoteType;
   status: NoteStatus;
+  visibility: NoteVisibility;
+  is_featured: boolean;
 };
 
 const emptyForm: NoteFormData = {
   title: "",
+  question: "",
+  observation: "",
+  conclusion: "",
+  next_step: "",
   content_md: "",
   tags: "",
   note_type: "fragment",
   status: "active",
+  visibility: "private",
+  is_featured: false,
 };
 
-const noteTypeConfig: Record<NoteType, { label: string; icon: typeof Flame; tone: "amber" | "rose" | "cyan" | "purple" | "green" }> = {
+const noteTypeConfig: Record<NoteType, { label: string; icon: typeof BookOpen; tone: "amber" | "rose" | "cyan" | "purple" | "green" }> = {
   fragment: { label: "碎碎念", icon: BookOpen, tone: "cyan" },
   failure: { label: "失败实验", icon: AlertTriangle, tone: "rose" },
   idea: { label: "想法", icon: Lightbulb, tone: "amber" },
@@ -71,6 +84,19 @@ export function ObservatoryPanel() {
   const [saving, setSaving] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const fetchNotes = useCallback(async () => {
+    try {
+      const params: ObservatoryListParams = { page_size: 50 };
+      if (filterType) params.note_type = filterType;
+      if (filterStatus) params.status = filterStatus;
+      if (searchQuery) params.search = searchQuery;
+      const result = await listObservatoryNotes(params);
+      setNotes(result.items);
+    } catch (err) {
+      push(extractErrorMessage(err, "加载观测台笔记失败"), "error");
+    }
+  }, [filterType, filterStatus, searchQuery, push]);
+
   useEffect(() => {
     let active = true;
     void (async () => {
@@ -93,22 +119,6 @@ export function ObservatoryPanel() {
     };
   }, [filterType, filterStatus, searchQuery, push]);
 
-  const fetchNotes = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params: ObservatoryListParams = { page_size: 50 };
-      if (filterType) params.note_type = filterType;
-      if (filterStatus) params.status = filterStatus;
-      if (searchQuery) params.search = searchQuery;
-      const result = await listObservatoryNotes(params);
-      setNotes(result.items);
-    } catch (err) {
-      push(extractErrorMessage(err, "加载观测台笔记失败"), "error");
-    } finally {
-      setLoading(false);
-    }
-  }, [filterType, filterStatus, searchQuery, push]);
-
   function handleNewNote() {
     setEditing({ ...emptyForm });
     setEditingId(null);
@@ -121,10 +131,16 @@ export function ObservatoryPanel() {
       const detail = await getObservatoryNote(note.id);
       setEditing({
         title: detail.title,
+        question: detail.question || "",
+        observation: detail.observation || "",
+        conclusion: detail.conclusion || "",
+        next_step: detail.next_step || "",
         content_md: detail.content_md || "",
         tags: detail.tags.join(", "),
         note_type: detail.note_type,
         status: detail.status,
+        visibility: detail.visibility || "private",
+        is_featured: detail.is_featured,
       });
     } catch (err) {
       push(extractErrorMessage(err, "加载笔记详情失败"), "error");
@@ -144,10 +160,16 @@ export function ObservatoryPanel() {
     try {
       const input = {
         title: editing.title,
+        question: editing.question,
+        observation: editing.observation,
+        conclusion: editing.conclusion,
+        next_step: editing.next_step,
         content_md: editing.content_md,
         tags: editing.tags.split(",").map((t) => t.trim()).filter(Boolean),
         note_type: editing.note_type,
         status: editing.status,
+        visibility: editing.is_featured ? "public" as const : editing.visibility,
+        is_featured: editing.is_featured,
       };
       if (editingId) {
         await updateObservatoryNote(editingId, input);
@@ -247,21 +269,17 @@ export function ObservatoryPanel() {
               </h2>
               <Button variant="ghost" onClick={() => setEditing(null)}>取消</Button>
             </div>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              想验证什么 → 看到了什么 → 这个结果改变了什么判断。公开给访客时，问题和观察为必填。
+            </p>
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_280px]">
               <div className="space-y-4">
-                <input
-                  className="field-surface block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
-                  placeholder="标题"
-                  value={editing.title}
-                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-                />
-                <textarea
-                  className="field-surface block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
-                  placeholder="内容（支持 Markdown）..."
-                  rows={8}
-                  value={editing.content_md}
-                  onChange={(e) => setEditing({ ...editing, content_md: e.target.value })}
-                />
+                <Field label="标题" placeholder="直接写问题或观察" value={editing.title} onChange={(value) => setEditing({ ...editing, title: value })} />
+                <Field label="问题 / 背景" multiline placeholder="为什么会出现这个问题？" value={editing.question} onChange={(value) => setEditing({ ...editing, question: value })} />
+                <Field label="关键观察" multiline placeholder="实际发生了什么，有什么证据？" value={editing.observation} onChange={(value) => setEditing({ ...editing, observation: value })} />
+                <Field label="当前结论" multiline placeholder="目前可以确认什么，仍不能确认什么？" value={editing.conclusion} onChange={(value) => setEditing({ ...editing, conclusion: value })} />
+                <Field label="下一步" placeholder="仅进行中需要一个可检查的动作" value={editing.next_step} onChange={(value) => setEditing({ ...editing, next_step: value })} />
+                <Field label="补充笔记" multiline placeholder="可选，支持 Markdown" value={editing.content_md} onChange={(value) => setEditing({ ...editing, content_md: value })} />
               </div>
               <div className="space-y-4">
                 <div>
@@ -288,15 +306,27 @@ export function ObservatoryPanel() {
                     ))}
                   </select>
                 </div>
-                <div>
-                  <span className="font-lab-mono text-xs text-[var(--muted)]">标签（逗号分隔）</span>
+                <Field label="标签（逗号分隔）" placeholder="如: 前端,性能,待验证" value={editing.tags} onChange={(value) => setEditing({ ...editing, tags: value })} />
+                <label className="flex items-center gap-2 text-sm text-[var(--text)]">
                   <input
-                    className="field-surface mt-2 block w-full rounded-[var(--radius)] px-4 py-3 text-sm text-[var(--text)] outline-none"
-                    placeholder="如: 前端,性能,待验证"
-                    value={editing.tags}
-                    onChange={(e) => setEditing({ ...editing, tags: e.target.value })}
+                    checked={editing.visibility === "public" || editing.is_featured}
+                    type="checkbox"
+                    onChange={(event) => setEditing({ ...editing, visibility: event.target.checked ? "public" : "private" })}
                   />
-                </div>
+                  公开给访客
+                </label>
+                <label className="flex items-center gap-2 text-sm text-[var(--text)]">
+                  <input
+                    checked={editing.is_featured}
+                    type="checkbox"
+                    onChange={(event) => setEditing({
+                      ...editing,
+                      is_featured: event.target.checked,
+                      visibility: event.target.checked ? "public" : editing.visibility,
+                    })}
+                  />
+                  观测台精选
+                </label>
                 <Button disabled={saving} variant="primary" onClick={handleSave}>
                   {saving ? "保存中..." : editingId ? "更新" : "创建"}
                 </Button>
@@ -328,11 +358,16 @@ export function ObservatoryPanel() {
                       <Icon size={16} />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <h3 className="truncate text-sm font-medium text-[var(--text-strong)]">{note.title}</h3>
                         <Badge tone={typeCfg.tone}>{typeCfg.label}</Badge>
                         <Badge tone={statusCfg.tone}>{statusCfg.label}</Badge>
+                        {note.visibility === "public" ? <Badge tone="green">公开</Badge> : <Badge>私有</Badge>}
+                        {note.is_featured && <Badge tone="amber">精选</Badge>}
                       </div>
+                      {note.observation && (
+                        <p className="mt-1 truncate text-xs text-[var(--muted)]">{note.observation}</p>
+                      )}
                       {note.tags.length > 0 && (
                         <div className="mt-1 flex flex-wrap gap-1">
                           {note.tags.map((tag) => (

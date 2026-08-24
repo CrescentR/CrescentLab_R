@@ -2,13 +2,20 @@ import { apiJson } from "@/lib/api/client";
 
 export type NoteType = "fragment" | "failure" | "idea" | "tool_idea" | "tech_debt";
 export type NoteStatus = "active" | "resolved" | "abandoned";
+export type NoteVisibility = "public" | "private";
 
 export type ObservatoryNoteItem = {
   id: number;
   title: string;
+  question: string;
+  observation: string;
+  conclusion: string;
+  next_step: string;
   tags: string[];
   note_type: NoteType;
   status: NoteStatus;
+  visibility: NoteVisibility;
+  is_featured: boolean;
   created_at: string;
   updated_at: string;
 };
@@ -29,9 +36,15 @@ export type ObservatoryNoteDetail = ObservatoryNoteItem & {
 export type ObservatoryNoteInput = {
   title: string;
   content_md?: string;
+  question?: string;
+  observation?: string;
+  conclusion?: string;
+  next_step?: string;
   tags?: string[];
   note_type?: NoteType;
   status?: NoteStatus;
+  visibility?: NoteVisibility;
+  is_featured?: boolean;
 };
 
 export type ObservatoryListParams = {
@@ -39,8 +52,15 @@ export type ObservatoryListParams = {
   page_size?: number;
   status?: NoteStatus;
   note_type?: NoteType;
+  visibility?: NoteVisibility;
   search?: string;
 };
+
+export function listPublicObservatoryNotes(params: ObservatoryListParams = {}) {
+  return apiJson<ObservatoryListResponse>(`/api/observatory${toQueryString(params)}`, {
+    cache: "no-store",
+  });
+}
 
 export function listObservatoryNotes(params: ObservatoryListParams = {}) {
   return apiJson<ObservatoryListResponse>(`/api/admin/observatory${toQueryString(params)}`);

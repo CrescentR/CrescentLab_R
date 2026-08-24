@@ -22,12 +22,27 @@ func NewHandler(repo *Repository) *Handler {
 	return &Handler{repo: repo, renderer: sharedmarkdown.NewRenderer()}
 }
 
+func (h *Handler) RegisterPublicRoutes(group *gin.RouterGroup) {
+	group.GET("/observatory", h.publicList)
+}
+
 func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/observatory", h.adminList)
 	group.GET("/observatory/detail", h.adminDetail)
 	group.POST("/observatory", h.create)
 	group.POST("/observatory/update", h.update)
 	group.POST("/observatory/delete", h.delete)
+}
+
+func (h *Handler) publicList(c *gin.Context) {
+	filter := parseListFilter(c)
+	filter.Visibility = NoteVisibilityPublic
+	result, err := h.repo.List(c.Request.Context(), filter)
+	if err != nil {
+		platformhttp.WriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, result)
 }
 
 func (h *Handler) adminList(c *gin.Context) {
@@ -64,6 +79,10 @@ func (h *Handler) create(c *gin.Context) {
 		platformhttp.WriteError(c, platformhttp.ValidationError("invalid request body"))
 		return
 	}
+	if err := input.Validate(); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError(err.Error()))
+		return
+	}
 	rendered, err := h.renderContent(input.ContentMD)
 	if err != nil {
 		platformhttp.WriteError(c, err)
@@ -88,6 +107,10 @@ func (h *Handler) update(c *gin.Context) {
 	}
 	if input.ID < 1 {
 		platformhttp.WriteError(c, platformhttp.ValidationError("invalid note id"))
+		return
+	}
+	if err := input.CreateInput.Validate(); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError(err.Error()))
 		return
 	}
 	rendered, err := h.renderContent(input.ContentMD)
@@ -145,10 +168,11 @@ func parseListFilter(c *gin.Context) ListFilter {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
 	return ListFilter{
-		Status:   NoteStatus(c.Query("status")),
-		NoteType: NoteType(c.Query("note_type")),
-		Search:   c.Query("search"),
-		Page:     page,
-		PageSize: pageSize,
+		Status:     NoteStatus(c.Query("status")),
+		NoteType:   NoteType(c.Query("note_type")),
+		Visibility: NoteVisibility(c.Query("visibility")),
+		Search:     c.Query("search"),
+		Page:       page,
+		PageSize:   pageSize,
 	}
 }

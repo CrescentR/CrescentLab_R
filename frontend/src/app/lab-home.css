@@ -503,6 +503,14 @@
   color: var(--lab-muted);
 }
 
+.lab-build-card-head a {
+  color: inherit;
+}
+
+.lab-build-card-head a:hover {
+  color: rgb(var(--lab-card-accent));
+}
+
 .lab-build-index,
 .lab-build-status {
   font-size: 10px;
@@ -552,6 +560,32 @@
 
 .lab-build-card:not(:first-child) h3 { font-size: 26px; }
 
+.lab-build-oneliner,
+.lab-build-progress {
+  max-width: 72%;
+  margin: 8px 0 0;
+  color: var(--lab-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.lab-build-progress {
+  font-size: 13px;
+}
+
+.lab-build-updated {
+  margin: 10px 0 0;
+  color: var(--lab-muted);
+  font-size: 10px;
+}
+
+.lab-empty-copy {
+  margin: 0;
+  color: var(--lab-muted);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
 .lab-build-status {
   margin: 0;
   color: var(--lab-muted);
@@ -579,7 +613,7 @@
 
 .lab-observatory-index {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 18px;
   margin: 0;
   padding: 0;

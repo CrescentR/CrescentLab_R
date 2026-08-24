@@ -50,30 +50,6 @@ export const commentsPrototypeSeed: PrototypeItem[] = [
   },
 ];
 
-export const buildsPrototypeSeed: PrototypeItem[] = [
-  {
-    id: "build_1",
-    title: "内容平台发布闭环",
-    summary: "文章 / 项目 / 观测台统一版本模型，当前做管理后台编辑补齐。",
-    status: "in_progress",
-    updatedAt: now(),
-  },
-  {
-    id: "build_2",
-    title: "媒体中心",
-    summary: "上传、预览、引用到文章封面；先做本地雏形，再接对象存储。",
-    status: "planned",
-    updatedAt: now(),
-  },
-  {
-    id: "build_3",
-    title: "首页真实供给",
-    summary: "把 building / experiments / projects 从 mock 换成公开 API。",
-    status: "blocked",
-    updatedAt: now(),
-  },
-];
-
 export const pluginsPrototypeSeed: PrototypeItem[] = [
   {
     id: "plugin_1",

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	authmodule "CrescentLab_R/internal/modules/auth"
+	buildsmodule "CrescentLab_R/internal/modules/builds"
 	commentsmodule "CrescentLab_R/internal/modules/comments"
 	contentmodule "CrescentLab_R/internal/modules/content"
 	observatorymodule "CrescentLab_R/internal/modules/observatory"
@@ -94,6 +95,18 @@ func (a *App) Run() error {
 	// 公开文章接口（不需认证）
 	contentRepo := contentmodule.NewRepository(db.SQL(), db.Driver())
 	contentmodule.NewHandler(contentRepo).RegisterPublicRoutes(engine.Group("/api"))
+	observatoryRepo := observatorymodule.NewRepository(db.SQL(), db.Driver())
+	if err := observatoryRepo.EnsureSchema(context.Background()); err != nil {
+		return err
+	}
+	observatoryHandler := observatorymodule.NewHandler(observatoryRepo)
+	observatoryHandler.RegisterPublicRoutes(engine.Group("/api"))
+	buildsRepo := buildsmodule.NewRepository(db.SQL(), db.Driver())
+	if err := buildsRepo.EnsureSchema(context.Background()); err != nil {
+		return err
+	}
+	buildsHandler := buildsmodule.NewHandler(buildsRepo)
+	buildsHandler.RegisterPublicRoutes(engine.Group("/api"))
 	projectsRepo := projectsmodule.NewRepository(db.SQL(), db.Driver())
 	if err := projectsRepo.EnsureArtifactSchema(context.Background()); err != nil {
 		return err
@@ -119,7 +132,8 @@ func (a *App) Run() error {
 	storageHandler.RegisterAdminRoutes(adminGroup)
 	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
 	projectsHandler.RegisterAdminRoutes(adminGroup)
-	observatorymodule.NewHandler(observatorymodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
+	observatoryHandler.RegisterAdminRoutes(adminGroup)
+	buildsHandler.RegisterAdminRoutes(adminGroup)
 	commentsHandler.RegisterAdminRoutes(adminGroup)
 
 	a.log.Info("crescentlab backend starting", "address", cfg.Server.Address(), "config", cfg.Source, "database_driver", db.Driver())

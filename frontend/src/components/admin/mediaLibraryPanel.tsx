@@ -183,7 +183,7 @@ export function MediaLibraryPanel() {
             <Badge tone="amber">媒体库</Badge>
             <h1 className="mt-4 font-lab-display text-3xl font-semibold text-[var(--text-strong)]">媒体库</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-              上传并管理图片、视频等媒体资源。文件写入当前默认存储策略，可通过稳定站内地址引用。单文件不超过 20MB。
+              上传并管理图片、视频等媒体资源。文件写入当前默认云存储策略，不落本地磁盘，可通过稳定站内地址引用。单文件不超过 20MB。
             </p>
             <div className="mt-5 flex flex-wrap gap-2">
               <Button

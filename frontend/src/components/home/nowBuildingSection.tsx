@@ -1,14 +1,46 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { ArrowUpRight, Box, Orbit, Sparkles, TerminalSquare } from "lucide-react";
 import { motion } from "motion/react";
-import { nowBuilding } from "@/lib/labHomeContent";
+import { listPublicBuilds, type BuildItem, type BuildStage } from "@/lib/api/builds";
 import { SectionIntro } from "@/components/home/sectionIntro";
 import { cardHover, fadeUp, stagger, viewport } from "@/components/home/motionConfig";
 
 const icons = [Box, TerminalSquare, Sparkles, Orbit] as const;
+const tones = ["sage", "blue", "clay", "stone"] as const;
+
+const stageLabel: Record<BuildStage, string> = {
+  prototype: "原型",
+  development: "开发",
+  validating: "验证",
+  beta: "内测",
+  paused: "暂停",
+};
 
 export function NowBuildingSection() {
+  const [builds, setBuilds] = useState<BuildItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    void (async () => {
+      try {
+        const result = await listPublicBuilds({ page_size: 4 });
+        if (!active) return;
+        setBuilds(result.items);
+      } catch {
+        if (active) setLoadError("构建记录加载失败，请稍后重试。");
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   return (
     <motion.section
       className="lab-section lab-shell"
@@ -18,36 +50,66 @@ export function NowBuildingSection() {
       whileInView="visible"
     >
       <SectionIntro
-        description="四个活跃的构建，在变化时进行观察。"
+        description="当前真实投入时间、短期内会继续更新的工作。没有进展就不展示。"
         index="01 / 正在构建"
         title="正在构建"
       />
-      <div className="lab-bento-grid">
-        {nowBuilding.map((project, index) => {
-          const Icon = icons[index];
-          return (
-            <motion.article
-              className={`lab-build-card lab-build-card-${project.tone}`}
-              key={project.id}
-              variants={fadeUp}
-              {...cardHover}
-            >
-              <div className="lab-build-card-head">
-                <span className="lab-build-index lab-mono">BUILD / {project.index}</span>
-                <ArrowUpRight size={17} />
-              </div>
-              <div className="lab-build-visual" aria-hidden="true">
-                <Icon size={index === 0 ? 38 : 30} strokeWidth={1.25} />
-                <span>{project.mark}</span>
-              </div>
-              <div>
-                <p className="lab-build-status lab-mono"><i /> 进行中</p>
-                <h3>{project.name}</h3>
-              </div>
-            </motion.article>
-          );
-        })}
-      </div>
+      {loading ? (
+        <p className="lab-empty-copy">正在读取构建项…</p>
+      ) : loadError ? (
+        <p className="lab-empty-copy">{loadError}</p>
+      ) : builds.length === 0 ? (
+        <p className="lab-empty-copy">目前没有正在构建的对象。</p>
+      ) : (
+        <div className="lab-bento-grid">
+          {builds.map((build, index) => {
+            const Icon = icons[index % icons.length];
+            const tone = tones[index % tones.length];
+            const href = build.detail_url || build.demo_url || build.repo_url;
+            const mark = build.name.replace(/\s+/g, "").slice(0, 2).toUpperCase();
+            return (
+              <motion.article
+                className={`lab-build-card lab-build-card-${tone}`}
+                key={build.id}
+                variants={fadeUp}
+                {...cardHover}
+              >
+                <div className="lab-build-card-head">
+                  <span className="lab-build-index lab-mono">BUILD / {String(index + 1).padStart(2, "0")}</span>
+                  {href ? (
+                    <a aria-label={`${build.name} 入口`} href={href} rel="noreferrer" target={href.startsWith("http") ? "_blank" : undefined}>
+                      <ArrowUpRight size={17} />
+                    </a>
+                  ) : (
+                    <span aria-hidden="true"><ArrowUpRight size={17} /></span>
+                  )}
+                </div>
+                <div className="lab-build-visual" aria-hidden="true">
+                  <Icon size={index === 0 ? 38 : 30} strokeWidth={1.25} />
+                  <span>{mark}</span>
+                </div>
+                <div>
+                  <p className="lab-build-status lab-mono"><i /> {stageLabel[build.stage]}</p>
+                  <h3>{build.name}</h3>
+                  {build.one_liner && <p className="lab-build-oneliner">{build.one_liner}</p>}
+                  {(build.latest_progress || build.next_step) && (
+                    <p className="lab-build-progress">{build.latest_progress || `下一步：${build.next_step}`}</p>
+                  )}
+                  {build.progressed_at && (
+                    <p className="lab-build-updated lab-mono">{formatDate(build.progressed_at)}</p>
+                  )}
+                </div>
+              </motion.article>
+            );
+          })}
+        </div>
+      )}
     </motion.section>
   );
+}
+
+function formatDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleDateString("zh-CN", { year: "numeric", month: "short", day: "numeric" });
 }

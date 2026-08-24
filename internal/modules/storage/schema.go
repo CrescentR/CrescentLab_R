@@ -12,7 +12,7 @@ ALTER TABLE storage_policies ADD COLUMN IF NOT EXISTS force_path_style BOOLEAN N
 ALTER TABLE storage_policies ADD COLUMN IF NOT EXISTS is_default BOOLEAN NOT NULL DEFAULT false;
 ALTER TABLE storage_policies DROP CONSTRAINT IF EXISTS storage_policies_type_check;
 ALTER TABLE storage_policies ADD CONSTRAINT storage_policies_type_check
-  CHECK (type IN ('local', 'onedrive', 'aliyun_oss', 'aws_s3', 'cloudflare_r2', 's3_compatible', 'tencent_cos', 'qiniu', 'custom'));
+  CHECK (type IN ('onedrive', 'aliyun_oss', 'aws_s3', 'cloudflare_r2', 's3_compatible', 'tencent_cos', 'qiniu'));
 CREATE UNIQUE INDEX IF NOT EXISTS ux_storage_policies_default
   ON storage_policies (is_default) WHERE is_default = true AND deleted_at IS NULL;`)
 		if err != nil {
