@@ -15,7 +15,6 @@ function isActiveTab(pathname: string, href: string): boolean {
 
 export function SiteHeader() {
   const pathname = usePathname();
-  const isArticle = pathname.startsWith("/articles/");
   const [user, setUser] = useState<AuthUser | null>(null);
 
   useEffect(() => {
@@ -29,7 +28,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className={isArticle ? "lab-header lab-header-article" : "lab-header"}>
+    <header className="lab-header">
       <div className="lab-shell lab-header-inner">
         <Link className="lab-brand" href="/">
           <span aria-hidden="true" className="lab-crescent-mark" />

@@ -7,14 +7,14 @@ import {
   Bookmark,
   CalendarDays,
   Check,
-  ChevronDown,
   Clock3,
   Copy,
+  Eye,
   ListTree,
   Share2,
   Text,
 } from "lucide-react";
-import { motion, useReducedMotion, useScroll, useTransform } from "motion/react";
+import { motion, useReducedMotion, useScroll } from "motion/react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { type ArticleDetail } from "@/lib/api/articles";
 import { ArticleComments } from "@/components/articles/articleComments";
@@ -76,12 +76,10 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
   const [bookmarked, setBookmarked] = useState(false);
   const [feedback, setFeedback] = useState("");
   const reduceMotion = useReducedMotion();
-  const { scrollY, scrollYProgress } = useScroll({
+  const { scrollYProgress } = useScroll({
     offset: ["start start", "end end"],
     target: articleRef,
   });
-  const heroY = useTransform(scrollY, [0, 900], [0, reduceMotion ? 0 : 120]);
-  const heroOpacity = useTransform(scrollY, [0, 760], [1, reduceMotion ? 1 : 0.38]);
 
   useEffect(() => {
     const content = contentRef.current;
@@ -127,153 +125,142 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
   }
 
   return (
-    <motion.article className="article-detail article-detail-v2" ref={articleRef}>
-      <motion.div aria-hidden="true" className="article-reading-progress" style={{ scaleX: scrollYProgress }} />
+    <article className="article-detail article-reading" ref={articleRef}>
+      <motion.div aria-hidden="true" className="article-progress" style={{ scaleX: scrollYProgress }} />
 
-      <section className="article-immersive-hero">
-        <motion.div className="article-hero-background" style={{ opacity: heroOpacity, y: heroY }}>
-          <Image
-            alt="月面研究站与远处的新月"
-            fill
-            priority
-            sizes="100vw"
-            src="/images/articles/lunar-observatory-hero.png"
-          />
-        </motion.div>
-        <div aria-hidden="true" className="article-hero-shade" />
+      {/* 页头氛围层：柔和光晕 + 纸纹，替代原先的默认大图 */}
+      <div aria-hidden="true" className="article-aura">
+        <span className="article-aura-orb article-aura-orb-a" />
+        <span className="article-aura-orb article-aura-orb-b" />
+        <span className="article-aura-grain" />
+      </div>
 
-        <div className="article-hero-inner lab-shell">
-          <motion.div
-            animate={{ opacity: 1, x: 0 }}
-            className="article-hero-back"
-            initial={{ opacity: 0, x: -18 }}
-            transition={{ delay: 0.1, duration: 0.6 }}
-          >
-            <Link href="/notes"><ArrowLeft size={16} />返回笔记</Link>
-          </motion.div>
+      <div className="article-shell lab-shell">
+        <motion.header
+          animate={{ opacity: 1, y: 0 }}
+          className="article-masthead"
+          initial={{ opacity: 0, y: 18 }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <Link className="article-crumb" href="/notes">
+            <ArrowLeft aria-hidden="true" size={15} />
+            返回笔记
+          </Link>
 
-          <motion.header
-            animate={{ opacity: 1, y: 0 }}
-            className="article-hero-copy"
-            initial={{ opacity: 0, y: 34 }}
-            transition={{ delay: 0.18, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <p className="article-hero-kicker">CRESCENT LAB / FIELD NOTES</p>
-            <h1>{article.title}</h1>
-            {article.excerpt && <p className="article-hero-excerpt">{article.excerpt}</p>}
-            <div className="article-hero-meta">
-              {article.published_at && (
-                <span><CalendarDays aria-hidden="true" size={17} />{formatDate(article.published_at)}</span>
-              )}
-              <span><Clock3 aria-hidden="true" size={17} />{article.reading_time_minutes || 1} 分钟阅读</span>
-              <span><Text aria-hidden="true" size={17} />{article.word_count} 字</span>
-            </div>
-          </motion.header>
+          <p className="article-eyebrow">
+            <span aria-hidden="true" className="article-eyebrow-pulse" />
+            CRESCENT LAB / FIELD NOTES
+          </p>
+          <h1>{article.title}</h1>
+          {article.excerpt && <p className="article-lede">{article.excerpt}</p>}
 
-          <motion.a
-            animate={{ opacity: 1, y: 0 }}
-            className="article-scroll-cue"
-            href="#article-body"
-            initial={{ opacity: 0, y: -10 }}
-            transition={{ delay: 0.9, duration: 0.6 }}
-          >
-            开始阅读 <ChevronDown aria-hidden="true" size={16} />
-          </motion.a>
-        </div>
-      </section>
+          <div className="article-meta">
+            {article.published_at && (
+              <span>
+                <CalendarDays aria-hidden="true" size={14} />
+                {formatDate(article.published_at)}
+              </span>
+            )}
+            <span>
+              <Clock3 aria-hidden="true" size={14} />
+              {article.reading_time_minutes || 1} 分钟阅读
+            </span>
+            <span>
+              <Text aria-hidden="true" size={14} />
+              {article.word_count} 字
+            </span>
+            <span>
+              <Eye aria-hidden="true" size={14} />
+              {article.view_count} 次阅读
+            </span>
+          </div>
+        </motion.header>
 
-      <section className="article-paper" id="article-body">
-        <div className="article-layout lab-shell">
+        {articleDocument.headings.length > 0 && (
           <aside aria-label="文章目录" className="article-toc">
-            <div className="article-toc-sticky">
-              <div className="article-toc-title"><ListTree aria-hidden="true" size={16} />文章目录</div>
-              {articleDocument.headings.length > 0 ? (
-                <ol>
-                  {articleDocument.headings.map((heading, index) => (
-                    <li className={activeHeading === heading.id ? "is-active" : ""} key={heading.id}>
-                      <button onClick={() => scrollToHeading(heading.id)} type="button">
-                        <span>{String(index + 1).padStart(2, "0")}</span>
-                        {heading.text}
-                      </button>
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <p>正文阅读</p>
-              )}
-              <div className="article-toc-progress">
-                <motion.i style={{ scaleX: scrollYProgress }} />
-              </div>
+            <div className="article-toc-title">
+              <ListTree aria-hidden="true" size={15} />
+              文章目录
+            </div>
+            <ol>
+              {articleDocument.headings.map((heading, index) => (
+                <li className={activeHeading === heading.id ? "is-active" : ""} key={heading.id}>
+                  <button onClick={() => scrollToHeading(heading.id)} type="button">
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    {heading.text}
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <div className="article-toc-progress">
+              <motion.i style={{ scaleX: scrollYProgress }} />
             </div>
           </aside>
+        )}
 
-          <main
-            className="article-reading-column"
-            style={{ "--article-font-scale": fontScale } as CSSProperties}
-          >
-            {article.cover_url && (
-              <motion.figure
-                className="article-inline-cover"
-                initial={{ clipPath: "inset(8% 0 8% 0)", opacity: 0 }}
-                transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-                viewport={{ amount: 0.2, once: true }}
-                whileInView={{ clipPath: "inset(0% 0 0% 0)", opacity: 1 }}
-              >
-                <Image alt={article.title} fill sizes="(max-width: 900px) 100vw, 760px" src={article.cover_url} unoptimized />
-              </motion.figure>
-            )}
-
-            <motion.div
-              className="article-content"
-              initial={{ opacity: 0, y: 28 }}
-              ref={contentRef}
+        <main className="article-column" style={{ "--article-font-scale": fontScale } as CSSProperties}>
+          {article.cover_url && (
+            <motion.figure
+              className="article-plate"
+              initial={{ opacity: 0, y: 16 }}
               transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              viewport={{ amount: 0.08, once: true }}
+              viewport={{ amount: 0.2, once: true }}
               whileInView={{ opacity: 1, y: 0 }}
             >
-              <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
-            </motion.div>
+              <Image alt={article.title} fill sizes="(max-width: 860px) 100vw, 720px" src={article.cover_url} unoptimized />
+            </motion.figure>
+          )}
 
-            <footer className="article-footer">
-              <div>
-                <p>阅读完成</p>
-                <div className="article-stats">
-                  <span>{article.word_count} 字</span>
-                  <span>{article.view_count} 次阅读</span>
-                  <span>{article.comment_count} 条评论</span>
-                </div>
+          <motion.div
+            className="article-content"
+            initial={{ opacity: 0, y: 20 }}
+            ref={contentRef}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ amount: 0.05, once: true }}
+            whileInView={{ opacity: 1, y: 0 }}
+          >
+            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+          </motion.div>
+
+          <footer className="article-footer">
+            <div>
+              <p>阅读完成</p>
+              <div className="article-stats">
+                <span>{article.word_count} 字</span>
+                <span>{article.view_count} 次阅读</span>
+                <span>{article.comment_count} 条评论</span>
               </div>
-              <Link className="article-footer-back" href="/notes">
-                <ArrowLeft aria-hidden="true" size={15} />返回全部笔记
-              </Link>
-            </footer>
-            <ArticleComments allowComment={article.allow_comment} articleId={article.id} />
-          </main>
-
-          <aside aria-label="阅读工具" className="article-tools">
-            <div className="article-tools-sticky">
-              <button aria-label="减小字号" disabled={fontScale <= 0.9} onClick={() => setFontScale((value) => Math.max(0.9, value - 0.1))} type="button">A−</button>
-              <button aria-label="增大字号" disabled={fontScale >= 1.2} onClick={() => setFontScale((value) => Math.min(1.2, value + 0.1))} type="button">A+</button>
-              <span />
-              <button aria-label="复制文章链接" onClick={copyLink} type="button"><Copy size={17} /></button>
-              <button aria-label="分享文章" onClick={shareArticle} type="button"><Share2 size={17} /></button>
-              <button
-                aria-label={bookmarked ? "取消收藏" : "收藏文章"}
-                className={bookmarked ? "is-active" : ""}
-                onClick={() => {
-                  setBookmarked((value) => !value);
-                  showFeedback(bookmarked ? "已取消收藏" : "已收藏");
-                }}
-                type="button"
-              >
-                {bookmarked ? <Check size={17} /> : <Bookmark size={17} />}
-              </button>
             </div>
-          </aside>
-        </div>
-      </section>
+            <Link className="article-footer-back" href="/notes">
+              <ArrowLeft aria-hidden="true" size={15} />
+              返回全部笔记
+            </Link>
+          </footer>
+
+          <ArticleComments allowComment={article.allow_comment} articleId={article.id} />
+        </main>
+
+        <aside aria-label="阅读工具" className="article-tools">
+          <button aria-label="减小字号" disabled={fontScale <= 0.9} onClick={() => setFontScale((value) => Math.max(0.9, value - 0.1))} type="button">A−</button>
+          <button aria-label="增大字号" disabled={fontScale >= 1.2} onClick={() => setFontScale((value) => Math.min(1.2, value + 0.1))} type="button">A+</button>
+          <span />
+          <button aria-label="复制文章链接" onClick={copyLink} type="button"><Copy size={16} /></button>
+          <button aria-label="分享文章" onClick={shareArticle} type="button"><Share2 size={16} /></button>
+          <button
+            aria-label={bookmarked ? "取消收藏" : "收藏文章"}
+            className={bookmarked ? "is-active" : ""}
+            onClick={() => {
+              setBookmarked((value) => !value);
+              showFeedback(bookmarked ? "已取消收藏" : "已收藏");
+            }}
+            type="button"
+          >
+            {bookmarked ? <Check size={16} /> : <Bookmark size={16} />}
+          </button>
+        </aside>
+      </div>
 
       {feedback && <motion.div animate={{ opacity: 1, y: 0 }} className="article-feedback" initial={{ opacity: 0, y: 8 }}>{feedback}</motion.div>}
-    </motion.article>
+    </article>
   );
 }
