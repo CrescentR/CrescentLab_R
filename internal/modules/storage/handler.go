@@ -31,6 +31,7 @@ func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/storage/policies", h.listPolicies)
 	group.POST("/storage/policies", h.createPolicy)
 	group.POST("/storage/policies/:id", h.updatePolicy)
+	group.POST("/storage/policies/:id/credentials/reset", h.resetCredentials)
 	group.POST("/storage/policies/:id/status", h.setStatus)
 	group.POST("/storage/policies/:id/default", h.setDefault)
 	group.POST("/storage/policies/:id/test", h.testPolicy)
@@ -86,6 +87,24 @@ func (h *Handler) updatePolicy(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, updated)
+}
+
+func (h *Handler) resetCredentials(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "存储策略 ID 无效"})
+		return
+	}
+	var input CredentialResetInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请求参数无效"})
+		return
+	}
+	if err := h.repo.ResetCredentials(c.Request.Context(), id, input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"ok": true})
 }
 
 func (h *Handler) setStatus(c *gin.Context) {

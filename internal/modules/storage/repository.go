@@ -188,6 +188,61 @@ func (r *Repository) Update(ctx context.Context, p Policy) (Policy, error) {
 	return r.Get(ctx, p.ID)
 }
 
+func (r *Repository) ResetCredentials(ctx context.Context, id int64, input CredentialResetInput) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	var policyType string
+	if err := tx.QueryRowContext(ctx, `SELECT type FROM storage_policies WHERE id=$1 AND deleted_at IS NULL FOR UPDATE`, id).Scan(&policyType); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return errors.New("存储策略不存在")
+		}
+		return err
+	}
+
+	input.AccessKeyID = strings.TrimSpace(input.AccessKeyID)
+	input.SecretAccessKey = strings.TrimSpace(input.SecretAccessKey)
+	input.ClientSecret = strings.TrimSpace(input.ClientSecret)
+	secrets := map[string]string{
+		"access_key_id":     "",
+		"secret_access_key": "",
+		"client_secret":     "",
+		"refresh_token":     "",
+		"oauth_state":       "",
+	}
+	if policyType == "onedrive" {
+		if input.ClientSecret == "" {
+			return errors.New("Client Secret 为必填项")
+		}
+		secrets["client_secret"], err = encryptSecret(r.secret, input.ClientSecret)
+	} else {
+		if input.AccessKeyID == "" || input.SecretAccessKey == "" {
+			return errors.New("Access Key ID 和 Secret Access Key 均为必填项")
+		}
+		secrets["access_key_id"], err = encryptSecret(r.secret, input.AccessKeyID)
+		if err == nil {
+			secrets["secret_access_key"], err = encryptSecret(r.secret, input.SecretAccessKey)
+		}
+	}
+	if err != nil {
+		return err
+	}
+
+	secretsJSON, _ := json.Marshal(secrets)
+	result, err := tx.ExecContext(ctx, `UPDATE storage_policies SET secrets_ciphertext=$1, updated_at=CURRENT_TIMESTAMP WHERE id=$2 AND deleted_at IS NULL`, secretsJSON, id)
+	if err != nil {
+		return err
+	}
+	count, _ := result.RowsAffected()
+	if count != 1 {
+		return errors.New("存储策略不存在")
+	}
+	return tx.Commit()
+}
+
 func (r *Repository) SetStatus(ctx context.Context, id int64, status string) error {
 	if status != "active" && status != "disabled" && status != "deleted" {
 		return errors.New("存储策略状态无效")

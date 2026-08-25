@@ -42,6 +42,7 @@ import {
   Minus,
   Paperclip,
   Palette,
+  PenLine,
   Quote,
   Redo2,
   RemoveFormatting,
@@ -74,6 +75,24 @@ type TipTapEditorProps = {
 };
 
 const FONT_SIZES = ["13px", "14px", "15px", "16px", "18px", "20px", "24px", "28px", "32px"];
+const ArticleTextStyle = TextStyle.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      wenkai: {
+        default: null,
+        parseHTML: (element) => element.classList.contains("wenkai-text") || null,
+        renderHTML: (attributes) => attributes.wenkai ? { class: "wenkai-text" } : {},
+      },
+    };
+  },
+  parseHTML() {
+    return [
+      { tag: "span.wenkai-text", consuming: false },
+      ...(this.parent?.() || []),
+    ];
+  },
+});
 /** 文字色：深色主调 + 强调色 */
 const TEXT_COLORS = [
   "#1c2821", "#343a40", "#495057", "#868e96", "#adb5bd", "#ced4da", "#ffffff",
@@ -105,7 +124,7 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
         codeBlock: false,
       }),
       CharacterCount,
-      TextStyle,
+      ArticleTextStyle,
       Color,
       BackgroundColor,
       Highlight.configure({ multicolor: true }),
@@ -319,6 +338,13 @@ export function TipTapEditor({ content, contentJSON, onChange, onDocumentChange,
           </IconBtn>
           <IconBtn active={editor.isActive("strike")} label="删除线" onClick={() => editor.chain().focus().toggleStrike().run()}>
             <Strikethrough size={18} strokeWidth={1.9} />
+          </IconBtn>
+          <IconBtn
+            active={editor.isActive("textStyle", { wenkai: true })}
+            label="文楷"
+            onClick={() => toggleWenKai(editor)}
+          >
+            <PenLine size={18} strokeWidth={1.9} />
           </IconBtn>
           <IconBtn active={editor.isActive("superscript")} label="上标" onClick={() => editor.chain().focus().toggleSuperscript().run()}>
             <SuperscriptIcon size={18} strokeWidth={1.9} />
@@ -614,7 +640,15 @@ function clearHighlightColor(editor: Editor, saved: { from: number; to: number }
   stripTextStyleAttribute(editor, "backgroundColor");
 }
 
-function stripTextStyleAttribute(editor: Editor, attribute: "color" | "backgroundColor") {
+function toggleWenKai(editor: Editor) {
+  if (editor.isActive("textStyle", { wenkai: true })) {
+    stripTextStyleAttribute(editor, "wenkai");
+    return;
+  }
+  editor.chain().focus().setMark("textStyle", { wenkai: true }).run();
+}
+
+function stripTextStyleAttribute(editor: Editor, attribute: "color" | "backgroundColor" | "wenkai") {
   editor.commands.command(({ tr, state, dispatch }) => {
     const type = state.schema.marks.textStyle;
     if (!type || !dispatch) return false;

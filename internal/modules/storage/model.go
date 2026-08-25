@@ -41,6 +41,12 @@ type PolicyInput struct {
 	ClientSecret    string `json:"client_secret"`
 }
 
+type CredentialResetInput struct {
+	AccessKeyID     string `json:"access_key_id"`
+	SecretAccessKey string `json:"secret_access_key"`
+	ClientSecret    string `json:"client_secret"`
+}
+
 func (input PolicyInput) policy() Policy {
 	policy := input.Policy
 	policy.AccessKeyID = input.AccessKeyID

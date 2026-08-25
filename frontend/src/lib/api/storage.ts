@@ -34,6 +34,11 @@ export type StoragePolicyInput = Omit<StoragePolicy, "id" | "status"> & {
   client_secret: string;
 };
 
+export type StorageCredentialResetInput = Pick<
+  StoragePolicyInput,
+  "access_key_id" | "secret_access_key" | "client_secret"
+>;
+
 export type UploadedStorageFile = {
   id: number;
   name: string;
@@ -68,6 +73,14 @@ export function updateStoragePolicy(id: number, policy: StoragePolicyInput) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(policy),
+  });
+}
+
+export function resetStoragePolicyCredentials(id: number, credentials: StorageCredentialResetInput) {
+  return apiJson<{ ok: boolean }>(`/api/admin/storage/policies/${id}/credentials/reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
   });
 }
 

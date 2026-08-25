@@ -56,7 +56,25 @@ func (c *S3Client) Test(policy Policy) error {
 	}
 	defer response.Body.Close()
 	if response.StatusCode < 200 || response.StatusCode >= 300 {
-		return fmt.Errorf("存储连接测试失败（%d）", response.StatusCode)
+		hint := "请检查 Endpoint、Region、Bucket 和访问凭据"
+		switch response.StatusCode {
+		case http.StatusMovedPermanently, http.StatusTemporaryRedirect:
+			hint = "Endpoint 或 Region 与 Bucket 所在区域不匹配"
+		case http.StatusBadRequest:
+			hint = "请求签名或 Endpoint、Region 配置不正确"
+		case http.StatusForbidden:
+			hint = "请检查 Access Key、Secret Access Key、Region、s3:ListBucket 权限及显式拒绝策略"
+		case http.StatusNotFound:
+			hint = "Bucket 名称或 Endpoint 不正确"
+		}
+		message := fmt.Sprintf("S3 连接测试失败：HTTP %d；请求地址 %s；%s", response.StatusCode, req.URL.Redacted(), hint)
+		if region := response.Header.Get("X-Amz-Bucket-Region"); region != "" {
+			message += "；AWS 返回区域 " + region
+		}
+		if requestID := response.Header.Get("X-Amz-Request-Id"); requestID != "" {
+			message += "；AWS Request ID " + requestID
+		}
+		return fmt.Errorf("%s", message)
 	}
 	return nil
 }

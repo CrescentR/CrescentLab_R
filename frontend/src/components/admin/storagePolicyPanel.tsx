@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { Check, Cloud, KeyRound, Plus, Star } from "lucide-react";
+import { Check, Cloud, KeyRound, Plus, RotateCcwKey, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Panel } from "@/components/ui/panel";
@@ -9,11 +9,13 @@ import {
   authorizeOneDrive,
   createStoragePolicy,
   listStoragePolicies,
+  resetStoragePolicyCredentials,
   setDefaultStoragePolicy,
   setStoragePolicyStatus,
   testStoragePolicy,
   updateStoragePolicy,
   type StoragePolicy,
+  type StorageCredentialResetInput,
   type StoragePolicyInput,
   type StorageType,
 } from "@/lib/api/storage";
@@ -55,8 +57,11 @@ export function StoragePolicyPanel() {
   const [form, setForm] = useState(blankPolicy);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [resettingPolicy, setResettingPolicy] = useState<StoragePolicy | null>(null);
+  const [credentials, setCredentials] = useState<StorageCredentialResetInput>({ access_key_id: "", secret_access_key: "", client_secret: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   useEffect(() => {
     void reload();
@@ -94,11 +99,30 @@ export function StoragePolicyPanel() {
   async function run(action: () => Promise<unknown>) {
     setBusy(true);
     setError("");
+    setNotice("");
     try {
       await action();
       await reload();
     } catch (cause) {
       setError(message(cause, "操作失败"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function submitCredentialReset(event: FormEvent) {
+    event.preventDefault();
+    if (!resettingPolicy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await resetStoragePolicyCredentials(resettingPolicy.id, credentials);
+      setResettingPolicy(null);
+      setCredentials({ access_key_id: "", secret_access_key: "", client_secret: "" });
+      setNotice(`存储策略“${resettingPolicy.name}”的凭据已重置。`);
+    } catch (cause) {
+      setError(message(cause, "重置存储凭据失败"));
     } finally {
       setBusy(false);
     }
@@ -115,8 +139,19 @@ export function StoragePolicyPanel() {
       secret_access_key: "",
       client_secret: "",
     });
+    setResettingPolicy(null);
     setEditingId(policy.id);
     setShowForm(true);
+  }
+
+  function resetCredentials(policy: StoragePolicy) {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(blankPolicy());
+    setResettingPolicy(policy);
+    setCredentials({ access_key_id: "", secret_access_key: "", client_secret: "" });
+    setError("");
+    setNotice("");
   }
 
   return (
@@ -127,10 +162,42 @@ export function StoragePolicyPanel() {
             <h1 className="font-lab-display text-3xl font-semibold text-[var(--text-strong)]">存储策略</h1>
             <p className="mt-2 text-sm leading-6 text-[var(--muted)]">默认策略用于内容编辑器中的图片和附件上传。</p>
           </div>
-          <Button icon={<Plus size={16} />} onClick={() => setShowForm((value) => !value)} variant="primary">添加策略</Button>
+          <Button icon={<Plus size={16} />} onClick={() => { setResettingPolicy(null); setShowForm((value) => !value); }} variant="primary">添加策略</Button>
         </header>
 
         {error && <Panel className="border-[var(--danger)] p-4 text-sm text-[var(--danger)]">{error}</Panel>}
+        {notice && <Panel className="border-[var(--success)] p-4 text-sm text-[var(--success)]">{notice}</Panel>}
+
+        {resettingPolicy && (
+          <Panel className="p-6 md:p-8">
+            <form className="space-y-6" onSubmit={submitCredentialReset}>
+              <div className="flex items-center gap-3 border-b border-[var(--border-soft)] pb-5">
+                <RotateCcwKey className="text-[var(--amber)]" size={20} />
+                <div>
+                  <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">重置“{resettingPolicy.name}”的存储凭据</h2>
+                  <p className="mt-1 text-sm leading-6 text-[var(--muted)]">新凭据会覆盖无法解密的旧密文，策略 ID 和历史文件关联保持不变。</p>
+                </div>
+              </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                {resettingPolicy.type === "onedrive" ? (
+                  <SecretField label="新的 Client Secret *" value={credentials.client_secret} onChange={(value) => setCredentials((current) => ({ ...current, client_secret: value }))} />
+                ) : (
+                  <>
+                    <Field label="新的 Access Key ID *" value={credentials.access_key_id} onChange={(value) => setCredentials((current) => ({ ...current, access_key_id: value }))} />
+                    <SecretField label="新的 Secret Access Key *" value={credentials.secret_access_key} onChange={(value) => setCredentials((current) => ({ ...current, secret_access_key: value }))} />
+                  </>
+                )}
+              </div>
+              {resettingPolicy.type === "onedrive" && resettingPolicy.auth_mode === "delegated" && (
+                <p className="text-sm leading-6 text-[var(--amber)]">旧 OAuth 授权会被清除，保存后请重新点击该策略的“授权”。</p>
+              )}
+              <div className="flex justify-end gap-3">
+                <Button disabled={busy} onClick={() => setResettingPolicy(null)}>取消</Button>
+                <Button disabled={busy} type="submit" variant="primary">{busy ? "重置中" : "确认重置"}</Button>
+              </div>
+            </form>
+          </Panel>
+        )}
 
         {showForm && (
           <Panel className="p-6 md:p-8">
@@ -200,6 +267,7 @@ export function StoragePolicyPanel() {
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button disabled={busy} onClick={() => run(() => testStoragePolicy(policy.id))}>测试</Button>
                   <Button disabled={busy} onClick={() => edit(policy)}>编辑</Button>
+                  <Button disabled={busy} icon={<RotateCcwKey size={14} />} onClick={() => resetCredentials(policy)}>重置凭据</Button>
                   {policy.type === "onedrive" && policy.auth_mode === "delegated" && (
                     <Button disabled={busy} icon={<KeyRound size={14} />} onClick={() => run(() => authorizeOneDrive(policy.id))}>授权</Button>
                   )}

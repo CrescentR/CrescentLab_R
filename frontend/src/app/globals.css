@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "LXGW WenKai Screen";
+  src: url("/fonts/lxgw-wenkai/LXGWWenKaiScreen-Regular.woff2") format("woff2");
+  font-display: swap;
+  font-style: normal;
+  font-weight: 400;
+}
+
 :root {
   --background: #f6f5ef;
   --background-soft: #ecece4;
@@ -1340,6 +1348,11 @@ a:focus-visible {
 
 .tiptap-editor p {
   margin: 0.6em 0;
+}
+
+.tiptap-editor .wenkai-text,
+.article-content .wenkai-text {
+  font-family: "LXGW WenKai Screen", "KaiTi", "STKaiti", "Noto Serif SC", serif;
 }
 
 .tiptap-editor ul,

@@ -11,12 +11,17 @@ export type AuthUser = {
   is_admin: boolean;
 };
 
-export type ApiError = {
-  code: string;
-  message: string;
-  request_id?: string;
-  status: number;
-};
+export class ApiError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly status: number,
+    public readonly request_id?: string,
+  ) {
+    super(message);
+    this.name = "ApiError";
+  }
+}
 
 // ---- token 存取 ----
 
@@ -106,7 +111,7 @@ let refreshPromise: Promise<string> | null = null;
 export async function refreshAccessToken(): Promise<string> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
-    throw { code: "UNAUTHORIZED", message: "无 refresh token", status: 401 } as ApiError;
+    throw new ApiError("UNAUTHORIZED", "无 refresh token", 401);
   }
 
   // 单飞：避免并发请求同时触发多次刷新
@@ -214,23 +219,10 @@ export async function apiJson<T>(path: string, init: RequestInit = {}): Promise<
 function toApiError(payload: unknown, status: number): ApiError {
   if (payload && typeof payload === "object" && "message" in payload) {
     const p = payload as { code?: string; message: string; request_id?: string };
-    return {
-      code: p.code ?? "INTERNAL_ERROR",
-      message: p.message,
-      request_id: p.request_id,
-      status,
-    };
+    return new ApiError(p.code ?? "INTERNAL_ERROR", p.message, status, p.request_id);
   }
   if (payload && typeof payload === "object" && "error" in payload && typeof payload.error === "string") {
-    return {
-      code: "REQUEST_FAILED",
-      message: payload.error,
-      status,
-    };
+    return new ApiError("REQUEST_FAILED", payload.error, status);
   }
-  return {
-    code: "INTERNAL_ERROR",
-    message: `请求失败（${status}）`,
-    status,
-  };
+  return new ApiError("INTERNAL_ERROR", `请求失败（${status}）`, status);
 }
