@@ -1,20 +1,15 @@
 export default function ArticleLoading() {
   return (
-    <div className="article-detail article-reading">
-      <div className="article-shell">
-        <div aria-hidden="true" className="article-rail" />
-        <div className="article-main">
-          <div className="animate-pulse">
-            <div className="mb-8 h-3 w-48 rounded bg-[var(--surface-field)]" />
-            <div className="mb-4 h-12 w-4/5 rounded bg-[var(--surface-field)]" />
-            <div className="mb-2 h-5 w-1/2 rounded bg-[var(--surface-field)]" />
-            <div className="mt-10 aspect-video rounded-[24px] bg-[var(--surface-field)]" />
-            <div className="mt-10 space-y-3">
-              <div className="h-4 w-full rounded bg-[var(--surface-field)]" />
-              <div className="h-4 w-full rounded bg-[var(--surface-field)]" />
-              <div className="h-4 w-4/5 rounded bg-[var(--surface-field)]" />
-            </div>
-          </div>
+    <div className="article-detail article-reading article-zine article-loading">
+      <div className="article-zine-wide animate-pulse">
+        <div className="mb-16 h-px bg-white/20" />
+        <div className="mb-6 h-3 w-40 bg-white/15" />
+        <div className="article-loading-title mb-8" />
+        <div className="mb-3 h-5 w-3/5 bg-white/10" />
+        <div className="mb-16 h-5 w-2/5 bg-white/10" />
+        <div className="grid grid-cols-2 gap-8">
+          <div className="h-64 bg-white/10" />
+          <div className="h-64 bg-white/10" />
         </div>
       </div>
     </div>

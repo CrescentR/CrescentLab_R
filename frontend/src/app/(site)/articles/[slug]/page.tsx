@@ -9,10 +9,6 @@ type ArticlePageProps = {
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const { slug } = await params;
 
-  try {
-    const article = await getPublicArticle(slug);
-    return <ArticleDetailContent article={article} />;
-  } catch {
-    notFound();
-  }
+  const article = await getPublicArticle(slug).catch(() => notFound());
+  return <ArticleDetailContent article={article} />;
 }

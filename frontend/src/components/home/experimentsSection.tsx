@@ -146,14 +146,12 @@ export function ExperimentsSection() {
                           : { damping: 15, mass: 0.78, stiffness: 190, type: "spring" }
                       }
                       whileDrag={{
-                        borderRadius: dragDirection < 0
-                          ? "42px 22px 34px 46px"
-                          : "22px 42px 46px 34px",
+                        borderRadius: 0,
                         rotateZ: dragDirection * 1.6,
                         scaleX: 1.045,
                         scaleY: 0.955,
                       }}
-                      whileHover={shouldReduceMotion ? undefined : { borderRadius: 32, scale: 1.006 }}
+                      whileHover={shouldReduceMotion ? undefined : { scale: 1.006 }}
                     >
                       <div className="lab-observatory-panel-copy">
                         <div className="lab-observatory-panel-meta">
@@ -200,7 +198,7 @@ function getCardAnimation(
 ) {
   if (isPreview) {
     return {
-      borderRadius: 34,
+      borderRadius: 0,
       opacity: 0.68,
       rotateX: -2,
       rotateZ: dragDirection * 1.2,
@@ -212,16 +210,16 @@ function getCardAnimation(
   }
 
   if (index < activeIndex) {
-    return { borderRadius: 26, opacity: 0, rotateZ: -7, scale: 0.88, x: "-112%", y: 0, z: 80 };
+    return { borderRadius: 0, opacity: 0, rotateZ: -7, scale: 0.88, x: "-112%", y: 0, z: 80 };
   }
 
   if (index === activeIndex) {
-    return { borderRadius: 26, opacity: 1, rotateX: 0, rotateZ: 0, scale: 1, x: 0, y: 0, z: 0 };
+    return { borderRadius: 0, opacity: 1, rotateX: 0, rotateZ: 0, scale: 1, x: 0, y: 0, z: 0 };
   }
 
   const depth = index - activeIndex;
   return {
-    borderRadius: 26,
+    borderRadius: 0,
     opacity: Math.max(0.22, 0.52 - depth * 0.12),
     rotateX: depth * -3,
     rotateZ: depth * 0.8,

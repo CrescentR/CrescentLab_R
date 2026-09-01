@@ -10,6 +10,7 @@ import { getCurrentUser, isAuthenticated, logout, type AuthUser } from "@/lib/ap
 /** 判断 tab 是否处于激活态：首页只在精确匹配时激活，其余按路径前缀匹配以覆盖详情页 */
 function isActiveTab(pathname: string, href: string): boolean {
   if (href === "/") return pathname === "/";
+  if (href === "/notes" && pathname.startsWith("/articles/")) return true;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
@@ -28,7 +29,7 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="lab-header">
+    <header className="lab-header lab-header-zine">
       <div className="lab-shell lab-header-inner">
         <Link className="lab-brand" href="/">
           <span aria-hidden="true" className="lab-crescent-mark" />

@@ -184,7 +184,7 @@ export function NotesExperience() {
           <motion.div className="nl-empty" variants={fadeUp}>
             <Feather aria-hidden="true" size={28} />
             <h2>还没有笔记</h2>
-            <p>去后台写下第一篇，这里会变成一座安静的阅读花园。</p>
+            <p>发布第一篇笔记后，内容会出现在这里。</p>
           </motion.div>
         ) : (
           <>
@@ -277,7 +277,7 @@ function NotesHero({
           <span className="nl-hero-title-accent">思考</span>
         </h1>
         <p className="nl-hero-lead">
-          开发实践、产品判断，以及那些值得被完整保留的过程。像翻开一本持续增厚的实验室手记。
+          开发实践、产品判断、失败记录与最终结论。这里保留完整过程，不只展示结果。
         </p>
       </div>
 

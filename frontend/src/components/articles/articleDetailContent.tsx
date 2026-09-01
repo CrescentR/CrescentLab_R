@@ -3,25 +3,25 @@
 import Image from "next/image";
 import Link from "next/link";
 import {
+  ArrowDownRight,
+  ArrowLeft,
   Bookmark,
-  CalendarDays,
   Check,
-  Clock3,
-  Eye,
   Heart,
   MessageCircle,
+  Minus,
+  Plus,
   Share2,
-  Text,
 } from "lucide-react";
 import { motion, useReducedMotion, useScroll } from "motion/react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { ArticleComments } from "@/components/articles/articleComments";
+import { bindArticleCodeCopy, highlightArticleHtml } from "@/lib/codeHighlight";
 import {
   listPublicArticles,
   type ArticleDetail,
   type ArticleListItem,
 } from "@/lib/api/articles";
-import { ArticleComments } from "@/components/articles/articleComments";
-import { bindArticleCodeCopy, highlightArticleHtml } from "@/lib/codeHighlight";
 
 const subscribeNoop = () => () => {};
 const getClientSnapshot = () => true;
@@ -74,21 +74,6 @@ function formatShortDate(dateString: string): string {
   });
 }
 
-function statusLabel(status: string): string {
-  switch (status) {
-    case "published":
-      return "已发布";
-    case "draft":
-      return "草稿";
-    case "archived":
-      return "已归档";
-    case "scheduled":
-      return "定时发布";
-    default:
-      return status;
-  }
-}
-
 export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
   const articleRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -100,6 +85,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     [articleDocument.html, isClient],
   );
   const [activeHeading, setActiveHeading] = useState(articleDocument.headings[0]?.id || "");
+  const [fontScale, setFontScale] = useState(1);
   const [liked, setLiked] = useState(false);
   const [bookmarked, setBookmarked] = useState(false);
   const [feedback, setFeedback] = useState("");
@@ -119,7 +105,6 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     bindArticleCodeCopy(content.ownerDocument, content);
 
     const elements = Array.from(content.querySelectorAll<HTMLHeadingElement>("h1, h2, h3"));
-
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.find((entry) => entry.isIntersecting);
@@ -137,7 +122,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     void listPublicArticles({ page: 1, page_size: 6 })
       .then((result) => {
         if (cancelled) return;
-        setRelated(result.items.filter((item) => item.id !== article.id).slice(0, 4));
+        setRelated(result.items.filter((item) => item.id !== article.id).slice(0, 3));
       })
       .catch(() => {
         if (!cancelled) setRelated([]);
@@ -152,9 +137,18 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     window.setTimeout(() => setFeedback(""), 1800);
   }
 
+  function adjustFontScale(step: number) {
+    setFontScale((value) => Math.min(1.12, Math.max(0.92, Number((value + step).toFixed(2)))));
+  }
+
   async function shareArticle() {
     if (navigator.share) {
-      await navigator.share({ title: article.title, url: window.location.href });
+      try {
+        await navigator.share({ title: article.title, url: window.location.href });
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        throw error;
+      }
       return;
     }
     await navigator.clipboard.writeText(window.location.href);
@@ -171,225 +165,245 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
   }
 
   return (
-    <article className="article-detail article-reading" ref={articleRef}>
+    <article className="article-detail article-reading article-zine" ref={articleRef}>
       <motion.div aria-hidden="true" className="article-progress" style={{ scaleX: scrollYProgress }} />
 
-      <div className="article-shell">
-        {/* 左侧互动栏 */}
-        <aside aria-label="文章互动" className="article-rail">
-          <div className="article-rail-card">
-            <button
-              aria-label={liked ? "取消喜欢" : "喜欢文章"}
-              className={liked ? "is-active is-liked" : ""}
-              onClick={() => {
-                setLiked((value) => !value);
-                showFeedback(liked ? "已取消喜欢" : "已喜欢");
-              }}
-              type="button"
-            >
-              <Heart fill={liked ? "currentColor" : "none"} size={18} />
-              <span>{liked ? 1 : 0}</span>
-            </button>
-            <button
-              aria-label={bookmarked ? "取消收藏" : "收藏文章"}
-              className={bookmarked ? "is-active" : ""}
-              onClick={() => {
-                setBookmarked((value) => !value);
-                showFeedback(bookmarked ? "已取消收藏" : "已收藏");
-              }}
-              type="button"
-            >
-              {bookmarked ? <Check size={18} /> : <Bookmark size={18} />}
-              <span>{bookmarked ? 1 : 0}</span>
-            </button>
-            <button aria-label="查看评论" onClick={scrollToComments} type="button">
-              <MessageCircle size={18} />
-              <span>{article.comment_count}</span>
-            </button>
-            <button aria-label="分享文章" onClick={shareArticle} type="button">
-              <Share2 size={18} />
-            </button>
-          </div>
-        </aside>
+      <motion.header
+        animate={{ opacity: 1 }}
+        className="article-zine-hero"
+        initial={{ opacity: 0 }}
+        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+      >
+        <div aria-hidden="true" className="article-zine-grid" />
 
-        {/* 主栏 */}
-        <div className="article-main">
-          <motion.header
-            animate={{ opacity: 1, y: 0 }}
-            className="article-masthead"
-            initial={{ opacity: 0, y: 16 }}
-            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
-          >
-            <nav aria-label="面包屑" className="article-breadcrumb">
-              <Link href="/">CRESCENT LAB</Link>
-              <span>/</span>
-              <Link href="/notes">FIELD NOTES</Link>
-              <span>/</span>
-              <span>笔记</span>
-            </nav>
-
-            <div className="article-head">
-              <div className="article-head-copy">
-                <h1>{article.title}</h1>
-                {article.excerpt && <p className="article-lede">{article.excerpt}</p>}
-
-                <div className="article-byline">
-                  <span aria-hidden="true" className="article-avatar">
-                    <span className="lab-crescent-mark" />
-                  </span>
-                  <div>
-                    <strong>Crescent Lab</strong>
-                    <span>数字实验室笔记</span>
-                  </div>
-                </div>
-
-                <div className="article-meta">
-                  {publishedAt && (
-                    <span>
-                      <CalendarDays aria-hidden="true" size={14} />
-                      {formatDate(publishedAt)}
-                    </span>
-                  )}
-                  <span>
-                    <Clock3 aria-hidden="true" size={14} />
-                    {article.reading_time_minutes || 1} 分钟
-                  </span>
-                  <span>
-                    <Eye aria-hidden="true" size={14} />
-                    {article.view_count} 次阅读
-                  </span>
-                  <span>
-                    <Text aria-hidden="true" size={14} />
-                    {article.word_count} 字
-                  </span>
-                </div>
-              </div>
-
-              <dl className="article-spec">
-                <div>
-                  <dt>Published</dt>
-                  <dd>{publishedAt ? formatShortDate(publishedAt) : "—"}</dd>
-                </div>
-                <div>
-                  <dt>Reading</dt>
-                  <dd>{article.reading_time_minutes || 1} min</dd>
-                </div>
-                <div>
-                  <dt>Category</dt>
-                  <dd>Field Notes</dd>
-                </div>
-                <div>
-                  <dt>Status</dt>
-                  <dd>
-                    <span className={`article-status article-status-${article.status}`}>
-                      <i />
-                      {statusLabel(article.status)}
-                    </span>
-                  </dd>
-                </div>
-                <div>
-                  <dt>Words</dt>
-                  <dd>{article.word_count.toLocaleString("zh-CN")}</dd>
-                </div>
-              </dl>
-            </div>
-          </motion.header>
-
-          {article.cover_url && (
-            <motion.figure
-              className="article-plate"
-              initial={{ opacity: 0, y: 14 }}
-              transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-              viewport={{ amount: 0.2, once: true }}
-              whileInView={{ opacity: 1, y: 0 }}
-            >
-              <Image
-                alt={article.title}
-                fill
-                sizes="(max-width: 900px) 100vw, 760px"
-                src={article.cover_url}
-                unoptimized
-              />
-            </motion.figure>
-          )}
-
-          <motion.div
-            className="article-content"
-            initial={{ opacity: 0, y: 18 }}
-            ref={contentRef}
-            style={{ "--article-font-scale": 1 } as CSSProperties}
-            transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
-            viewport={{ amount: 0.05, once: true }}
-            whileInView={{ opacity: 1, y: 0 }}
-          >
-            <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
-          </motion.div>
-
-          <footer className="article-footer">
-            <div>
-              <p>阅读完成</p>
-              <div className="article-stats">
-                <span>{article.word_count} 字</span>
-                <span>{article.view_count} 次阅读</span>
-                <span>{article.comment_count} 条评论</span>
-              </div>
-            </div>
-            <Link className="article-footer-back" href="/notes">
-              返回全部笔记
-            </Link>
-          </footer>
-
-          <div ref={commentsRef}>
-            <ArticleComments allowComment={article.allow_comment} articleId={article.id} />
-          </div>
+        <div className="article-zine-wide article-zine-topline">
+          <Link href="/notes">
+            <ArrowLeft aria-hidden="true" size={17} />
+            返回笔记
+          </Link>
+          <span>PUBLIC NOTE</span>
+          {publishedAt && <time dateTime={publishedAt}>{formatDate(publishedAt)}</time>}
         </div>
 
-        {/* 右侧信息栏 */}
-        <aside aria-label="文章导航" className="article-aside">
-          {articleDocument.headings.length > 0 && (
-            <section className="article-panel">
-              <h2 className="article-panel-title">文章目录</h2>
-              <ol className="article-toc-list">
-                {articleDocument.headings.map((heading, index) => (
-                  <li className={activeHeading === heading.id ? "is-active" : ""} key={heading.id}>
-                    <button onClick={() => scrollToHeading(heading.id)} type="button">
-                      <span>{String(index + 1).padStart(2, "0")}</span>
-                      {heading.text}
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </section>
-          )}
+        <div className="article-zine-wide article-zine-stage">
+          <div className="article-zine-copy">
+            <p className="article-zine-kicker">
+              <span>NEW</span>
+              CRESCENT LAB / WRITING
+            </p>
+            <h1>{article.title}</h1>
+            {article.excerpt && <p className="article-zine-lede">{article.excerpt}</p>}
+            <a className="article-zine-read" href="#article-body">
+              开始阅读
+              <ArrowDownRight aria-hidden="true" size={22} />
+            </a>
+          </div>
 
-          {related.length > 0 && (
-            <section className="article-panel">
-              <h2 className="article-panel-title">相关文章</h2>
-              <ul className="article-related">
-                {related.map((item) => (
-                  <li key={item.id}>
-                    <Link href={`/articles/${item.slug}`}>
-                      <span className="article-related-thumb">
-                        {item.cover_url ? (
-                          <Image alt="" fill sizes="56px" src={item.cover_url} unoptimized />
-                        ) : (
-                          <span aria-hidden="true" className="article-related-fallback" />
-                        )}
-                      </span>
-                      <span className="article-related-copy">
-                        <strong>{item.title}</strong>
+          <motion.figure
+            className={article.cover_url ? "article-zine-cover" : "article-zine-cover is-fallback"}
+            initial={{ opacity: 0, rotate: 0, x: 24 }}
+            transition={{ delay: 0.12, duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
+            viewport={{ once: true }}
+            whileInView={{ opacity: 1, rotate: -2.2, x: 0 }}
+          >
+            <span aria-hidden="true" className="article-zine-cover-corner" />
+            <div className="article-zine-cover-media">
+              {article.cover_url ? (
+                <Image
+                  alt={article.title}
+                  fill
+                  loading="eager"
+                  sizes="(max-width: 900px) 88vw, 540px"
+                  src={article.cover_url}
+                  unoptimized
+                />
+              ) : (
+                <span className="article-zine-cover-type">{article.title}</span>
+              )}
+            </div>
+            <figcaption>
+              <span>CRESCENT LAB</span>
+              <span>{article.word_count.toLocaleString("zh-CN")} WORDS</span>
+            </figcaption>
+          </motion.figure>
+        </div>
+
+        <dl className="article-zine-facts">
+          <div>
+            <dt>AUTHOR</dt>
+            <dd>Crescent Lab</dd>
+          </div>
+          <div>
+            <dt>READING</dt>
+            <dd>{article.reading_time_minutes || 1} MIN</dd>
+          </div>
+          <div>
+            <dt>WORDS</dt>
+            <dd>{article.word_count.toLocaleString("zh-CN")}</dd>
+          </div>
+          <div>
+            <dt>VIEWS</dt>
+            <dd>{article.view_count.toLocaleString("zh-CN")}</dd>
+          </div>
+          <div>
+            <dt>COMMENTS</dt>
+            <dd>{article.comment_count.toLocaleString("zh-CN")}</dd>
+          </div>
+        </dl>
+      </motion.header>
+
+      <section className="article-paper" id="article-body">
+        <div className="article-zine-wide article-reading-stage">
+          <aside aria-label="阅读工具" className="article-dock">
+            <span aria-hidden="true" className="article-dock-label">READ<br />MODE</span>
+            <div aria-label="字号设置" className="article-dock-group" role="group">
+              <button
+                aria-label="减小正文字号"
+                disabled={fontScale <= 0.92}
+                onClick={() => adjustFontScale(-0.04)}
+                type="button"
+              >
+                <Minus aria-hidden="true" size={17} />
+              </button>
+              <span aria-hidden="true">Aa</span>
+              <button
+                aria-label="增大正文字号"
+                disabled={fontScale >= 1.12}
+                onClick={() => adjustFontScale(0.04)}
+                type="button"
+              >
+                <Plus aria-hidden="true" size={17} />
+              </button>
+            </div>
+            <div aria-label="文章互动" className="article-dock-actions" role="group">
+              <button
+                aria-label={liked ? "取消喜欢" : "喜欢文章"}
+                aria-pressed={liked}
+                className={liked ? "is-active is-liked" : ""}
+                onClick={() => {
+                  setLiked((value) => !value);
+                  showFeedback(liked ? "已取消喜欢" : "已喜欢");
+                }}
+                type="button"
+              >
+                <Heart aria-hidden="true" fill={liked ? "currentColor" : "none"} size={18} />
+              </button>
+              <button
+                aria-label={bookmarked ? "取消收藏" : "收藏文章"}
+                aria-pressed={bookmarked}
+                className={bookmarked ? "is-active" : ""}
+                onClick={() => {
+                  setBookmarked((value) => !value);
+                  showFeedback(bookmarked ? "已取消收藏" : "已收藏");
+                }}
+                type="button"
+              >
+                {bookmarked ? <Check aria-hidden="true" size={18} /> : <Bookmark aria-hidden="true" size={18} />}
+              </button>
+              <button aria-label="分享文章" onClick={() => void shareArticle()} type="button">
+                <Share2 aria-hidden="true" size={18} />
+              </button>
+              <button aria-label="查看评论" onClick={scrollToComments} type="button">
+                <MessageCircle aria-hidden="true" size={18} />
+              </button>
+            </div>
+          </aside>
+
+          <div className="article-body-column">
+            {articleDocument.headings.length > 0 && (
+              <nav aria-label="文章目录" className="article-map">
+                <header>
+                  <span>CONTENTS</span>
+                  <strong>{String(articleDocument.headings.length).padStart(2, "0")} SECTIONS</strong>
+                </header>
+                <ol>
+                  {articleDocument.headings.map((heading, index) => (
+                    <li className={activeHeading === heading.id ? "is-active" : ""} key={heading.id}>
+                      <button onClick={() => scrollToHeading(heading.id)} type="button">
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        <strong>{heading.text}</strong>
+                      </button>
+                    </li>
+                  ))}
+                </ol>
+              </nav>
+            )}
+
+            <motion.div
+              className="article-content"
+              initial={{ opacity: 0, y: 22 }}
+              ref={contentRef}
+              style={{ "--article-font-scale": fontScale } as CSSProperties}
+              transition={{ duration: 0.72, ease: [0.16, 1, 0.3, 1] }}
+              viewport={{ amount: 0.04, once: true }}
+              whileInView={{ opacity: 1, y: 0 }}
+            >
+              <div dangerouslySetInnerHTML={{ __html: contentHtml }} />
+            </motion.div>
+
+            <footer className="article-signoff">
+              <div>
+                <span>END OF NOTE</span>
+                <strong>{article.title}</strong>
+              </div>
+              <div>
+                <p>{article.word_count.toLocaleString("zh-CN")} 字 / {article.reading_time_minutes || 1} 分钟</p>
+                <Link href="/notes">
+                  下一篇从笔记列表开始
+                  <ArrowDownRight aria-hidden="true" size={19} />
+                </Link>
+              </div>
+            </footer>
+          </div>
+        </div>
+      </section>
+
+      {related.length > 0 && (
+        <section aria-labelledby="article-more-title" className="article-more">
+          <div className="article-zine-wide">
+            <header>
+              <span>KEEP EXPLORING</span>
+              <h2 id="article-more-title">继续阅读，不要停。</h2>
+            </header>
+            <ol>
+              {related.map((item, index) => (
+                <li key={item.id}>
+                  <Link href={`/articles/${item.slug}`}>
+                    <span className="article-more-index">{String(index + 1).padStart(2, "0")}</span>
+                    <span className="article-more-copy">
+                      <strong>{item.title}</strong>
+                      <span>
                         <time dateTime={item.published_at || item.created_at}>
                           {formatShortDate(item.published_at || item.created_at)}
                         </time>
+                        <span>{item.reading_time_minutes || 1} 分钟</span>
                       </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-        </aside>
-      </div>
+                    </span>
+                    <span className="article-more-media">
+                      {item.cover_url ? (
+                        <Image alt="" fill sizes="180px" src={item.cover_url} unoptimized />
+                      ) : (
+                        <span aria-hidden="true" className="article-more-fallback" />
+                      )}
+                    </span>
+                    <ArrowDownRight aria-hidden="true" className="article-more-arrow" size={28} />
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+      )}
+
+      <section className="article-conversation" ref={commentsRef}>
+        <div className="article-zine-wide">
+          <div className="article-conversation-label">
+            <span>DISCUSSION</span>
+            <strong>留下你的判断，<br />而不是一句“不错”。</strong>
+          </div>
+          <ArticleComments allowComment={article.allow_comment} articleId={article.id} />
+        </div>
+      </section>
 
       {feedback && (
         <motion.div animate={{ opacity: 1, y: 0 }} className="article-feedback" initial={{ opacity: 0, y: 8 }}>
