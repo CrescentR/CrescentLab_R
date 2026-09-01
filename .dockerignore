@@ -5,6 +5,8 @@ data/*
 !data/.gitkeep
 frontend/.next
 frontend/node_modules
+admin/.next
+admin/node_modules
 node_modules
 bin
 dist

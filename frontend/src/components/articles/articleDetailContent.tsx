@@ -8,14 +8,12 @@ import {
   Bookmark,
   Check,
   Heart,
-  MessageCircle,
   Minus,
   Plus,
   Share2,
 } from "lucide-react";
 import { motion, useReducedMotion, useScroll } from "motion/react";
 import { type CSSProperties, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { ArticleComments } from "@/components/articles/articleComments";
 import { bindArticleCodeCopy, highlightArticleHtml } from "@/lib/codeHighlight";
 import {
   listPublicArticles,
@@ -77,7 +75,6 @@ function formatShortDate(dateString: string): string {
 export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
   const articleRef = useRef<HTMLElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const commentsRef = useRef<HTMLDivElement>(null);
   const articleDocument = useMemo(() => buildArticleDocument(article.content_html), [article.content_html]);
   const isClient = useSyncExternalStore(subscribeNoop, getClientSnapshot, getServerSnapshot);
   const contentHtml = useMemo(
@@ -160,10 +157,6 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
     document.getElementById(id)?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
   }
 
-  function scrollToComments() {
-    commentsRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
-  }
-
   return (
     <article className="article-detail article-reading article-zine" ref={articleRef}>
       <motion.div aria-hidden="true" className="article-progress" style={{ scaleX: scrollYProgress }} />
@@ -189,7 +182,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
           <div className="article-zine-copy">
             <p className="article-zine-kicker">
               <span>NEW</span>
-              CRESCENT LAB / WRITING
+              CRESCENT INDEX / WRITING
             </p>
             <h1>{article.title}</h1>
             {article.excerpt && <p className="article-zine-lede">{article.excerpt}</p>}
@@ -222,7 +215,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
               )}
             </div>
             <figcaption>
-              <span>CRESCENT LAB</span>
+              <span>CRESCENT INDEX</span>
               <span>{article.word_count.toLocaleString("zh-CN")} WORDS</span>
             </figcaption>
           </motion.figure>
@@ -231,7 +224,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
         <dl className="article-zine-facts">
           <div>
             <dt>AUTHOR</dt>
-            <dd>Crescent Lab</dd>
+            <dd>Crescent Index</dd>
           </div>
           <div>
             <dt>READING</dt>
@@ -244,10 +237,6 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
           <div>
             <dt>VIEWS</dt>
             <dd>{article.view_count.toLocaleString("zh-CN")}</dd>
-          </div>
-          <div>
-            <dt>COMMENTS</dt>
-            <dd>{article.comment_count.toLocaleString("zh-CN")}</dd>
           </div>
         </dl>
       </motion.header>
@@ -302,9 +291,6 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
               </button>
               <button aria-label="分享文章" onClick={() => void shareArticle()} type="button">
                 <Share2 aria-hidden="true" size={18} />
-              </button>
-              <button aria-label="查看评论" onClick={scrollToComments} type="button">
-                <MessageCircle aria-hidden="true" size={18} />
               </button>
             </div>
           </aside>
@@ -394,16 +380,6 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
           </div>
         </section>
       )}
-
-      <section className="article-conversation" ref={commentsRef}>
-        <div className="article-zine-wide">
-          <div className="article-conversation-label">
-            <span>DISCUSSION</span>
-            <strong>留下你的判断，<br />而不是一句“不错”。</strong>
-          </div>
-          <ArticleComments allowComment={article.allow_comment} articleId={article.id} />
-        </div>
-      </section>
 
       {feedback && (
         <motion.div animate={{ opacity: 1, y: 0 }} className="article-feedback" initial={{ opacity: 0, y: 8 }}>

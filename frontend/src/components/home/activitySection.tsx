@@ -4,12 +4,14 @@ import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toneDotClass } from "./homeTone";
 
+const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001";
+
 export function ActivitySection({ activities, canEnterAdmin }: { activities: LabActivity[]; canEnterAdmin: boolean }) {
   return (
     <section className="home-container home-activity-section" id="activity">
       <div className="home-activity-main" data-lab-animate>
         <div className="home-activity-heading">
-          <h2>实验记录</h2>
+          <h2>过程记录</h2>
           <p>这些不是另一组卡片，而是站点持续发生变化的时间线。它们让读者知道这里不是静态橱窗。</p>
         </div>
         <div className="home-timeline">
@@ -27,7 +29,7 @@ export function ActivitySection({ activities, canEnterAdmin }: { activities: Lab
         </p>
         {canEnterAdmin && (
           <div className="home-maintenance-action">
-            <ButtonLink href="/admin" icon={<LayoutDashboard size={15} />} variant="secondary">
+            <ButtonLink href={`${adminUrl}/admin`} icon={<LayoutDashboard size={15} />} variant="secondary">
               打开后台
             </ButtonLink>
           </div>

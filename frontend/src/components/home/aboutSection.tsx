@@ -4,15 +4,11 @@ import { motion } from "motion/react";
 import { SectionIntro } from "@/components/home/sectionIntro";
 import { fadeUp, stagger, viewport } from "@/components/home/motionConfig";
 
-/** 四个内容区块各自承担的职责，与 PRD「首页内容主线」保持一致 */
+/** 三个公开内容栏目各自承担的职责 */
 const contentMap = [
   {
-    section: "正在构建",
-    duty: "现在把精力放在哪里。方向明确、结果未完成，天到数周的时间尺度。",
-  },
-  {
-    section: "实验观测台",
-    duty: "遇到了什么、验证后知道了什么。允许失败、变化和未决。",
+    section: "动态",
+    duty: "最近在推进什么，以及过程中得到哪些新判断。短期变化统一收在这里。",
   },
   {
     section: "项目",
@@ -44,7 +40,7 @@ export function AboutSection() {
           <span className="lab-mono">IDENTITY</span>
           <h3>这是什么</h3>
           <p>
-            CrescentLab 是一个自托管的个人技术实验室。它用一个公开站点承载正在构建的产品、开源实验和工程笔记，而不是一份简历或产品广告页。
+            Crescent Index 是一个自托管的个人站点，用来整理项目动态、技术实践和工程笔记，而不是一份简历或产品广告页。
           </p>
         </motion.article>
         <motion.article className="lab-about-card" variants={fadeUp}>

@@ -3,7 +3,7 @@ import { NotesExperience } from "@/components/notes/notesExperience";
 import "@/app/notes-list.css";
 
 export const metadata: Metadata = {
-  title: "笔记 — Crescent Lab",
+  title: "笔记 — Crescent Index",
   description: "已经整理成完整文章、能够独立阅读和长期引用的内容。",
 };
 

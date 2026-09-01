@@ -23,8 +23,8 @@ const newsreader = Newsreader({
 });
 
 export const metadata: Metadata = {
-  title: "Crescent Lab — Digital Research Laboratory",
-  description: "个人项目、开源实验、技术笔记和正在构建产品的数字实验室。",
+  title: "Crescent Index — Projects, Notes and Updates",
+  description: "记录个人项目、近期动态与技术笔记的自托管站点。",
   icons: {
     icon: siteBranding.faviconUrl,
   },

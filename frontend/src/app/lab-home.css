@@ -1129,7 +1129,14 @@
 
 /* ── 登录页 ── */
 
-.login-page {
+.lab-home.login-page {
+  --lab-card: var(--surface);
+  --lab-card-raised: var(--surface-raised);
+  --lab-ink: var(--text-strong);
+  --lab-copy: var(--text);
+  --lab-muted: var(--muted);
+  --lab-line: var(--border);
+  --lab-line-strong: var(--text-strong);
   display: grid;
   place-items: center;
   min-height: 100vh;
@@ -1246,7 +1253,7 @@
   border: 1px solid var(--lab-sage);
   border-radius: 999px;
   background: var(--lab-sage);
-  color: #ffffff;
+  color: var(--lab-ink);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
@@ -1255,7 +1262,9 @@
 }
 
 .login-button:hover {
-  background: #366b5b;
+  border-color: var(--lab-clay);
+  background: var(--lab-clay);
+  color: var(--lab-ink);
   box-shadow: 0 12px 26px rgba(63, 125, 106, 0.24);
 }
 
@@ -1343,12 +1352,28 @@
 }
 
 .lab-header.lab-header-zine {
-  border-bottom: 1px solid rgba(217, 255, 67, 0.34);
-  background: rgba(11, 13, 12, 0.94);
+  border-bottom: 3px solid #d9ff43;
+  background: rgba(11, 13, 12, 0.97);
 }
 
 .lab-header-zine .lab-header-inner {
   width: min(100% - 64px, 1320px);
+  min-height: 76px;
+}
+
+.lab-header-zine .lab-brand {
+  color: #f8f7f0;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+}
+
+.lab-header-zine .lab-tabs {
+  gap: 0;
+  border: 2px solid rgba(248, 247, 240, 0.28);
+  background: #111411;
+  padding: 3px;
 }
 
 .lab-header-zine .lab-tab {
@@ -1356,12 +1381,47 @@
   display: grid;
   place-items: center;
   border-radius: 0;
-  padding-inline: 16px;
+  padding-inline: 18px;
+  color: rgba(248, 247, 240, 0.78);
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.lab-header-zine .lab-tab + .lab-tab {
+  border-left: 1px solid rgba(248, 247, 240, 0.18);
+}
+
+.lab-header-zine .lab-tab:hover {
+  background: #f1eee1;
+  color: #0b0d0c;
 }
 
 .lab-header-zine .lab-tab-active {
   background: #d9ff43;
   color: #0b0d0c;
+}
+
+.lab-header-zine .lab-account-actions a,
+.lab-header-zine .lab-account-actions button {
+  min-height: 40px;
+  border-width: 2px;
+  border-color: rgba(248, 247, 240, 0.34);
+  border-radius: 0;
+  color: rgba(248, 247, 240, 0.86);
+  font-weight: 700;
+}
+
+.lab-header-zine .lab-account-actions a:hover,
+.lab-header-zine .lab-account-actions button:hover {
+  border-color: #d9ff43;
+  background: #d9ff43;
+  color: #0b0d0c;
+}
+
+.lab-header-zine .lab-account-name {
+  color: #f8f7f0;
+  font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
 }
 
 .lab-section {
@@ -1519,12 +1579,12 @@
   font-weight: 850;
 }
 
-.lab-button-primary {
+.lab-home .lab-button-primary {
   background: #d9ff43;
   color: #0b0d0c;
 }
 
-.lab-button-primary:hover {
+.lab-home .lab-button-primary:hover {
   background: #ff5b35;
   border-color: #ff5b35;
   color: #0b0d0c;
@@ -1639,6 +1699,14 @@
 .lab-hero-route-blue { background: #3949f6; color: #f8f7f0; }
 .lab-hero-route-orange { background: #ff5b35; }
 .lab-hero-route-paper { background: #f1eee1; }
+
+.lab-home .lab-hero-route {
+  color: #0b0d0c;
+}
+
+.lab-home .lab-hero-route-blue {
+  color: #f8f7f0;
+}
 
 /* Building wall */
 
@@ -1868,7 +1936,16 @@
 
 .lab-project-card-1 { grid-column: 1 / span 7; background: #f1eee1; }
 .lab-project-card-2 { grid-column: 8 / span 5; margin-top: 90px; background: #ff5b35; }
-.lab-project-card-3 { grid-column: 3 / span 7; background: #3949f6; color: #f8f7f0; }
+.lab-project-card-3 { grid-column: 3 / span 7; background: #3949f6; }
+
+.lab-home .lab-project-card-1,
+.lab-home .lab-project-card-2 {
+  color: #0b0d0c;
+}
+
+.lab-home .lab-project-card-3 {
+  color: #f8f7f0;
+}
 
 .lab-project-signal {
   border: 3px solid currentColor;
@@ -1895,10 +1972,19 @@
   line-height: 0.82;
 }
 
+.lab-project-card .lab-project-card-copy > p:first-child {
+  color: currentColor;
+  opacity: 1;
+}
+
 .lab-project-card-copy strong,
 .lab-project-card-copy > p:last-child {
   color: currentColor;
-  opacity: 0.74;
+  opacity: 1;
+}
+
+.lab-project-card-copy strong {
+  font-weight: 800;
 }
 
 .lab-project-modal-backdrop {
@@ -2058,7 +2144,7 @@
     justify-self: stretch;
     justify-content: flex-start;
     margin-inline: 0;
-    padding-inline: 0;
+    padding: 3px;
   }
 
   .lab-section-intro {
@@ -2125,6 +2211,22 @@
 
   .lab-section {
     padding-block: 58px 100px;
+  }
+
+  .lab-header-zine .lab-header-inner {
+    row-gap: 12px;
+    padding-block: 12px;
+  }
+
+  .lab-header-zine .lab-tabs {
+    margin-inline: -14px;
+    border-inline: 0;
+  }
+
+  .lab-header-zine .lab-tab {
+    min-width: max-content;
+    flex: 1 0 auto;
+    padding-inline: 16px;
   }
 
   .lab-section-intro {
@@ -2202,8 +2304,12 @@
   .lab-project-card-1,
   .lab-project-card-2,
   .lab-project-card-3 {
-    grid-column: 1 / -1;
+    grid-column: 1 / -1 !important;
     min-height: 520px;
+  }
+
+  .lab-project-grid {
+    grid-template-columns: 1fr;
   }
 
   .lab-about-grid {

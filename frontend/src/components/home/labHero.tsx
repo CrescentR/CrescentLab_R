@@ -6,10 +6,10 @@ import { motion } from "motion/react";
 import { fadeUp, scaleIn, stagger } from "@/components/home/motionConfig";
 
 const routes = [
-  { href: "/building", index: "01", label: "正在构建", tone: "acid" },
-  { href: "/experiments", index: "02", label: "实验观测", tone: "blue" },
-  { href: "/projects", index: "03", label: "项目", tone: "orange" },
-  { href: "/notes", index: "04", label: "笔记", tone: "paper" },
+  { href: "/updates", index: "01", label: "动态", tone: "acid" },
+  { href: "/projects", index: "02", label: "项目", tone: "blue" },
+  { href: "/notes", index: "03", label: "笔记", tone: "orange" },
+  { href: "/about", index: "04", label: "关于", tone: "paper" },
 ] as const;
 
 export function LabHero() {
@@ -24,17 +24,17 @@ export function LabHero() {
         </motion.p>
         <motion.h1 variants={fadeUp}>
           <span>CRESCENT</span>
-          <span>LAB</span>
+          <span>INDEX</span>
         </motion.h1>
         <motion.p className="lab-hero-manifesto" variants={fadeUp}>
-          构建想法。<br />运行实验。<br />发布留存成果。
+          记录进展。<br />整理方法。<br />分享成果。
         </motion.p>
         <motion.p className="lab-hero-description" variants={fadeUp}>
-          一个持续运转的个人技术实验室。这里收录正在构建的产品、开源实验、工程笔记，以及仍需要被证明的想法。
+          一个持续更新的个人站点。这里收录项目进展、过程记录和工程笔记，也保留尚未写成完整文章的思考。
         </motion.p>
         <motion.div className="lab-hero-actions" variants={fadeUp}>
-          <Link className="lab-button lab-button-primary" href="/building">
-            进入实验室 <ArrowRight aria-hidden="true" size={17} />
+          <Link className="lab-button lab-button-primary" href="/updates">
+            查看最新动态 <ArrowRight aria-hidden="true" size={17} />
           </Link>
           <Link className="lab-button lab-button-quiet" href="/about">
             这是什么
@@ -45,9 +45,9 @@ export function LabHero() {
       <motion.aside animate="visible" className="lab-hero-visual" initial="hidden" variants={scaleIn}>
         <div className="lab-hero-poster">
           <span className="lab-mono">OPEN FILE / 001</span>
-          <strong>BUILD<br />OBSERVE<br />PUBLISH</strong>
-          <i aria-hidden="true">CL</i>
-          <p>UTC+08 / SELF HOSTED / ALWAYS IN PROGRESS</p>
+          <strong>MAKE<br />REFINE<br />SHARE</strong>
+          <i aria-hidden="true">CI</i>
+          <p>UTC+08 / SELF HOSTED / CONTINUOUSLY UPDATED</p>
         </div>
       </motion.aside>
 

@@ -11,9 +11,9 @@ CrescentLab_R 是一个自托管博客 / CMS。当前阶段已完成构建基线
 - 健康检查：`GET /healthz/live`（存活）、`GET /healthz/ready`（就绪，含核心表检查）
 - 统一错误响应：`{code, message, request_id}` 结构，内部错误不泄露详情
 - HTTP 基线：请求超时、body 上限、request_id 关联
-- Next.js App Router 前端工程，首页与后台 Admin Shell
-- 登录页 `/login`，AdminShell 权限检查真实 token，退出按钮
-- 前端 API 客户端（`frontend/src/lib/api/client.ts`）：封装 fetch、自动携带 token、刷新拦截器
+- Next.js App Router 公开前台与独立后台工程，后台 Admin Shell
+- 后台登录页 `admin` 项目中的 `/login`，AdminShell 权限检查真实 token，退出按钮
+- API 客户端边界：公开前台只封装公开请求，管理后台在 `admin/src/lib/api/client.ts` 中处理 token 与刷新拦截器
 - SQLite 与 PostgreSQL 双数据库支持，手动导入 schema
 
 ## 技术栈
@@ -75,18 +75,23 @@ jwt_secret = "your-secret-here"
 # 后端
 go run main.go
 
-# 前端
+# 公开前台
 cd frontend
 pnpm install
 pnpm dev
+
+# 另开终端启动管理后台
+cd admin
+pnpm install
+pnpm dev -- --port 3001
 ```
 
-默认后端地址 `http://localhost:8091`，前端地址 `http://localhost:3000`。
+默认后端地址 `http://localhost:8091`，公开前台地址 `http://localhost:3000`，管理后台地址 `http://localhost:3001`。
 
 ### 5. 验证
 
 - 访问 `http://localhost:8091/healthz/ready` 确认数据库就绪
-- 访问 `http://localhost:3000/login` 使用管理员账号登录
+- 访问 `http://localhost:3001/login` 使用管理员账号登录
 
 ## 常用命令
 
@@ -100,6 +105,11 @@ go build ./...
 cd frontend && pnpm lint
 cd frontend && pnpm typecheck
 cd frontend && pnpm build
+
+# 后台
+cd admin && pnpm lint
+cd admin && pnpm typecheck
+cd admin && pnpm build
 ```
 
 也可以使用 `Makefile`：
@@ -146,7 +156,7 @@ cd frontend
 npm run dev
 ```
 
-5. 打开 `http://localhost:3000/admin/settings`，如果出现后台权限门，先点击“切换为管理员演示”。修改站点标志、后台标志、默认头像、首页主图或 favicon，保存后刷新页面，应能读回刚保存的值。
+5. 打开 `http://localhost:3001/admin/settings`，使用管理员账号登录后修改站点标志、后台标志、默认头像、首页主图或 favicon，保存后刷新页面，应能读回刚保存的值。
 
 ## 目录结构
 
@@ -156,7 +166,8 @@ npm run dev
 ├── internal/modules/           # 业务模块（auth、content、settings、users 等）
 ├── internal/platform/          # 数据库、HTTP、日志、存储、搜索、任务等平台能力
 ├── internal/shared/            # 鉴权、事件、ID、Markdown、安全、校验等共享能力
-├── frontend/                   # Next.js 前端
+├── frontend/                   # Next.js 公开前台
+├── admin/                      # Next.js 独立管理后台
 ├── database/sqlite/schema.sql  # SQLite 建表 SQL
 ├── database/postgres/schema.sql # PostgreSQL 建表 SQL
 ├── default_files/conf.ini      # 默认配置模板

@@ -55,9 +55,9 @@ export const articleSummaries: ArticleSummary[] = [
 export const projectSites: ProjectSite[] = [
   {
     id: "crescentlab",
-    title: "CrescentLab",
-    subtitle: "个人 Labs CMS",
-    description: "当前主项目。它把博客、项目子站、实验记录和后台工作台收束到同一套内容系统里。",
+    title: "Crescent Index",
+    subtitle: "个人内容 CMS",
+    description: "当前主项目。它把博客、项目动态、过程记录和后台工作台收束到同一套内容系统里。",
     category: "CMS",
     status: "building",
     tone: "cyan",
@@ -75,7 +75,7 @@ export const projectSites: ProjectSite[] = [
     tone: "purple",
     updatedAt: "整理中",
     href: "#labs",
-    sections: ["案例", "模板", "实验记录"],
+    sections: ["案例", "模板", "过程记录"],
   },
   {
     id: "atelier-index",
@@ -185,7 +185,7 @@ export const adminLabModules: LabModule[] = [
   },
   {
     id: "system-lab",
-    title: "系统实验室",
+    title: "系统设置",
     description: "配置存储策略、定时任务、通知投递、备份和插件运行状态。",
     tone: "amber",
     status: "高权限",

@@ -202,13 +202,13 @@ export function NotesExperience() {
               )}
             </AnimatePresence>
 
-            {collection.length === 0 ? (
+            {collection.length === 0 && !featured ? (
               <motion.div className="nl-empty nl-empty-soft" variants={fadeUp}>
                 <Search aria-hidden="true" size={22} />
                 <h2>没有匹配的笔记</h2>
                 <p>试试别的关键词，或切换回「全部」。</p>
               </motion.div>
-            ) : view === "mosaic" ? (
+            ) : collection.length > 0 && view === "mosaic" ? (
               <motion.div className="nl-mosaic" variants={shellStagger}>
                 {collection.map((article, index) => (
                   <NotesMosaicCard
@@ -218,13 +218,13 @@ export function NotesExperience() {
                   />
                 ))}
               </motion.div>
-            ) : (
+            ) : collection.length > 0 ? (
               <motion.div className="nl-stream" variants={shellStagger}>
                 {collection.map((article) => (
                   <NotesStreamCard article={article} key={article.id} />
                 ))}
               </motion.div>
-            )}
+            ) : null}
 
             {(hasMore || loadError) && (
               <motion.div className="nl-more" variants={fadeUp}>
@@ -270,7 +270,7 @@ function NotesHero({
       <div className="nl-hero-copy">
         <p className="nl-eyebrow">
           <span className="nl-eyebrow-pulse" aria-hidden="true" />
-          Crescent Lab · Notes Archive
+          Crescent Index · Notes Archive
         </p>
         <h1>
           <span className="nl-hero-title-line">写下来的</span>

@@ -28,8 +28,6 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "8091:8091"
     volumes:
       - ./default_files/conf.postgres.ini:/app/data/conf.ini:ro
       - project_artifacts:/app/data/project-artifacts
@@ -45,12 +43,33 @@ services:
         NODE_IMAGE: ${NODE_IMAGE:-m.daocloud.io/docker.io/library/node:24-slim}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
         BACKEND_URL: http://backend:8091
+        ADMIN_URL: ${ADMIN_URL:-http://localhost:3001}
     environment:
       BACKEND_URL: http://backend:8091
+      NEXT_PUBLIC_ADMIN_URL: ${ADMIN_URL:-http://localhost:3001}
     depends_on:
       - backend
     ports:
       - "3000:3000"
+
+  admin:
+    build:
+      context: .
+      target: admin
+      provenance: false
+      sbom: false
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-m.daocloud.io/docker.io/library/node:24-slim}
+        NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
+        BACKEND_URL: http://backend:8091
+        PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+    environment:
+      BACKEND_URL: http://backend:8091
+      NEXT_PUBLIC_PUBLIC_SITE_URL: ${PUBLIC_SITE_URL:-http://localhost:3000}
+    depends_on:
+      - backend
+    ports:
+      - "3001:3000"
 
 volumes:
   postgres_data:

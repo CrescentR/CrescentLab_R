@@ -8,13 +8,13 @@
 
 | 层级 | 选型 | 说明 |
 |---|---|---|
-| 前端框架 | Next.js App Router | Next.js 16，满足 15+ 约束 |
+| 前端框架 | Next.js App Router | Next.js 16，公开前台与管理后台分别构建 |
 | UI 运行时 | React 19 + TypeScript | 强类型组件与 Server/Client Component 分层 |
 | 样式 | Tailwind CSS 4 + CSS Variables | 暗色、玻璃态、紫/青色强调沉淀为 token |
 | 图标 | lucide-react | 统一后台操作图标 |
 | 客户端状态 | Zustand | 侧栏、弹窗、局部 UI 状态 |
 | 服务端状态 | TanStack Query | 后续 API 接入后的缓存、重试、失效控制 |
-| HTTP 客户端 | fetch（封装在 `lib/api/client.ts`） | 认证拦截器、自动刷新、错误归一化 |
+| HTTP 客户端 | fetch（分别封装在两个项目的 `lib/api/client.ts`） | 后台客户端负责认证拦截与刷新，前台客户端只处理公开请求与错误归一化 |
 | 后端框架 | Gin | 路由、中间件、JSON 序列化 |
 | 认证 | JWT (HS256) + bcrypt | access token 2h、refresh token 7d、退出撤销 |
 | 数据库 | SQLite / PostgreSQL | 手动导入 schema，不做自动 migration |
@@ -54,27 +54,34 @@ POST /api/auth/login    POST /api/auth/refresh   POST /api/auth/logout
  └─ 通过 → 进入 handler
 ```
 
-## 前端目录
+## 前端与后台目录
 
 ```text
 frontend/src/
 ├── app/                 # Next.js 路由
-│   ├── admin/           # 管理后台
-│   ├── login/           # 登录页
 │   ├── layout.tsx       # 根布局和 Provider
 │   └── page.tsx         # 公开博客首页框架
 ├── components/
-│   ├── admin/           # 后台壳、编辑器、用户、设置等页面组件
 │   ├── home/            # 首页组件
 │   ├── layout/          # 公开页布局组件
 │   └── ui/              # Button、Panel、Badge、Field 等基础组件
 ├── lib/
-│   ├── api/             # API 客户端（认证拦截器、token 管理）
+│   ├── api/             # 公开 API 客户端
 │   ├── mockData.ts      # 静态演示数据
 │   └── utils.ts
 ├── store/               # Zustand store
 └── types/               # 前端类型
+
+admin/src/
+├── app/
+│   ├── admin/            # 管理后台路由
+│   ├── login/            # 管理员登录页
+│   └── layout.tsx        # 后台根布局
+├── components/admin/    # 后台壳、编辑器、用户、设置等页面组件
+└── lib/api/              # 管理 API 客户端与认证拦截器
 ```
+
+两个 Next.js 项目分别部署。公开前台默认使用 3000 端口，后台默认使用 3001 端口；后台页面和 `/api/admin/*` 接口均由 JWT + 管理员权限保护。
 
 ## 后端目录
 

@@ -33,7 +33,6 @@ func NewHandler(authService *auth.Service, userRepo *users.Repository, tokenRepo
 
 // RegisterRoutes 注册认证路由（公开接口）。
 func (h *Handler) RegisterRoutes(group *gin.RouterGroup) {
-	group.POST("/auth/register", h.register)
 	group.POST("/auth/login", h.login)
 	group.POST("/auth/refresh", h.refresh)
 	group.POST("/auth/logout", h.logout)

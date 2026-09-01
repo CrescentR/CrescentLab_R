@@ -27,8 +27,10 @@ CMD ["/app/crescentlab"]
 FROM ${NODE_IMAGE} AS frontend-build
 WORKDIR /src/frontend
 ARG BACKEND_URL=http://backend:8091
+ARG ADMIN_URL=http://localhost:3001
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV BACKEND_URL=${BACKEND_URL}
+ENV NEXT_PUBLIC_ADMIN_URL=${ADMIN_URL}
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm config set registry "${NPM_REGISTRY}" \
@@ -44,6 +46,32 @@ ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=frontend-build --chown=node:node /src/frontend/.next/standalone ./
 COPY --from=frontend-build --chown=node:node /src/frontend/.next/static ./.next/static
+USER node
+EXPOSE 3000
+CMD ["node", "server.js"]
+
+FROM ${NODE_IMAGE} AS admin-build
+WORKDIR /src/admin
+ARG BACKEND_URL=http://backend:8091
+ARG PUBLIC_SITE_URL=http://localhost:3000
+ARG NPM_REGISTRY=https://registry.npmmirror.com
+ENV BACKEND_URL=${BACKEND_URL}
+ENV NEXT_PUBLIC_PUBLIC_SITE_URL=${PUBLIC_SITE_URL}
+RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
+COPY admin/package.json admin/pnpm-lock.yaml ./
+RUN pnpm config set registry "${NPM_REGISTRY}" \
+  && pnpm install --frozen-lockfile
+COPY admin ./
+RUN pnpm run build
+
+FROM ${NODE_IMAGE} AS admin
+WORKDIR /app
+ENV NODE_ENV=production
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=admin-build --chown=node:node /src/admin/.next/standalone ./
+COPY --from=admin-build --chown=node:node /src/admin/.next/static ./.next/static
 USER node
 EXPOSE 3000
 CMD ["node", "server.js"]

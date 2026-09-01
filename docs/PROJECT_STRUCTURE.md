@@ -35,13 +35,19 @@
 │       ├── markdown/            # Markdown、HTML 净化、目录提取
 │       ├── security/            # 加密、哈希、脱敏
 │       └── validate/            # 通用校验器
-├── frontend/                    # Next.js App Router 前端
+├── frontend/                    # Next.js App Router 公开前台
 │   └── src/
 │       ├── app/                 # 路由
 │       ├── components/          # 页面组件与 UI 组件
-│       ├── lib/                 # 前端工具、API client 边界、mock 数据
+│       ├── lib/                 # 公开 API client、前端工具、mock 数据
 │       ├── store/               # Zustand store
 │       └── types/               # TypeScript 类型
+├── admin/                       # Next.js App Router 独立管理后台
+│   └── src/
+│       ├── app/admin/           # 后台路由
+│       ├── app/login/           # 管理员登录
+│       ├── components/admin/    # 后台页面组件
+│       └── lib/api/             # 管理 API client 与认证拦截器
 ├── database/
 │   └── postgres/
 │       └── schema.sql           # 手动导入的 PostgreSQL 建表 SQL

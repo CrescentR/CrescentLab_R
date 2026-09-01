@@ -47,7 +47,7 @@ export const articleStatusLabel: Record<ArticleStatus, string> = {
 };
 
 export const projectStatusLabel: Record<ProjectSite["status"], string> = {
-  building: "构建中",
+  building: "推进中",
   live: "已公开",
   research: "研究中",
 };

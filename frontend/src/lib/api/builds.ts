@@ -31,21 +31,6 @@ export type BuildListResponse = {
   total_pages: number;
 };
 
-export type BuildInput = {
-  name: string;
-  slug: string;
-  one_liner?: string;
-  stage?: BuildStage;
-  round_goal?: string;
-  latest_progress?: string;
-  next_step?: string;
-  detail_url?: string;
-  demo_url?: string;
-  repo_url?: string;
-  status?: BuildStatus;
-  sort_order?: number;
-};
-
 export type BuildListParams = {
   page?: number;
   page_size?: number;
@@ -56,38 +41,6 @@ export type BuildListParams = {
 export function listPublicBuilds(params: BuildListParams = {}) {
   return apiJson<BuildListResponse>(`/api/builds${toQueryString(params)}`, {
     cache: "no-store",
-  });
-}
-
-export function listAdminBuilds(params: BuildListParams = {}) {
-  return apiJson<BuildListResponse>(`/api/admin/builds${toQueryString(params)}`);
-}
-
-export function getAdminBuild(id: number) {
-  return apiJson<BuildItem>(`/api/admin/builds/detail?id=${id}`);
-}
-
-export function createAdminBuild(input: BuildInput) {
-  return apiJson<BuildItem>("/api/admin/builds", {
-    body: JSON.stringify(input),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
-}
-
-export function updateAdminBuild(id: number, input: BuildInput) {
-  return apiJson<BuildItem>("/api/admin/builds/update", {
-    body: JSON.stringify({ id, ...input }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
-}
-
-export function deleteAdminBuild(id: number) {
-  return apiJson<{ success: boolean }>("/api/admin/builds/delete", {
-    body: JSON.stringify({ id }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
   });
 }
 

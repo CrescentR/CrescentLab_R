@@ -62,21 +62,21 @@ export function ExperimentsSection() {
     <section className="lab-section">
       <div className="lab-shell">
         <SectionIntro
-          description="来自受控失败、未完成工具和技术问题的观察。重点不是做了什么，而是验证后知道了什么。"
-          index="02 / 归档"
-          title="实验观测台"
+          description="开发过程和技术问题中形成的阶段记录。重点不是罗列工作，而是说明过程中知道了什么。"
+          index="02 / 动态"
+          title="过程记录"
         />
 
         {loading ? (
-          <p className="lab-empty-copy">正在读取观测记录…</p>
+          <p className="lab-empty-copy">正在读取过程记录…</p>
         ) : loadError ? (
           <p className="lab-empty-copy">{loadError}</p>
         ) : notes.length === 0 ? (
-          <p className="lab-empty-copy">还没有公开的观测记录。有验证结果时再写进来。</p>
+          <p className="lab-empty-copy">还没有公开的过程记录。有明确的新信息时再写进来。</p>
         ) : (
           <div className="lab-observatory">
             <div className="lab-observatory-rail">
-              <ol aria-label="实验记录索引" className="lab-observatory-index">
+              <ol aria-label="过程记录索引" className="lab-observatory-index">
                 {notes.map((note, index) => (
                   <li className={index === activeIndex ? "is-active" : undefined} key={note.id}>
                     <button
@@ -104,7 +104,7 @@ export function ExperimentsSection() {
             </div>
 
             <div
-              aria-label="实验观测卡片，可使用左右方向键切换"
+              aria-label="过程记录卡片，可使用左右方向键切换"
               className="lab-observatory-stage"
               onKeyDown={(event) => {
                 if (event.key === "ArrowLeft") showExperiment(activeIndex - 1);
@@ -122,7 +122,7 @@ export function ExperimentsSection() {
                     <motion.article
                       animate={getCardAnimation(index, activeIndex, isPreview, dragDirection)}
                       aria-hidden={index !== activeIndex}
-                      aria-label={`观测 ${number}：${note.title}`}
+                      aria-label={`记录 ${number}：${note.title}`}
                       className="lab-observatory-panel"
                       data-experiment-card
                       drag={index === activeIndex && !shouldReduceMotion ? "x" : false}
@@ -155,7 +155,7 @@ export function ExperimentsSection() {
                     >
                       <div className="lab-observatory-panel-copy">
                         <div className="lab-observatory-panel-meta">
-                          <span className="lab-experiment-number lab-mono">OBSERVATION / {number}</span>
+                          <span className="lab-experiment-number lab-mono">NOTE / {number}</span>
                           <span className="lab-experiment-status lab-mono"><i /> {statusLabel[note.status] ?? note.status}</span>
                         </div>
                         <h3>{note.title}</h3>

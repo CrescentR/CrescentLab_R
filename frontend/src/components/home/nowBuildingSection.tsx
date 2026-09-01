@@ -31,7 +31,7 @@ export function NowBuildingSection() {
         if (!active) return;
         setBuilds(result.items);
       } catch {
-        if (active) setLoadError("构建记录加载失败，请稍后重试。");
+        if (active) setLoadError("近期进展加载失败，请稍后重试。");
       } finally {
         if (active) setLoading(false);
       }
@@ -50,16 +50,16 @@ export function NowBuildingSection() {
       whileInView="visible"
     >
       <SectionIntro
-        description="当前真实投入时间、短期内会继续更新的工作。没有进展就不展示。"
-        index="01 / 正在构建"
-        title="正在构建"
+        description="当前投入时间、近期会继续推进的工作。没有新进展就不展示。"
+        index="01 / 动态"
+        title="近期进展"
       />
       {loading ? (
-        <p className="lab-empty-copy">正在读取构建项…</p>
+        <p className="lab-empty-copy">正在读取近期进展…</p>
       ) : loadError ? (
         <p className="lab-empty-copy">{loadError}</p>
       ) : builds.length === 0 ? (
-        <p className="lab-empty-copy">目前没有正在构建的对象。</p>
+        <p className="lab-empty-copy">目前没有公开的近期进展。</p>
       ) : (
         <div className="lab-bento-grid">
           {builds.map((build, index) => {
@@ -75,7 +75,7 @@ export function NowBuildingSection() {
                 {...cardHover}
               >
                 <div className="lab-build-card-head">
-                  <span className="lab-build-index lab-mono">BUILD / {String(index + 1).padStart(2, "0")}</span>
+                  <span className="lab-build-index lab-mono">UPDATE / {String(index + 1).padStart(2, "0")}</span>
                   {href ? (
                     <a aria-label={`${build.name} 入口`} href={href} rel="noreferrer" target={href.startsWith("http") ? "_blank" : undefined}>
                       <ArrowUpRight size={17} />

@@ -1,9 +1,11 @@
 import Link from "next/link";
-import { ChevronDown, FlaskConical, LayoutDashboard, Moon, Search, Sun, UserRound } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Moon, Search, Sun, UserRound } from "lucide-react";
 import type { Persona } from "@/lib/personas";
 import type { PersonaRole, ThemeMode } from "@/store/uiStore";
 import type { HomeNavItem } from "@/types/home";
 import { Button, ButtonLink } from "@/components/ui/button";
+
+const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001";
 
 type PersonaOption = Pick<Persona, "description" | "id" | "initials" | "name">;
 
@@ -36,11 +38,11 @@ export function HomeHeader({
         <div className="home-header-shell">
           <Link className="home-brand" href="/">
             <span className="home-brand-mark">
-              <FlaskConical size={18} />
+              <Moon size={18} />
             </span>
             <span className="min-w-0">
-              <span className="block truncate font-lab-display text-xl font-semibold text-[var(--text-strong)]">CrescentLab</span>
-              <span className="block truncate font-lab-mono text-xs text-[var(--muted)]">Crescent 的内容实验室</span>
+              <span className="block truncate font-lab-display text-xl font-semibold text-[var(--text-strong)]">Crescent Index</span>
+              <span className="block truncate font-lab-mono text-xs text-[var(--muted)]">项目、动态与技术笔记</span>
             </span>
           </Link>
 
@@ -62,7 +64,7 @@ export function HomeHeader({
 
             <div className="home-permission-cluster">
               {persona.canEnterAdmin && (
-                <ButtonLink className="h-11 rounded-[8px] px-3 text-xs" href="/admin" icon={<LayoutDashboard size={14} />} variant="primary">
+                <ButtonLink className="h-11 rounded-[8px] px-3 text-xs" href={`${adminUrl}/admin`} icon={<LayoutDashboard size={14} />} variant="primary">
                   后台
                 </ButtonLink>
               )}

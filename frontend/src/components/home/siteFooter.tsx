@@ -7,8 +7,8 @@ export function SiteFooter() {
         <div className="lab-footer-brand">
           <span aria-hidden="true" className="lab-crescent-mark" />
           <div>
-            <strong>CRESCENT LAB</strong>
-            <p>独立的数字研究实践。</p>
+            <strong>CRESCENT INDEX</strong>
+            <p>独立的数字创作与技术记录。</p>
           </div>
         </div>
         <Link className="lab-footer-link" href="/about">

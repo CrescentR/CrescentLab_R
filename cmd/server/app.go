@@ -87,10 +87,6 @@ func (a *App) Run() error {
 	authHandler := authmodule.NewHandler(authService, userRepo, tokenRepo, a.log)
 	authHandler.RegisterRoutes(engine.Group("/api"))
 	commentsHandler := commentsmodule.NewHandler(commentsmodule.NewRepository(db.SQL(), db.Driver()), userRepo)
-	commentsHandler.RegisterPublicRoutes(engine.Group("/api"))
-	authenticatedGroup := engine.Group("/api")
-	authenticatedGroup.Use(middleware.RequireAuth(authService))
-	commentsHandler.RegisterAuthenticatedRoutes(authenticatedGroup)
 
 	// 公开文章接口（不需认证）
 	contentRepo := contentmodule.NewRepository(db.SQL(), db.Driver())
