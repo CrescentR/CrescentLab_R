@@ -69,6 +69,31 @@ jwt_secret = "your-secret-here"
 
 如果 `jwt_secret` 为空，开发环境会自动生成随机 secret（生产环境必须设置固定值）。
 
+### 生产部署（Docker Compose）
+
+复制 `.env.example` 为服务器上的 `.env`，至少设置前台/后台域名，并让 Compose 使用独立的后端配置文件：
+
+```bash
+cp .env.example .env
+cp data/conf.ini.example data/conf.ini
+```
+
+将 `.env` 中的 `ADMIN_URL`、`PUBLIC_SITE_URL` 改为实际 HTTPS 地址，并将 `BACKEND_CONFIG` 改为 `data/conf.ini`。随后编辑 `data/conf.ini`：
+
+- `[auth] jwt_secret` 设置固定的长随机字符串；
+- `[database] dsn` 填写服务器数据库地址；
+- `server.host` 保持 `0.0.0.0`，端口保持 `8091`。
+
+启动并初始化管理员：
+
+```bash
+docker compose build
+docker compose up -d
+docker compose exec backend /app/crescentlab admin init --username admin --password '你的管理员密码'
+```
+
+公开前台默认监听 3000，管理后台监听 3001。生产环境应通过反向代理分别绑定两个域名，并且不要将 8091 或 5432 暴露到公网。`postgres` 服务首次启动会执行 `database/postgres/schema.sql`；已有数据请保留 Compose 数据卷，不要随意执行 `docker compose down -v`。
+
 ### 4. 启动
 
 ```bash
