@@ -1,21 +1,4 @@
 services:
-  postgres:
-    image: ${POSTGRES_IMAGE:-m.daocloud.io/docker.io/library/postgres:16-alpine}
-    environment:
-      POSTGRES_DB: crescentlab
-      POSTGRES_USER: crescentlab
-      POSTGRES_PASSWORD: crescentlab
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./database/postgres/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U crescentlab -d crescentlab"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   backend:
     build:
       context: .
@@ -25,11 +8,8 @@ services:
       args:
         GO_IMAGE: ${GO_IMAGE:-m.daocloud.io/docker.io/library/golang:1.26-alpine}
         ALPINE_IMAGE: ${ALPINE_IMAGE:-m.daocloud.io/docker.io/library/alpine:3.22}
-    depends_on:
-      postgres:
-        condition: service_healthy
     volumes:
-      - ./default_files/conf.postgres.ini:/app/data/conf.ini:ro
+      - ./data/conf.ini:/app/data/conf.ini:ro
       - project_artifacts:/app/data/project-artifacts
       - storage_keys:/app/data/storage
 
@@ -72,6 +52,5 @@ services:
       - "3001:3000"
 
 volumes:
-  postgres_data:
   project_artifacts:
   storage_keys:

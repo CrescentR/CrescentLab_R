@@ -38,6 +38,13 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Local package-manager cache
+frontend/.pnpm-store/
+
+# Local configuration backups
+docker-compose.yml.bak.*
+.gitignore.bak.*
+
 # Logs
 logs/
 *.log

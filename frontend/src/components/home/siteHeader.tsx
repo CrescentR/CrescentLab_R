@@ -2,10 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LogIn } from "lucide-react";
 import { labNavigation } from "@/lib/labHomeContent";
-
-const adminUrl = process.env.NEXT_PUBLIC_ADMIN_URL ?? "http://localhost:3001";
 
 /** 判断 tab 是否处于激活态：首页只在精确匹配时激活，其余按路径前缀匹配以覆盖详情页 */
 function isActiveTab(pathname: string, href: string): boolean {
@@ -39,9 +36,6 @@ export function SiteHeader() {
             );
           })}
         </nav>
-        <div className="lab-account-actions">
-          <a href={`${adminUrl}/login`}><LogIn size={15} />后台登录</a>
-        </div>
       </div>
     </header>
   );
