@@ -29,7 +29,9 @@ type Project struct {
 	Slug         string
 	Tagline      sql.NullString
 	Description  string
+	ContentMD    string
 	ContentHTML  string
+	SourceFormat string
 	CoverURL     sql.NullString
 	RepoURL      sql.NullString
 	DemoURL      sql.NullString
@@ -61,8 +63,10 @@ type ProjectListItem struct {
 
 type ProjectDetail struct {
 	ProjectListItem
-	Description string `json:"description"`
-	ContentHTML string `json:"content_html"`
+	Description  string `json:"description"`
+	ContentMD    string `json:"content_md"`
+	ContentHTML  string `json:"content_html"`
+	SourceFormat string `json:"source_format"`
 }
 
 type ListFilter struct {
@@ -81,18 +85,18 @@ type ListResult struct {
 }
 
 type CreateInput struct {
-	Name        string   `json:"name"`
-	Slug        string   `json:"slug"`
-	Tagline     string   `json:"tagline"`
-	Description string   `json:"description"`
-	ContentHTML string   `json:"content_html"`
-	CoverURL    string   `json:"cover_url"`
-	RepoURL     string   `json:"repo_url"`
-	DemoURL     string   `json:"demo_url"`
-	Status      string   `json:"status"`
-	SourceFormat string  `json:"source_format"`
-	ContentMD   string   `json:"content_md"`
-	TechStack   []string `json:"tech_stack"`
+	Name         string   `json:"name"`
+	Slug         string   `json:"slug"`
+	Tagline      string   `json:"tagline"`
+	Description  string   `json:"description"`
+	ContentHTML  string   `json:"content_html"`
+	CoverURL     string   `json:"cover_url"`
+	RepoURL      string   `json:"repo_url"`
+	DemoURL      string   `json:"demo_url"`
+	Status       string   `json:"status"`
+	SourceFormat string   `json:"source_format"`
+	ContentMD    string   `json:"content_md"`
+	TechStack    []string `json:"tech_stack"`
 }
 
 func (f ListFilter) normalizedPage() int {
@@ -113,7 +117,9 @@ func (p Project) Detail() ProjectDetail {
 	return ProjectDetail{
 		ProjectListItem: p.ListItem(),
 		Description:     p.Description,
+		ContentMD:       p.ContentMD,
 		ContentHTML:     p.ContentHTML,
+		SourceFormat:    p.SourceFormat,
 	}
 }
 
@@ -184,6 +190,13 @@ func (i CreateInput) Validate() error {
 		case ProjectStatusDraft, ProjectStatusPublished, ProjectStatusArchived:
 		default:
 			return fmt.Errorf("invalid status %q", i.Status)
+		}
+	}
+	if i.SourceFormat != "" {
+		switch i.SourceFormat {
+		case "markdown", "mdx", "tiptap", "html":
+		default:
+			return fmt.Errorf("invalid source_format %q", i.SourceFormat)
 		}
 	}
 	return nil

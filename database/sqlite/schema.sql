@@ -186,7 +186,9 @@ CREATE TABLE IF NOT EXISTS projects (
   slug TEXT NOT NULL UNIQUE,
   tagline TEXT,
   description TEXT NOT NULL DEFAULT '',
+  content_md TEXT NOT NULL DEFAULT '',
   content_html TEXT NOT NULL DEFAULT '',
+  source_format TEXT NOT NULL DEFAULT 'markdown',
   cover_url TEXT,
   repo_url TEXT,
   demo_url TEXT,
@@ -199,6 +201,7 @@ CREATE TABLE IF NOT EXISTS projects (
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at DATETIME,
   CHECK (status IN ('draft', 'published', 'archived')),
+  CHECK (source_format IN ('markdown', 'mdx', 'tiptap', 'html')),
   CHECK (view_count >= 0)
 );
 

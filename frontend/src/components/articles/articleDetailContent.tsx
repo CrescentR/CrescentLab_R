@@ -38,7 +38,7 @@ type ArticleHeading = {
 function buildArticleDocument(contentHtml: string) {
   const headings: ArticleHeading[] = [];
   const html = contentHtml.replace(
-    /<h([1-3])([^>]*)>([\s\S]*?)<\/h\1>/gi,
+    /<h(1)([^>]*)>([\s\S]*?)<\/h\1>/gi,
     (match, level: string, attributes: string, content: string) => {
       const id = `section-${headings.length + 1}`;
       headings.push({
@@ -101,7 +101,7 @@ export function ArticleDetailContent({ article }: ArticleDetailContentProps) {
 
     bindArticleCodeCopy(content.ownerDocument, content);
 
-    const elements = Array.from(content.querySelectorAll<HTMLHeadingElement>("h1, h2, h3"));
+    const elements = Array.from(content.querySelectorAll<HTMLHeadingElement>("h1"));
     const observer = new IntersectionObserver(
       (entries) => {
         const visible = entries.find((entry) => entry.isIntersecting);

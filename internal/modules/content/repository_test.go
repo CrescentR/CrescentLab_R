@@ -262,7 +262,7 @@ func TestCreateArticleQueryUsesPostgresReturningID(t *testing.T) {
 	if !returnsID {
 		t.Fatal("PostgreSQL create query should return the inserted id")
 	}
-	want := "INSERT INTO articles (title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, CURRENT_TIMESTAMP) RETURNING id"
+	want := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP) RETURNING id"
 	if query != want {
 		t.Fatalf("PostgreSQL create query = %q, want %q", query, want)
 	}
@@ -273,7 +273,7 @@ func TestCreateArticleQueryKeepsSQLiteLastInsertIDPath(t *testing.T) {
 	if returnsID {
 		t.Fatal("SQLite create query should use LastInsertId")
 	}
-	want := "INSERT INTO articles (title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)"
+	want := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)"
 	if query != want {
 		t.Fatalf("SQLite create query = %q, want %q", query, want)
 	}

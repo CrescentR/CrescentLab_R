@@ -1715,7 +1715,9 @@ CREATE TABLE projects (
   slug TEXT NOT NULL UNIQUE,
   tagline TEXT,
   description TEXT NOT NULL DEFAULT '',
+  content_md TEXT NOT NULL DEFAULT '',
   content_html TEXT NOT NULL DEFAULT '',
+  source_format TEXT NOT NULL DEFAULT 'markdown',
   cover_url TEXT,
   repo_url TEXT,
   demo_url TEXT,
@@ -1728,6 +1730,7 @@ CREATE TABLE projects (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
   deleted_at TIMESTAMPTZ,
   CHECK (status IN ('draft', 'published', 'archived')),
+  CHECK (source_format IN ('markdown', 'mdx', 'tiptap', 'html')),
   CHECK (view_count >= 0)
 );
 

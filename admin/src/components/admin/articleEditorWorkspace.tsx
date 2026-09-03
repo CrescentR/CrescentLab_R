@@ -24,11 +24,14 @@ import {
   updateAdminArticle,
   publishAdminArticle,
   previewArticle,
+  listAdminCollections,
+  type Collection,
   type ArticleInput,
 } from "@/lib/api/articles";
 import { highlightCodeBlocks } from "@/lib/codeHighlight";
 
 type ArticleFormState = {
+  category_id: number | null;
   title: string;
   slug: string;
   excerpt: string;
@@ -41,6 +44,7 @@ type SaveStatus = "idle" | "saving" | "saved";
 const ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 const NEW_ARTICLE_TEMPLATE: ArticleFormState = {
+  category_id: null,
   title: "",
   slug: generateRandomSlug(),
   excerpt: "",
@@ -81,8 +85,13 @@ export function ArticleEditorWorkspace({
   const [isPreviewing, setIsPreviewing] = useState(false);
   const [isLoading, setIsLoading] = useState(() => Boolean(initialArticleId));
   const [isDeleting, setIsDeleting] = useState(false);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadedIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    void listAdminCollections().then((result) => setCollections(result.items)).catch(() => setCollections([]));
+  }, []);
 
   useEffect(() => {
     if (!initialArticleId) return;
@@ -97,6 +106,7 @@ export function ArticleEditorWorkspace({
         setArticleId(detail.id);
         setStatus(detail.status);
         setForm({
+          category_id: detail.category_id,
           title: detail.title,
           slug: detail.slug,
           excerpt: detail.excerpt || "",
@@ -122,6 +132,7 @@ export function ArticleEditorWorkspace({
 
   const buildApiInput = useCallback((): ArticleInput => {
     return {
+      category_id: form.category_id,
       title: form.title,
       slug: form.slug,
       excerpt: form.excerpt,
@@ -173,6 +184,7 @@ export function ArticleEditorWorkspace({
         setArticleId(created.id);
       }
       const result = await publishAdminArticle(targetId, {
+        category_id: form.category_id,
         title: form.title,
         slug: form.slug,
         excerpt: form.excerpt,
@@ -422,6 +434,13 @@ export function ArticleEditorWorkspace({
               <span className="article-meta-slug">{form.slug}</span>
             </div>
             <CoverImageField value={form.cover_url} onChange={(v) => updateField("cover_url", v)} />
+            <label className="article-meta-field">
+              <span className="article-meta-label-row"><span>分类集合</span></span>
+              <select className="article-meta-input" value={form.category_id ?? ""} onChange={(event) => updateField("category_id", event.target.value ? Number(event.target.value) : null)}>
+                <option value="">未归入集合</option>
+                {collections.map((collection) => <option key={collection.id} value={collection.id}>{collection.name}</option>)}
+              </select>
+            </label>
             <Field
               className="article-meta-field"
               inputClassName="article-meta-input article-meta-textarea"

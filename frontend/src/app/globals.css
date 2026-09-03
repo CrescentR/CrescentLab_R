@@ -8,6 +8,25 @@
   font-weight: 400;
 }
 
+.project-detail { padding: 5rem 0 8rem; }
+.project-detail-hero { border-bottom: 1px solid var(--border); padding: 0 0 3rem; }
+.project-detail-hero h1 { margin: 1rem 0; font-size: clamp(3rem, 8vw, 7rem); letter-spacing: -0.07em; }
+.project-detail-hero > p:not(.lab-mono) { color: var(--muted); font-size: 1.25rem; }
+.project-detail-links { display: flex; gap: 1rem; margin-top: 2rem; }
+.project-detail-links a, .project-list a { color: var(--text-strong); text-decoration: underline; text-underline-offset: 0.25em; }
+.project-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) 220px; gap: 4rem; margin-top: 3rem; }
+.project-readme { max-width: 780px; line-height: 1.85; }
+.project-readme h1, .project-readme h2, .project-readme h3 { color: var(--text-strong); line-height: 1.2; margin: 2.2em 0 0.7em; }
+.project-readme pre { overflow-x: auto; padding: 1rem; border-radius: var(--radius); background: var(--text-strong); color: var(--surface); }
+.project-readme-callout { border-left: 3px solid var(--teal); background: var(--teal-soft); padding: 1rem 1.25rem; }
+.project-detail-meta { display: flex; flex-wrap: wrap; align-content: start; gap: .5rem; height: fit-content; }
+.project-detail-meta strong { width: 100%; margin-bottom: .5rem; }
+.project-detail-meta span { border: 1px solid var(--border); border-radius: 999px; padding: .3rem .65rem; color: var(--muted); font-size: .85rem; }
+.project-list { display: grid; gap: 1rem; margin-top: 2rem; }
+.project-list a { display: block; border-top: 1px solid var(--border); padding: 1.5rem 0; text-decoration: none; }
+.project-list h2 { margin: .5rem 0; color: var(--text-strong); }
+.project-list p { color: var(--muted); }
+
 :root {
   --background: #f6f5ef;
   --background-soft: #ecece4;

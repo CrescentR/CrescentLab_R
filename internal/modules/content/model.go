@@ -105,6 +105,7 @@ type ArticleDetail struct {
 	PublicID           string     `json:"public_id"`
 	Title              string     `json:"title"`
 	Slug               string     `json:"slug"`
+	CategoryID         *int64     `json:"category_id"`
 	Excerpt            string     `json:"excerpt"`
 	ContentMD          string     `json:"content_md"`
 	ContentHTML        string     `json:"content_html"`
@@ -129,6 +130,7 @@ func (a Article) Detail() ArticleDetail {
 		PublicID:           a.PublicID,
 		Title:              a.Title,
 		Slug:               a.Slug,
+		CategoryID:         nullableInt64(a.CategoryID),
 		Excerpt:            a.Excerpt.String,
 		ContentMD:          a.ContentMD,
 		ContentHTML:        a.ContentHTML,
@@ -155,6 +157,7 @@ func (a Article) Detail() ArticleDetail {
 type CreateInput struct {
 	Title              string `json:"title"`
 	Slug               string `json:"slug"`
+	CategoryID         *int64 `json:"category_id"`
 	Excerpt            string `json:"excerpt"`
 	ContentMD          string `json:"content_md"`
 	CoverURL           string `json:"cover_url"`
@@ -163,6 +166,13 @@ type CreateInput struct {
 	ContentHTML        string `json:"content_html"`
 	WordCount          int    `json:"-"`
 	ReadingTimeMinutes int    `json:"-"`
+}
+
+func nullableInt64(value sql.NullInt64) *int64 {
+	if !value.Valid {
+		return nil
+	}
+	return &value.Int64
 }
 
 func (i CreateInput) Validate() error {

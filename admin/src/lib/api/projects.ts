@@ -28,7 +28,9 @@ export type ProjectListResponse = {
 
 export type ProjectDetail = ProjectListItem & {
   description: string;
+  content_md: string;
   content_html: string;
+  source_format: "markdown" | "mdx" | "tiptap" | "html";
 };
 
 export type ProjectArtifact = {
@@ -53,7 +55,7 @@ export type ProjectInput = {
   description?: string;
   content_md?: string;
   content_html?: string;
-  source_format?: "markdown" | "tiptap" | "html";
+  source_format?: "markdown" | "mdx" | "tiptap" | "html";
   cover_url?: string;
   repo_url?: string;
   demo_url?: string;
@@ -156,4 +158,3 @@ function toQueryString(params: ProjectListParams) {
   const query = searchParams.toString();
   return query ? `?${query}` : "";
 }
-

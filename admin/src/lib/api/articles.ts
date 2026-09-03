@@ -28,6 +28,7 @@ export type ArticleListResponse = {
 };
 
 export type ArticleDetail = ArticleListItem & {
+  category_id: number | null;
   content_md: string;
   content_html: string;
   visibility: string;
@@ -39,6 +40,7 @@ export type ArticleDetail = ArticleListItem & {
 export type ArticleInput = {
   title: string;
   slug: string;
+  category_id?: number | null;
   excerpt?: string;
   content_md?: string;
   content_html?: string;
@@ -46,6 +48,18 @@ export type ArticleInput = {
   status?: ArticleStatus;
   source_format?: "markdown" | "tiptap" | "html";
 };
+
+export type Collection = {
+  id: number;
+  name: string;
+  slug: string;
+  description: string;
+  article_count: number;
+};
+
+export function listAdminCollections() {
+  return apiJson<{ items: Collection[] }>("/api/admin/collections");
+}
 
 export type ArticleListParams = {
   page?: number;

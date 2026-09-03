@@ -90,7 +90,8 @@ func (a *App) Run() error {
 
 	// 公开文章接口（不需认证）
 	contentRepo := contentmodule.NewRepository(db.SQL(), db.Driver())
-	contentmodule.NewHandler(contentRepo).RegisterPublicRoutes(engine.Group("/api"))
+	contentHandler := contentmodule.NewHandler(contentRepo)
+	contentHandler.RegisterPublicRoutes(engine.Group("/api"))
 	observatoryRepo := observatorymodule.NewRepository(db.SQL(), db.Driver())
 	if err := observatoryRepo.EnsureSchema(context.Background()); err != nil {
 		return err
@@ -104,11 +105,15 @@ func (a *App) Run() error {
 	buildsHandler := buildsmodule.NewHandler(buildsRepo)
 	buildsHandler.RegisterPublicRoutes(engine.Group("/api"))
 	projectsRepo := projectsmodule.NewRepository(db.SQL(), db.Driver())
+	if err := projectsRepo.EnsureContentSchema(context.Background()); err != nil {
+		return err
+	}
 	if err := projectsRepo.EnsureArtifactSchema(context.Background()); err != nil {
 		return err
 	}
 	projectsHandler := projectsmodule.NewHandler(projectsRepo)
 	projectsHandler.RegisterArtifactRoutes(engine.Group("/api"))
+	projectsHandler.RegisterPublicRoutes(engine.Group("/api"))
 	storageKey, err := storagemodule.LoadOrCreateKey("data/storage/storage.key")
 	if err != nil {
 		return err
@@ -123,10 +128,11 @@ func (a *App) Run() error {
 	// 管理接口（需认证 + 管理员）
 	adminGroup := engine.Group("/api/admin")
 	adminGroup.Use(middleware.RequireAuth(authService), middleware.RequireAdmin())
+	contentHandler.RegisterCollectionRoutes(engine.Group("/api"), adminGroup)
 	authHandler.RegisterAdminRoutes(adminGroup)
 	settingsmodule.NewHandler(settingsmodule.NewRepository(db.SQL(), db.Driver())).RegisterAdminRoutes(adminGroup)
 	storageHandler.RegisterAdminRoutes(adminGroup)
-	contentmodule.NewHandler(contentRepo).RegisterAdminRoutes(adminGroup)
+	contentHandler.RegisterAdminRoutes(adminGroup)
 	projectsHandler.RegisterAdminRoutes(adminGroup)
 	observatoryHandler.RegisterAdminRoutes(adminGroup)
 	buildsHandler.RegisterAdminRoutes(adminGroup)

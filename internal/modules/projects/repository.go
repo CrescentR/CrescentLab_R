@@ -28,6 +28,29 @@ func NewRepository(db *sql.DB, driver ...string) *Repository {
 	return &Repository{db: db, driver: d}
 }
 
+// EnsureContentSchema keeps existing installations compatible with README/MDX fields.
+func (r *Repository) EnsureContentSchema(ctx context.Context) error {
+	if r == nil || r.db == nil {
+		return errors.New("projects repository database is nil")
+	}
+	statements := []string{
+		"ALTER TABLE projects ADD COLUMN content_md TEXT NOT NULL DEFAULT ''",
+		"ALTER TABLE projects ADD COLUMN source_format TEXT NOT NULL DEFAULT 'markdown'",
+	}
+	if r.driver == "postgres" {
+		statements = []string{
+			"ALTER TABLE projects ADD COLUMN IF NOT EXISTS content_md TEXT NOT NULL DEFAULT ''",
+			"ALTER TABLE projects ADD COLUMN IF NOT EXISTS source_format TEXT NOT NULL DEFAULT 'markdown'",
+		}
+	}
+	for _, statement := range statements {
+		if _, err := r.db.ExecContext(ctx, statement); err != nil && !strings.Contains(strings.ToLower(err.Error()), "duplicate column") {
+			return fmt.Errorf("ensure project content schema: %w", err)
+		}
+	}
+	return nil
+}
+
 func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, error) {
 	if r == nil || r.db == nil {
 		return ListResult{}, errors.New("projects repository database is nil")
@@ -104,7 +127,7 @@ func (r *Repository) GetBySlug(ctx context.Context, slug string) (Project, error
 		return Project{}, errors.New("projects repository database is nil")
 	}
 
-	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_html, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at FROM projects WHERE slug = ? AND deleted_at IS NULL"
+	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at FROM projects WHERE slug = ? AND deleted_at IS NULL"
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
 	}
@@ -117,7 +140,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (Project, error) {
 		return Project{}, errors.New("projects repository database is nil")
 	}
 
-	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_html, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at FROM projects WHERE id = ? AND deleted_at IS NULL"
+	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at FROM projects WHERE id = ? AND deleted_at IS NULL"
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
 	}
@@ -137,6 +160,10 @@ func (r *Repository) Create(ctx context.Context, input CreateInput, renderedHTML
 	if status == "" {
 		status = string(ProjectStatusDraft)
 	}
+	sourceFormat := input.SourceFormat
+	if sourceFormat == "" {
+		sourceFormat = "markdown"
+	}
 
 	techJSON, err := json.Marshal(input.TechStack)
 	if err != nil {
@@ -146,7 +173,7 @@ func (r *Repository) Create(ctx context.Context, input CreateInput, renderedHTML
 	query := createProjectQuery(r.driver, status)
 	args := []any{
 		input.Name, input.Slug, input.Tagline, input.Description,
-		renderedHTML, input.CoverURL, input.RepoURL, input.DemoURL,
+		input.ContentMD, renderedHTML, sourceFormat, input.CoverURL, input.RepoURL, input.DemoURL,
 		status, string(techJSON),
 	}
 
@@ -181,6 +208,10 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput, re
 	if status == "" {
 		status = string(ProjectStatusDraft)
 	}
+	sourceFormat := input.SourceFormat
+	if sourceFormat == "" {
+		sourceFormat = "markdown"
+	}
 
 	techJSON, err := json.Marshal(input.TechStack)
 	if err != nil {
@@ -188,7 +219,7 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput, re
 	}
 
 	query := `UPDATE projects
-SET name = ?, slug = ?, tagline = ?, description = ?, content_html = ?,
+SET name = ?, slug = ?, tagline = ?, description = ?, content_md = ?, content_html = ?, source_format = ?,
     cover_url = ?, repo_url = ?, demo_url = ?, status = ?, tech_stack = ?,
     published_at = CASE
         WHEN ? = 'published' THEN COALESCE(published_at, CURRENT_TIMESTAMP)
@@ -202,7 +233,7 @@ WHERE id = ? AND deleted_at IS NULL`
 
 	result, err := r.db.ExecContext(ctx, query,
 		input.Name, input.Slug, input.Tagline, input.Description,
-		renderedHTML, input.CoverURL, input.RepoURL, input.DemoURL,
+		input.ContentMD, renderedHTML, sourceFormat, input.CoverURL, input.RepoURL, input.DemoURL,
 		status, string(techJSON), status, id)
 	if err != nil {
 		return Project{}, normalizeProjectWriteError("update project", err)
@@ -248,7 +279,7 @@ func createProjectQuery(driver, status string) string {
 	if status == string(ProjectStatusPublished) {
 		publishedAtExpr = "CURRENT_TIMESTAMP"
 	}
-	query := "INSERT INTO projects (name, slug, tagline, description, content_html, cover_url, repo_url, demo_url, status, tech_stack, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
+	query := "INSERT INTO projects (name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
 	if driver == "postgres" {
 		return convertPlaceholders(query) + " RETURNING id"
 	}
@@ -258,14 +289,14 @@ func createProjectQuery(driver, status string) string {
 func scanProjectRow(row *sql.Row) (Project, error) {
 	var project Project
 	var status string
-	var tagline, coverURL, repoURL, demoURL sql.NullString
+	var tagline, coverURL, repoURL, demoURL, sourceFormat sql.NullString
 	var techStackRaw string
 	var publishedAt sql.NullTime
 
 	if err := row.Scan(
 		&project.ID, &project.PublicID, &project.OwnerID,
 		&project.Name, &project.Slug, &tagline,
-		&project.Description, &project.ContentHTML,
+		&project.Description, &project.ContentMD, &project.ContentHTML, &sourceFormat,
 		&coverURL, &repoURL, &demoURL,
 		&status, &techStackRaw,
 		&project.SortOrder, &project.ViewCount,
@@ -282,6 +313,10 @@ func scanProjectRow(row *sql.Row) (Project, error) {
 	project.CoverURL = coverURL
 	project.RepoURL = repoURL
 	project.DemoURL = demoURL
+	project.SourceFormat = sourceFormat.String
+	if project.SourceFormat == "" {
+		project.SourceFormat = "markdown"
+	}
 	if publishedAt.Valid {
 		project.PublishedAt = publishedAt
 	}

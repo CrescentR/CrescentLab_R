@@ -72,7 +72,7 @@ func TestArtifactVersionsPublishAndRollback(t *testing.T) {
 	defer db.Close()
 	if _, err := db.Exec(`CREATE TABLE projects (
 		id INTEGER PRIMARY KEY, public_id TEXT, owner_id INTEGER, name TEXT NOT NULL, slug TEXT NOT NULL,
-		tagline TEXT, description TEXT NOT NULL DEFAULT '', content_html TEXT NOT NULL DEFAULT '',
+		tagline TEXT, description TEXT NOT NULL DEFAULT '', content_md TEXT NOT NULL DEFAULT '', content_html TEXT NOT NULL DEFAULT '', source_format TEXT NOT NULL DEFAULT 'markdown',
 		cover_url TEXT, repo_url TEXT, demo_url TEXT, status TEXT NOT NULL DEFAULT 'draft',
 		tech_stack TEXT NOT NULL DEFAULT '[]', sort_order INTEGER NOT NULL DEFAULT 0,
 		view_count INTEGER NOT NULL DEFAULT 0, published_at DATETIME, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

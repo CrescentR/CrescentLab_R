@@ -87,6 +87,14 @@ func (h *Handler) detail(c *gin.Context) {
 		platformhttp.WriteError(c, platformhttp.NotFound("article not found"))
 		return
 	}
+	if strings.TrimSpace(article.ContentHTML) == "" && strings.TrimSpace(article.ContentMD) != "" {
+		rendered, renderErr := h.renderer.Render(article.ContentMD)
+		if renderErr != nil {
+			platformhttp.WriteError(c, renderErr)
+			return
+		}
+		article.ContentHTML = rendered.HTML
+	}
 
 	c.JSON(http.StatusOK, article.Detail())
 }

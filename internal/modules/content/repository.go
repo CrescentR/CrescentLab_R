@@ -183,7 +183,7 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, er
 
 	query, returnsID := createArticleQuery(r.driver, ArticleStatus(status))
 	args := []any{
-		input.Title, input.Slug, input.Excerpt, input.ContentMD, input.ContentHTML,
+		input.CategoryID, input.Title, input.Slug, input.Excerpt, input.ContentMD, input.ContentHTML,
 		input.CoverURL, status, sourceFormat, input.WordCount, input.ReadingTimeMinutes,
 	}
 
@@ -217,7 +217,7 @@ func createArticleQuery(driver string, status ArticleStatus) (string, bool) {
 		publishedAtExpr = "CURRENT_TIMESTAMP"
 	}
 
-	query := "INSERT INTO articles (title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
+	query := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
 	if driver == "postgres" {
 		return convertPlaceholders(query) + " RETURNING id", true
 	}
@@ -242,7 +242,7 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (A
 	}
 
 	query := `UPDATE articles
-SET title = ?, slug = ?, excerpt = ?, content_md = ?, cover_url = ?, status = ?, source_format = ?,
+SET category_id = ?, title = ?, slug = ?, excerpt = ?, content_md = ?, cover_url = ?, status = ?, source_format = ?,
 	content_html = ?, word_count = ?, reading_time_minutes = ?,
     published_at = CASE
         WHEN ? = 'published' THEN COALESCE(published_at, CURRENT_TIMESTAMP)
@@ -255,7 +255,7 @@ WHERE id = ? AND deleted_at IS NULL`
 	}
 
 	result, err := r.db.ExecContext(ctx, query,
-		input.Title, input.Slug, input.Excerpt, input.ContentMD,
+		input.CategoryID, input.Title, input.Slug, input.Excerpt, input.ContentMD,
 		input.CoverURL, status, sourceFormat,
 		input.ContentHTML, input.WordCount, input.ReadingTimeMinutes,
 		status, id)

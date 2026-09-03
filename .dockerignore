@@ -7,6 +7,7 @@ frontend/.next
 frontend/node_modules
 admin/.next
 admin/node_modules
+admin/.pnpm-store
 node_modules
 bin
 dist

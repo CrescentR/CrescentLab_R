@@ -52,6 +52,8 @@ type ProjectFormState = {
   tagline: string;
   description: string;
   content_html: string;
+  content_md: string;
+  source_format: "markdown" | "mdx" | "tiptap" | "html";
   cover_url: string;
   repo_url: string;
   demo_url: string;
@@ -76,6 +78,8 @@ const emptyForm: ProjectFormState = {
   tagline: "",
   description: "",
   content_html: "<p></p>",
+  content_md: "# 项目概览\n\n在这里介绍项目的目标、能力和使用方式。\n\n<Callout>这是一个 MDX 提示框。</Callout>",
+  source_format: "mdx",
   cover_url: "",
   repo_url: "",
   demo_url: "",
@@ -147,6 +151,8 @@ export function ProjectWorkspace() {
         tagline: detail.tagline,
         description: detail.description,
         content_html: detail.content_html || "<p></p>",
+        content_md: detail.content_md || "",
+        source_format: detail.source_format || "tiptap",
         cover_url: detail.cover_url,
         repo_url: detail.repo_url,
         demo_url: detail.demo_url,
@@ -175,7 +181,8 @@ export function ProjectWorkspace() {
       tagline: form.tagline,
       description: form.description,
       content_html: form.content_html,
-      source_format: "tiptap",
+      content_md: form.content_md,
+      source_format: form.source_format,
       cover_url: form.cover_url,
       repo_url: form.repo_url,
       demo_url: form.demo_url,
@@ -231,7 +238,8 @@ export function ProjectWorkspace() {
         tagline: form.tagline,
         description: form.description,
         content_html: form.content_html,
-        source_format: "tiptap",
+        content_md: form.content_md,
+        source_format: form.source_format,
         cover_url: form.cover_url,
         repo_url: form.repo_url,
         demo_url: form.demo_url,
@@ -439,8 +447,9 @@ export function ProjectWorkspace() {
                   <div><span>02 / CONTENT</span><h1>展示内容</h1><p>编排项目背景、能力说明与使用方式，形成完整的项目介绍。</p></div>
                 </header>
                 <div className="project-cms-content-note"><FileText size={16} /><span>此处内容用于项目介绍；静态站点文件与发布版本请前往“部署版本”。</span></div>
+                <div className="project-cms-format-picker"><label>内容格式<select value={form.source_format} onChange={(event) => updateField("source_format", event.target.value as ProjectFormState["source_format"])}><option value="mdx">MDX（支持 React 组件）</option><option value="markdown">Markdown</option><option value="tiptap">TipTap</option></select></label></div>
                 <div className="project-cms-editor-frame">
-                  <TipTapEditor content={form.content_html} onChange={(html) => updateField("content_html", html)} onSave={handleSave} />
+                  {form.source_format === "mdx" || form.source_format === "markdown" ? <textarea className="project-cms-mdx-editor" value={form.content_md} onChange={(event) => updateField("content_md", event.target.value)} placeholder="# 项目概览\n\n支持 Markdown 和白名单 MDX 组件" /> : <TipTapEditor content={form.content_html} onChange={(html) => updateField("content_html", html)} onSave={handleSave} />}
                 </div>
               </>
             )}

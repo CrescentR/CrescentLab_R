@@ -41,6 +41,29 @@ func (h *Handler) RegisterArtifactRoutes(group *gin.RouterGroup) {
 	group.GET("/p/:slug/*path", h.servePublishedArtifact)
 }
 
+func (h *Handler) RegisterPublicRoutes(group *gin.RouterGroup) {
+	group.GET("/projects", h.publicList)
+	group.GET("/projects/:slug", h.publicDetail)
+}
+
+func (h *Handler) publicList(c *gin.Context) {
+	result, err := h.repo.List(c.Request.Context(), ListFilter{Status: ProjectStatusPublished, Page: 1, PageSize: 50})
+	if err != nil {
+		platformhttp.WriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, result)
+}
+
+func (h *Handler) publicDetail(c *gin.Context) {
+	project, err := h.repo.GetBySlug(c.Request.Context(), c.Param("slug"))
+	if err != nil || project.Status != ProjectStatusPublished {
+		platformhttp.WriteError(c, platformhttp.NotFound("project not found"))
+		return
+	}
+	c.JSON(http.StatusOK, project.Detail())
+}
+
 func (h *Handler) adminList(c *gin.Context) {
 	filter := parseProjectListFilter(c)
 	result, err := h.repo.List(c.Request.Context(), filter)
@@ -281,6 +304,9 @@ func (h *Handler) writeArtifactFile(c *gin.Context, path string) {
 }
 
 func (h *Handler) renderContent(input CreateInput) (string, error) {
+	if input.SourceFormat == "mdx" {
+		return "", nil
+	}
 	if input.SourceFormat == "tiptap" || input.SourceFormat == "html" {
 		return editorhtml.Sanitize(input.ContentHTML), nil
 	}
