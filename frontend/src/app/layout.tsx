@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { siteBranding } from "@/lib/site-settings";
 import "./globals.css";
 import "./lab-home.css";
+import "./home-index.css";
 
 const instrumentSerif = Instrument_Serif({
   subsets: ["latin"],

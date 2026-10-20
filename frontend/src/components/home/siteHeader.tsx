@@ -15,7 +15,7 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className="lab-header lab-header-zine">
+    <header className={`lab-header lab-header-zine${pathname === "/" ? " lab-header-index" : ""}`}>
       <div className="lab-shell lab-header-inner">
         <Link className="lab-brand" href="/">
           <span aria-hidden="true" className="lab-crescent-mark" />

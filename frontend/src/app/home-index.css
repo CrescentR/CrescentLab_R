@@ -1,0 +1,34 @@
+/* 首页导航参考稿样式，内容区保留远程版本。 */
+.lab-header-index .lab-header-inner {
+  width: min(100%, 1200px);
+  padding-inline: 40px;
+}
+
+.lab-header.lab-header-index {
+  border-bottom: 1px solid color-mix(in srgb, var(--lab-ink) 12%, transparent);
+  box-shadow: none;
+}
+
+.lab-header-index .lab-header-inner { min-height: 72px; }
+.lab-header-index .lab-brand { font-size: 14px; letter-spacing: .12em; }
+.lab-header-index .lab-tabs { gap: 4px; border: 0; padding: 0; background: transparent; }
+.lab-header-index .lab-tab { min-height: 44px; border-radius: 6px; font-size: 15px; font-weight: 600; }
+.lab-header-index .lab-tab + .lab-tab { border-left: 0; }
+.lab-header-index .lab-tab:hover { background: var(--lab-bg-alt); color: var(--lab-ink); }
+.lab-header-index .lab-tab-active,
+.lab-header-index .lab-tab-active:hover { background: var(--lab-sage); color: var(--lab-bg); }
+
+@media (max-width: 980px) {
+  .lab-header-index .lab-header-inner { grid-template-columns: 1fr; gap: 12px; padding-block: 16px 8px; }
+  .lab-header-index .lab-tabs { grid-column: 1; justify-self: stretch; margin: 0; padding: 0; }
+  .lab-header-index .lab-tab { flex: 1 0 auto; }
+}
+
+@media (max-width: 900px) {
+  .lab-header-index .lab-header-inner { width: 100%; padding-inline: 20px; }
+}
+
+@media (max-width: 400px) {
+  .lab-header-index .lab-brand { font-size: 12px; }
+  .lab-header-index .lab-tab { padding-inline: 12px; }
+}
