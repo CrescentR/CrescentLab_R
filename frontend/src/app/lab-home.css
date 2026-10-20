@@ -1364,9 +1364,9 @@
 .lab-header-zine .lab-brand {
   color: #f8f7f0;
   font-family: "JetBrains Mono", "SFMono-Regular", Consolas, monospace;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 850;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
 }
 
 .lab-header-zine .lab-tabs {
@@ -1383,7 +1383,7 @@
   border-radius: 0;
   padding-inline: 18px;
   color: rgba(248, 247, 240, 0.78);
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 750;
 }
 
@@ -1497,8 +1497,7 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at 82% 24%, rgba(57, 73, 246, 0.32), transparent 28rem),
-    radial-gradient(circle at 12% 72%, rgba(255, 91, 53, 0.18), transparent 24rem);
+    radial-gradient(circle at 80% 36%, rgba(57, 73, 246, 0.24), transparent 30rem);
 }
 
 .lab-hero-copy {
@@ -1512,9 +1511,10 @@
   align-items: center;
   gap: 14px;
   margin: 0 0 30px;
-  color: rgba(248, 247, 240, 0.62);
-  font-size: 10px;
+  color: rgba(248, 247, 240, 0.72);
+  font-size: 12px;
   font-weight: 800;
+  letter-spacing: 0.14em;
 }
 
 .lab-kicker > span {
@@ -1527,11 +1527,11 @@
   margin: 0;
   color: #f8f7f0;
   font-family: var(--font-instrument-serif), Georgia, serif;
-  font-size: clamp(90px, 12vw, 172px);
+  font-size: clamp(84px, 11vw, 160px);
   font-style: italic;
   font-weight: 400;
-  letter-spacing: -0.075em;
-  line-height: 0.72;
+  letter-spacing: -0.05em;
+  line-height: 0.86;
 }
 
 .lab-hero h1 > span {
@@ -1539,24 +1539,42 @@
 }
 
 .lab-hero h1 > span:last-child {
+  margin-top: 0.04em;
   margin-left: 0.65em;
   color: #d9ff43;
 }
 
 .lab-hero-manifesto {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
   margin: 48px 0 0;
   color: #f8f7f0;
-  font-size: clamp(25px, 3vw, 42px);
+  font-size: clamp(22px, 2.4vw, 32px);
   font-weight: 850;
-  letter-spacing: -0.045em;
-  line-height: 1.02;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+}
+
+.lab-hero-manifesto > span {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.lab-hero-manifesto > span + span::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  background: #d9ff43;
+  transform: rotate(45deg);
 }
 
 .lab-hero-description {
   max-width: 560px;
   margin: 28px 0 0;
-  color: rgba(248, 247, 240, 0.62);
-  font-size: 16px;
+  color: rgba(248, 247, 240, 0.76);
+  font-size: 17px;
   line-height: 1.75;
 }
 
@@ -1568,14 +1586,14 @@
 }
 
 .lab-button {
-  min-height: 48px;
+  min-height: 52px;
   display: inline-flex;
   align-items: center;
-  gap: 22px;
+  gap: 16px;
   border: 3px solid #d9ff43;
   border-radius: 0;
-  padding: 11px 17px;
-  font-size: 12px;
+  padding: 12px 22px;
+  font-size: 15px;
   font-weight: 850;
 }
 
@@ -1624,8 +1642,11 @@
 }
 
 .lab-hero-poster > span {
-  font-size: 9px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
   font-weight: 800;
+  letter-spacing: 0.14em;
 }
 
 .lab-hero-poster > strong {
@@ -1637,13 +1658,13 @@
 
 .lab-hero-poster > i {
   position: absolute;
-  right: 18px;
-  bottom: 38px;
+  top: 64px;
+  right: 22px;
   color: #d9ff43;
   font-family: var(--font-instrument-serif), Georgia, serif;
-  font-size: 170px;
+  font-size: 128px;
   font-weight: 400;
-  line-height: 0.7;
+  line-height: 0.8;
   opacity: 0.9;
 }
 
@@ -1651,12 +1672,16 @@
   position: relative;
   z-index: 2;
   margin: 0;
-  border-top: 3px solid #0b0d0c;
-  padding-top: 12px;
-  color: #0b0d0c;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 3px solid #f8f7f0;
+  padding-top: 14px;
+  color: #f8f7f0;
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 850;
+  letter-spacing: 0.08em;
 }
 
 .lab-hero-routes {
@@ -2249,11 +2274,16 @@
   }
 
   .lab-hero h1 {
-    font-size: clamp(86px, 26vw, 122px);
+    font-size: clamp(72px, 22vw, 110px);
   }
 
   .lab-hero-manifesto {
-    font-size: 30px;
+    gap: 8px 12px;
+    font-size: 20px;
+  }
+
+  .lab-hero-manifesto > span {
+    gap: 12px;
   }
 
   .lab-hero-poster {
