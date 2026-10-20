@@ -27,7 +27,9 @@ export function LabHero() {
           <span>INDEX</span>
         </motion.h1>
         <motion.p className="lab-hero-manifesto" variants={fadeUp}>
-          记录进展。<br />整理方法。<br />分享成果。
+          <span>记录进展</span>
+          <span>整理方法</span>
+          <span>分享成果</span>
         </motion.p>
         <motion.p className="lab-hero-description" variants={fadeUp}>
           一个持续更新的个人站点。这里收录项目进展、过程记录和工程笔记，也保留尚未写成完整文章的思考。
@@ -37,7 +39,7 @@ export function LabHero() {
             查看最新动态 <ArrowRight aria-hidden="true" size={17} />
           </Link>
           <Link className="lab-button lab-button-quiet" href="/about">
-            这是什么
+            关于这个站点
           </Link>
         </motion.div>
       </motion.div>
@@ -47,7 +49,11 @@ export function LabHero() {
           <span className="lab-mono">OPEN FILE / 001</span>
           <strong>MAKE<br />REFINE<br />SHARE</strong>
           <i aria-hidden="true">CI</i>
-          <p>UTC+08 / SELF HOSTED / CONTINUOUSLY UPDATED</p>
+          <p>
+            <span>UTC+08</span>
+            <span>SELF-HOSTED</span>
+            <span>ALWAYS ON</span>
+          </p>
         </div>
       </motion.aside>
 
