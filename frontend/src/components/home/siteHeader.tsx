@@ -15,10 +15,12 @@ export function SiteHeader() {
   const pathname = usePathname();
 
   return (
-    <header className={`lab-header lab-header-zine${pathname === "/" ? " lab-header-index" : ""}`}>
+    <header className="lab-header lab-header-zine">
       <div className="lab-shell lab-header-inner">
         <Link className="lab-brand" href="/">
-          <span aria-hidden="true" className="lab-crescent-mark" />
+          <svg aria-hidden="true" className="lab-crescent-mark" width="26" height="26" viewBox="0 0 26 26">
+            <path d="M17 2.5A11 11 0 1 0 23.5 17 8.5 8.5 0 0 1 17 2.5Z" />
+          </svg>
           <span>CRESCENT INDEX</span>
         </Link>
         <nav aria-label="主导航" className="lab-tabs">

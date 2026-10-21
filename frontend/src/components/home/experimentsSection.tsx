@@ -146,7 +146,7 @@ export function ExperimentsSection() {
                           : { damping: 15, mass: 0.78, stiffness: 190, type: "spring" }
                       }
                       whileDrag={{
-                        borderRadius: 0,
+                        borderRadius: 8,
                         rotateZ: dragDirection * 1.6,
                         scaleX: 1.045,
                         scaleY: 0.955,
@@ -198,7 +198,7 @@ function getCardAnimation(
 ) {
   if (isPreview) {
     return {
-      borderRadius: 0,
+      borderRadius: 8,
       opacity: 0.68,
       rotateX: -2,
       rotateZ: dragDirection * 1.2,
@@ -210,16 +210,16 @@ function getCardAnimation(
   }
 
   if (index < activeIndex) {
-    return { borderRadius: 0, opacity: 0, rotateZ: -7, scale: 0.88, x: "-112%", y: 0, z: 80 };
+    return { borderRadius: 8, opacity: 0, rotateZ: -7, scale: 0.88, x: "-112%", y: 0, z: 80 };
   }
 
   if (index === activeIndex) {
-    return { borderRadius: 0, opacity: 1, rotateX: 0, rotateZ: 0, scale: 1, x: 0, y: 0, z: 0 };
+    return { borderRadius: 8, opacity: 1, rotateX: 0, rotateZ: 0, scale: 1, x: 0, y: 0, z: 0 };
   }
 
   const depth = index - activeIndex;
   return {
-    borderRadius: 0,
+    borderRadius: 8,
     opacity: Math.max(0.22, 0.52 - depth * 0.12),
     rotateX: depth * -3,
     rotateZ: depth * 0.8,

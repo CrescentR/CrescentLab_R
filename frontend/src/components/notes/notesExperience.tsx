@@ -10,7 +10,7 @@ import {
   Search,
   Sparkles,
 } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import type { ArticleListItem } from "@/lib/api/articles";
 import { listPublicArticles } from "@/lib/api/articles";
 import {
@@ -45,7 +45,6 @@ const fadeUp = {
 };
 
 export function NotesExperience() {
-  const reduceMotion = useReducedMotion();
   const [articles, setArticles] = useState<ArticleListItem[]>([]);
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(0);
@@ -117,7 +116,7 @@ export function NotesExperience() {
     <motion.section
       animate="visible"
       className="nl-page"
-      initial={reduceMotion ? false : "hidden"}
+      initial="hidden"
       variants={shellStagger}
     >
       <div className="nl-atmosphere" aria-hidden="true">

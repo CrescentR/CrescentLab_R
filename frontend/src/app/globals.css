@@ -1504,14 +1504,6 @@ a:focus-visible {
   color: #f8f7f0;
 }
 
-.lab-header-zine .lab-crescent-mark {
-  border-color: #d9ff43;
-}
-
-.lab-header-zine .lab-crescent-mark::after {
-  background: #0b0d0c;
-}
-
 .lab-header-zine .lab-tab {
   border-radius: 0;
   color: rgba(248, 247, 240, 0.62);
@@ -1544,14 +1536,6 @@ a:focus-visible {
   border-top: 1px solid rgba(217, 255, 67, 0.3);
   background: #0b0d0c;
   color: #f8f7f0;
-}
-
-.lab-home:has(.article-zine) .lab-footer .lab-crescent-mark {
-  border-color: #d9ff43;
-}
-
-.lab-home:has(.article-zine) .lab-footer .lab-crescent-mark::after {
-  background: #0b0d0c;
 }
 
 .lab-home:has(.article-zine) .lab-footer-link,
