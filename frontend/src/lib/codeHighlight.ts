@@ -53,9 +53,9 @@ const TOKEN_COLORS: Record<string, string> = {
   "hljs-tag": "#fda4af",
   "hljs-name": "#fda4af",
   "hljs-meta": "#fda4af",
-  "hljs-params": "#e1e9e1",
-  "hljs-variable": "#e1e9e1",
-  "hljs-subst": "#e1e9e1",
+  "hljs-params": "#e8e6df",
+  "hljs-variable": "#e8e6df",
+  "hljs-subst": "#e8e6df",
 };
 
 const STYLE_ID = "crescent-article-codeblock-style";
@@ -136,13 +136,13 @@ function decorateCodeBlocks(document: Document, root: ParentNode) {
     code.classList.add("hljs", `language-${language}`);
     code.setAttribute(
       "style",
-      "background:transparent!important;color:#e1e9e1!important;padding:0!important;border:0!important;box-shadow:none!important;font-family:JetBrains Mono,Consolas,monospace;",
+      "background:transparent!important;color:#e8e6df!important;padding:0!important;border:0!important;box-shadow:none!important;font-family:JetBrains Mono,Consolas,monospace;",
     );
     pre.dataset.language = language;
     pre.classList.add(`language-${language}`);
     pre.setAttribute(
       "style",
-      "overflow-x:auto;margin:0!important;border:0!important;border-radius:0!important;background:#121c18!important;box-shadow:none!important;padding:18px 20px!important;color:#e1e9e1!important;font-size:0.9em;line-height:1.7;",
+      "overflow-x:auto;margin:0!important;border:0!important;border-radius:0!important;background:#16171a!important;box-shadow:none!important;padding:18px 20px!important;color:#e8e6df!important;font-size:0.9em;line-height:1.7;",
     );
 
     if (existingShell) {
@@ -167,20 +167,20 @@ function decorateCodeBlock(document: Document, pre: HTMLElement, language: strin
   shell.dataset.language = language;
   shell.setAttribute(
     "style",
-    "overflow:hidden;margin:2em 0;border:1px solid rgba(173,189,178,0.3);border-radius:14px;background:#121c18;box-shadow:0 18px 46px rgba(31,46,37,0.14);",
+    "overflow:hidden;margin:2em 0;border:1px solid rgba(173,189,178,0.3);border-radius:8px;background:#16171a;box-shadow:none;",
   );
 
   const header = document.createElement("div");
   header.className = "article-codeblock-header";
   header.setAttribute(
     "style",
-    "display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid rgba(173,189,178,0.2);background:#f1f2ed;padding:8px 12px;",
+    "display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:12px;min-height:48px;border-bottom:1px solid rgba(173,189,178,0.2);background:#1e1f23;padding:8px 12px;",
   );
 
   const dots = document.createElement("span");
   dots.className = "article-codeblock-dots";
   dots.setAttribute("aria-hidden", "true");
-  dots.setAttribute("style", "display:inline-flex;gap:6px;");
+  dots.setAttribute("style", "display:none;");
   for (let index = 0; index < 3; index += 1) {
     const dot = document.createElement("span");
     dot.className = "article-codeblock-dot";
@@ -197,7 +197,7 @@ function decorateCodeBlock(document: Document, pre: HTMLElement, language: strin
   label.textContent = LANGUAGE_LABELS[language] || language.toUpperCase();
   label.setAttribute(
     "style",
-    'color:#526159;font-family:"JetBrains Mono",Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;',
+    'color:#bdb8ab;font-family:"JetBrains Mono",Consolas,monospace;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;',
   );
 
   const copy = document.createElement("button");
@@ -206,7 +206,7 @@ function decorateCodeBlock(document: Document, pre: HTMLElement, language: strin
   copy.textContent = "复制";
   copy.setAttribute(
     "style",
-    "border:1px solid rgba(82,97,89,0.16);border-radius:8px;background:#fff;color:#526159;cursor:pointer;font:inherit;font-size:12px;line-height:1;padding:7px 10px;",
+    "border:1px solid rgba(82,97,89,0.16);border-radius:8px;background:#16171a;color:#bdb8ab;cursor:pointer;font:inherit;font-size:12px;line-height:1;padding:7px 10px;",
   );
 
   header.append(dots, label, copy);
@@ -282,9 +282,9 @@ function ensureArticleCodeStyles(document: Document) {
   overflow: hidden;
   margin: 2em 0;
   border: 1px solid rgba(173, 189, 178, 0.3);
-  border-radius: 14px;
-  background: #121c18;
-  box-shadow: 0 18px 46px rgba(31, 46, 37, 0.14);
+  border-radius: 8px;
+  background: #16171a;
+  box-shadow: none;
 }
 .article-codeblock-header {
   display: grid !important;
@@ -293,10 +293,10 @@ function ensureArticleCodeStyles(document: Document) {
   gap: 12px;
   min-height: 48px;
   border-bottom: 1px solid rgba(173, 189, 178, 0.2);
-  background: #f1f2ed;
+  background: #1e1f23;
   padding: 8px 12px;
 }
-.article-codeblock-dots { display: inline-flex; gap: 6px; }
+.article-codeblock-dots { display: none; }
 .article-codeblock-dot {
   display: block;
   width: 10px;
@@ -307,7 +307,7 @@ function ensureArticleCodeStyles(document: Document) {
 .article-codeblock-dot:nth-child(2) { background: #febc2e; }
 .article-codeblock-dot:nth-child(3) { background: #28c840; }
 .article-codeblock-language {
-  color: #526159;
+  color: #bdb8ab;
   font-family: "JetBrains Mono", Consolas, monospace;
   font-size: 11px;
   font-weight: 700;
@@ -315,10 +315,10 @@ function ensureArticleCodeStyles(document: Document) {
   text-transform: uppercase;
 }
 .article-codeblock-copy {
-  border: 1px solid rgba(82, 97, 89, 0.16);
+  border: 1px solid #3b3c36;
   border-radius: 8px;
-  background: #fff;
-  color: #526159;
+  background: #1e1f23;
+  color: #bdb8ab;
   cursor: pointer;
   font: inherit;
   font-size: 12px;
@@ -326,18 +326,18 @@ function ensureArticleCodeStyles(document: Document) {
   padding: 7px 10px;
 }
 .article-codeblock-copy:hover {
-  border-color: rgba(57, 120, 100, 0.35);
-  color: #286f58;
+  border-color: #8e98ff;
+  color: #e8e6df;
 }
 .article-codeblock pre {
   overflow-x: auto;
   margin: 0 !important;
   border: 0 !important;
   border-radius: 0 !important;
-  background: #121c18 !important;
+  background: #16171a !important;
   box-shadow: none !important;
   padding: 18px 20px !important;
-  color: #e1e9e1 !important;
+  color: #e8e6df !important;
   font-size: 0.9em;
   line-height: 1.7;
 }

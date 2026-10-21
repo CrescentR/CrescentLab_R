@@ -21,7 +21,18 @@ const (
 	ProjectStatusArchived  ProjectStatus = "archived"
 )
 
+type EditorialFields struct {
+	Phase           string `json:"phase"`
+	Goal            string `json:"goal"`
+	Boundary        string `json:"boundary"`
+	CurrentWork     string `json:"current_work"`
+	ProgressPercent *int   `json:"progress_percent"`
+	ClosureKind     string `json:"closure_kind"`
+	ClosureReason   string `json:"closure_reason"`
+}
+
 type Project struct {
+	EditorialFields
 	ID           int64
 	PublicID     sql.NullString
 	OwnerID      sql.NullInt64
@@ -46,6 +57,7 @@ type Project struct {
 }
 
 type ProjectListItem struct {
+	EditorialFields
 	ID          int64      `json:"id"`
 	Name        string     `json:"name"`
 	Slug        string     `json:"slug"`
@@ -70,6 +82,7 @@ type ProjectDetail struct {
 }
 
 type ListFilter struct {
+	Public   bool
 	Status   ProjectStatus
 	Search   string
 	Page     int
@@ -85,6 +98,7 @@ type ListResult struct {
 }
 
 type CreateInput struct {
+	EditorialFields
 	Name         string   `json:"name"`
 	Slug         string   `json:"slug"`
 	Tagline      string   `json:"tagline"`
@@ -125,14 +139,15 @@ func (p Project) Detail() ProjectDetail {
 
 func (p Project) ListItem() ProjectListItem {
 	item := ProjectListItem{
-		ID:        p.ID,
-		Name:      p.Name,
-		Slug:      p.Slug,
-		Status:    string(p.Status),
-		TechStack: p.TechStack,
-		ViewCount: p.ViewCount,
-		CreatedAt: p.CreatedAt,
-		UpdatedAt: p.UpdatedAt,
+		EditorialFields: p.EditorialFields,
+		ID:              p.ID,
+		Name:            p.Name,
+		Slug:            p.Slug,
+		Status:          string(p.Status),
+		TechStack:       p.TechStack,
+		ViewCount:       p.ViewCount,
+		CreatedAt:       p.CreatedAt,
+		UpdatedAt:       p.UpdatedAt,
 	}
 	if p.Tagline.Valid {
 		item.Tagline = p.Tagline.String
@@ -154,6 +169,36 @@ func (p Project) ListItem() ProjectListItem {
 }
 
 func (i CreateInput) Validate() error {
+	if (i.Status == "published" || i.Status == "archived") && i.Phase == "" {
+		return errors.New("公开项目必须填写月相阶段")
+	}
+	if i.Status == "archived" && i.Phase != "waning" {
+		return errors.New("归档项目必须处于下弦阶段")
+	}
+
+	switch i.Phase {
+	case "", "research", "building", "live", "waning":
+	default:
+		return errors.New("invalid phase")
+	}
+	if i.ProgressPercent != nil && (*i.ProgressPercent < 0 || *i.ProgressPercent > 100) {
+		return errors.New("progress_percent must be between 0 and 100")
+	}
+	if i.ClosureKind != "" && i.ClosureKind != "archived" && i.ClosureKind != "abandoned" {
+		return errors.New("invalid closure_kind")
+	}
+	if i.Phase == "waning" && (i.ClosureKind == "" || strings.TrimSpace(i.ClosureReason) == "") {
+		return errors.New("waning projects require closure_kind and closure_reason")
+	}
+	if i.Phase != "waning" && (i.ClosureKind != "" || i.ClosureReason != "") {
+		return errors.New("closure fields require waning phase")
+	}
+	for _, value := range []string{i.Goal, i.Boundary, i.CurrentWork, i.ClosureReason} {
+		if utf8.RuneCountInString(value) > 1000 {
+			return errors.New("project editorial text must not exceed 1000 characters")
+		}
+	}
+
 	name := strings.TrimSpace(i.Name)
 	if name == "" {
 		return errors.New("name is required")

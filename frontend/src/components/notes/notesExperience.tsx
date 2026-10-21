@@ -1,365 +1,50 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
-import {
-  BookOpen,
-  Feather,
-  Grid2X2,
-  LayoutList,
-  LoaderCircle,
-  Search,
-  Sparkles,
-} from "lucide-react";
-import { AnimatePresence, motion } from "motion/react";
-import type { ArticleListItem } from "@/lib/api/articles";
-import { listPublicArticles } from "@/lib/api/articles";
-import {
-  NotesFeaturedCard,
-  NotesMosaicCard,
-  NotesStreamCard,
-} from "@/components/notes/notesCard";
-import {
-  filterNotes,
-  pickFeatured,
-  summarizeNotes,
-  type NotesFilter,
-  type NotesView,
-} from "@/components/notes/notesUtils";
+import Image from "next/image";
+import Link from "next/link";
+import { useMemo, useState } from "react";
+import { MoonPhase } from "@/components/home/moonPhase";
+import { entryLabel, entryText, journalDate, projectPhases, type JournalData, type JournalEntry } from "@/lib/journal";
 
-const PAGE_SIZE = 12;
-
-const shellStagger = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.08, delayChildren: 0.05 },
-  },
-};
-
-const fadeUp = {
-  hidden: { opacity: 0, y: 28 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.75, ease: [0.16, 1, 0.3, 1] as const },
-  },
-};
-
-export function NotesExperience() {
-  const [articles, setArticles] = useState<ArticleListItem[]>([]);
-  const [page, setPage] = useState(1);
-  const [pages, setPages] = useState(0);
-  const [totalCount, setTotalCount] = useState(0);
-  const [filter, setFilter] = useState<NotesFilter>("all");
-  const [view, setView] = useState<NotesView>("mosaic");
-  const [query, setQuery] = useState("");
-  const [loadingArticles, setLoadingArticles] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [loadError, setLoadError] = useState("");
-
-  useEffect(() => {
-    let active = true;
-    void (async () => {
-      try {
-        const result = await listPublicArticles({ page: 1, page_size: PAGE_SIZE });
-        if (!active) return;
-        setArticles(result.items);
-        setPage(result.page);
-        setPages(result.total_pages);
-        setTotalCount(result.total);
-      } catch {
-        if (active) setLoadError("加载文章失败，请刷新页面重试");
-      } finally {
-        if (active) setLoadingArticles(false);
-      }
-    })();
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const summary = useMemo(() => summarizeNotes(articles), [articles]);
-  const featured = useMemo(() => {
-    if (query.trim() || filter === "pinned") return null;
-    return pickFeatured(articles);
-  }, [articles, filter, query]);
-
-  const collection = useMemo(() => {
-    const filtered = filterNotes(articles, filter, query);
-    if (!featured) return filtered;
-    return filtered.filter((article) => article.id !== featured.id);
-  }, [articles, featured, filter, query]);
-
-  const hasMore = page < pages && !query.trim() && filter === "all";
-
-  async function loadMore() {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    setLoadError("");
-    try {
-      const nextPage = page + 1;
-      const result = await listPublicArticles({ page: nextPage, page_size: PAGE_SIZE });
-      setArticles((prev) => {
-        const seen = new Set(prev.map((item) => item.id));
-        return [...prev, ...result.items.filter((item) => !seen.has(item.id))];
-      });
-      setPage(result.page);
-      setPages(result.total_pages);
-      setTotalCount(result.total);
-    } catch {
-      setLoadError("加载失败，请稍后再试");
-    } finally {
-      setLoadingMore(false);
-    }
+export function NotesExperience({ data, initialQuery = "", initialKind = "all", initialCollection = "", initialEntry = "" }: { data: JournalData; initialQuery?: string; initialKind?: string; initialCollection?: string; initialEntry?: string }) {
+  const [kind, setKind] = useState(initialKind);
+  const [topic, setTopic] = useState("");
+  const [collectionId, setCollectionId] = useState(initialCollection);
+  const [projectId, setProjectId] = useState("");
+  const [year, setYear] = useState("");
+  const [query, setQuery] = useState(initialQuery);
+  const [limit, setLimit] = useState(() => Math.max(20, data.entries.findIndex((entry) => entry.key === initialEntry) + 1));
+  const shortCount = data.entries.length - data.articles.length;
+  const topics = [...new Set(data.entries.flatMap((entry) => entry.kind === "article" ? (entry.item.category_name ? [entry.item.category_name] : []) : entry.kind === "note" ? entry.item.tags : []))];
+  const years = [...new Set(data.entries.map((entry) => journalDate(entry.date, "full").slice(0, 4)))];
+  const filtered = useMemo(() => data.entries.filter((entry) => {
+    if (kind === "article" && entry.kind !== "article") return false;
+    if (kind === "short" && entry.kind === "article") return false;
+    if (topic && !(entry.kind === "article" ? entry.item.category_name === topic : entry.kind === "note" && entry.item.tags.includes(topic))) return false;
+    if (collectionId && (entry.kind !== "article" || String(entry.item.category_id) !== collectionId)) return false;
+    if (projectId && String(entry.item.project_id) !== projectId) return false;
+    if (year && !journalDate(entry.date, "full").startsWith(year)) return false;
+    return !query || entryText(entry).toLocaleLowerCase().includes(query.toLocaleLowerCase());
+  }), [data.entries, kind, topic, collectionId, projectId, year, query]);
+  const groups = new Map<string, JournalEntry[]>();
+  for (const entry of filtered.slice(0, limit)) {
+    const month = journalDate(entry.date, "month");
+    const group = groups.get(month) || [];
+    group.push(entry); groups.set(month, group);
   }
 
+  function resetFilters() { setKind("all"); setTopic(""); setCollectionId(""); setProjectId(""); setYear(""); setQuery(""); setLimit(20); }
+
   return (
-    <motion.section
-      animate="visible"
-      className="nl-page"
-      initial="hidden"
-      variants={shellStagger}
-    >
-      <div className="nl-atmosphere" aria-hidden="true">
-        <span className="nl-orb nl-orb-a" />
-        <span className="nl-orb nl-orb-b" />
-        <span className="nl-orb nl-orb-c" />
-        <span className="nl-grain" />
-      </div>
-
-      <div className="nl-shell">
-        <NotesHero total={totalCount} summary={summary} />
-
-        <motion.div className="nl-toolbar" variants={fadeUp}>
-          <label className="nl-search">
-            <Search aria-hidden="true" size={16} />
-            <input
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="搜索标题或摘要…"
-              type="search"
-              value={query}
-            />
-          </label>
-
-          <div className="nl-toolbar-group" role="group" aria-label="筛选">
-            <FilterButton active={filter === "all"} onClick={() => setFilter("all")}>
-              全部
-            </FilterButton>
-            <FilterButton active={filter === "pinned"} onClick={() => setFilter("pinned")}>
-              <Sparkles aria-hidden="true" size={13} />
-              精选
-            </FilterButton>
-          </div>
-
-          <div className="nl-toolbar-group" role="group" aria-label="视图">
-            <ViewButton
-              active={view === "mosaic"}
-              label="杂志视图"
-              onClick={() => setView("mosaic")}
-            >
-              <Grid2X2 aria-hidden="true" size={15} />
-            </ViewButton>
-            <ViewButton
-              active={view === "stream"}
-              label="列表视图"
-              onClick={() => setView("stream")}
-            >
-              <LayoutList aria-hidden="true" size={15} />
-            </ViewButton>
-          </div>
-        </motion.div>
-
-        {loadingArticles ? (
-          <motion.div className="nl-empty" variants={fadeUp}>
-            <LoaderCircle aria-hidden="true" className="nl-spin" size={28} />
-            <h2>正在读取笔记</h2>
-          </motion.div>
-        ) : loadError && articles.length === 0 ? (
-          <motion.div className="nl-empty" variants={fadeUp}>
-            <Feather aria-hidden="true" size={28} />
-            <h2>笔记加载失败</h2>
-            <p>{loadError}</p>
-          </motion.div>
-        ) : articles.length === 0 ? (
-          <motion.div className="nl-empty" variants={fadeUp}>
-            <Feather aria-hidden="true" size={28} />
-            <h2>还没有笔记</h2>
-            <p>发布第一篇笔记后，内容会出现在这里。</p>
-          </motion.div>
-        ) : (
-          <>
-            <AnimatePresence mode="popLayout">
-              {featured && (
-                <motion.div
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -12 }}
-                  initial={{ opacity: 0, y: 16 }}
-                  key={featured.id}
-                  layout
-                >
-                  <NotesFeaturedCard article={featured} />
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            {collection.length === 0 && !featured ? (
-              <motion.div className="nl-empty nl-empty-soft" variants={fadeUp}>
-                <Search aria-hidden="true" size={22} />
-                <h2>没有匹配的笔记</h2>
-                <p>试试别的关键词，或切换回「全部」。</p>
-              </motion.div>
-            ) : collection.length > 0 && view === "mosaic" ? (
-              <motion.div className="nl-mosaic" variants={shellStagger}>
-                {collection.map((article, index) => (
-                  <NotesMosaicCard
-                    article={article}
-                    key={article.id}
-                    size={mosaicSize(index, Boolean(article.cover_url))}
-                  />
-                ))}
-              </motion.div>
-            ) : collection.length > 0 ? (
-              <motion.div className="nl-stream" variants={shellStagger}>
-                {collection.map((article) => (
-                  <NotesStreamCard article={article} key={article.id} />
-                ))}
-              </motion.div>
-            ) : null}
-
-            {(hasMore || loadError) && (
-              <motion.div className="nl-more" variants={fadeUp}>
-                {loadError && <p className="nl-more-error">{loadError}</p>}
-                {hasMore && (
-                  <button
-                    className="nl-more-btn"
-                    disabled={loadingMore}
-                    onClick={loadMore}
-                    type="button"
-                  >
-                    {loadingMore ? (
-                      <>
-                        <LoaderCircle aria-hidden="true" className="nl-spin" size={16} />
-                        正在展开
-                      </>
-                    ) : (
-                      <>
-                        <BookOpen aria-hidden="true" size={16} />
-                        加载更多笔记
-                      </>
-                    )}
-                  </button>
-                )}
-              </motion.div>
-            )}
-          </>
-        )}
-      </div>
-    </motion.section>
+    <>
+      <header className="j-notes-heading j-rise"><div className="j-wrap"><div><h1>笔记<em>Notes</em></h1><p>长文是已经整理好、值得完整阅读的结论；札记是过程中的进展、判断和放弃。两者按时间排在一起，你能看到一个想法是怎么长成一篇文章的。</p></div><dl className="j-stats"><div><dd>{data.articles.length}</dd><dt className="j-mono">长文</dt></div><div><dd>{shortCount}</dd><dt className="j-mono">札记</dt></div><div><dd>{data.collections.length}</dd><dt className="j-mono">合集</dt></div></dl></div></header>
+      <div className="j-filterbar"><div className="j-wrap"><div className="j-segment" role="group" aria-label="内容类型">{[["all", "全部", data.entries.length], ["article", "长文", data.articles.length], ["short", "札记", shortCount]].map(([value, label, count]) => <button key={value} aria-pressed={kind === value} onClick={() => { setKind(String(value)); setLimit(20); }}>{label}<small>{count}</small></button>)}</div><div className="j-chips" role="group" aria-label="主题筛选"><button className="j-chip" aria-pressed={!topic} onClick={() => { setTopic(""); setLimit(20); }}>全部主题</button>{topics.map((label) => <button className="j-chip" aria-pressed={topic === label} key={label} onClick={() => { setTopic(label); setLimit(20); }}>{label}</button>)}</div></div></div>
+      <div className="j-wrap j-notes-layout"><div id="archive">
+        <form className="j-notes-search" role="search" onSubmit={(event) => event.preventDefault()}><label htmlFor="notes-search">搜索笔记</label><input id="notes-search" type="search" value={query} placeholder="搜索标题、摘要或札记…" onChange={(event) => { setQuery(event.target.value); setLimit(20); }} />{(query || collectionId || projectId || year) && <button className="j-btn j-btn-ghost" type="button" onClick={resetFilters}>清除筛选</button>}</form>
+        {[...groups].map(([month, entries]) => <section className="j-month j-rise" key={month}><h2><b>{month.slice(5)}</b><span className="j-mono">{month.slice(0, 4)} · {Number(month.slice(5))}月</span></h2><ol className="j-feed">{entries.map((entry) => entry.kind === "article" ? <li className="j-long-entry" id={entry.key} key={entry.key}><Link className={entry.item.cover_url ? "has-cover" : ""} href={`/articles/${entry.item.slug}`}><div><div className="j-entry-meta j-mono"><span className="j-tag j-long-label">长文</span><span>No.{String(entry.item.id).padStart(3, "0")}</span>{entry.item.category_name && <span>{entry.item.category_name}</span>}<time dateTime={entry.date}>{journalDate(entry.date)}</time><span>{entry.item.reading_time_minutes} 分钟</span>{data.projects.filter((project) => project.id === entry.item.project_id).map((project) => <span className="j-project-tag" key={project.id}>{project.phase && <MoonPhase phase={projectPhases[project.phase].phase} size={13} />}{project.name}</span>)}</div><h3>{entry.item.title}</h3>{entry.item.excerpt && <p>{entry.item.excerpt}</p>}</div>{entry.item.cover_url && <div className="j-thumbnail"><Image alt="" src={entry.item.cover_url} fill sizes="(max-width:860px) 84px, 168px" unoptimized /></div>}</Link></li> : <li className="j-short-entry" id={entry.key} key={entry.key}><div className="j-entry-meta j-mono"><time dateTime={entry.date}>{journalDate(entry.date)}</time><span className={`j-tag${entryLabel(entry) === "放弃" ? " j-give" : ""}`}>{entryLabel(entry)}</span>{data.projects.filter((project) => project.id === entry.item.project_id).map((project) => <Link href={`/projects/${project.slug}`} key={project.id}>{project.name}</Link>)}</div><p>{entryText(entry)}</p></li>)}</ol></section>)}
+        {!groups.size && <div className="j-state"><h2>{data.entries.length ? "没有匹配的记录" : "还没有公开的笔记"}</h2><p>{data.entries.length ? "试试其他筛选条件。" : "发布长文或札记后，内容会按月份显示在这里。"}</p></div>}
+        {filtered.length > limit && <div className="j-more"><button className="j-btn j-btn-ghost" onClick={() => setLimit(limit + 20)}>加载更早的记录</button></div>}
+      </div><aside className="j-sidebar"><section id="collections"><h2>合集</h2><ul>{data.collections.map((collection) => <li key={collection.id}><button aria-pressed={collectionId === String(collection.id)} onClick={() => { setCollectionId(collectionId === String(collection.id) ? "" : String(collection.id)); setLimit(20); }}><span>{collection.name}</span><span>{String(collection.article_count).padStart(2, "0")}</span></button></li>)}</ul>{!data.collections.length && <p className="j-empty-inline">暂无合集</p>}</section><section><h2>按项目</h2><ul>{data.projects.map((project) => <li key={project.id}><button aria-pressed={projectId === String(project.id)} onClick={() => { setProjectId(projectId === String(project.id) ? "" : String(project.id)); setLimit(20); }}><span className="j-project-tag">{project.phase && <MoonPhase phase={projectPhases[project.phase].phase} size={14} />}{project.name}</span><span>{data.entries.filter((entry) => entry.item.project_id === project.id).length}</span></button></li>)}</ul>{!data.projects.length && <p className="j-empty-inline">暂无公开项目</p>}</section><section><h2>归档</h2><ul>{years.map((value) => <li key={value}><button aria-pressed={year === value} onClick={() => { setYear(year === value ? "" : value); setLimit(20); }}><span>{value}</span><span>{data.entries.filter((entry) => journalDate(entry.date, "full").startsWith(value)).length}</span></button></li>)}</ul></section></aside></div>
+    </>
   );
-}
-
-function NotesHero({
-  total,
-  summary,
-}: {
-  total: number;
-  summary: ReturnType<typeof summarizeNotes>;
-}) {
-  return (
-    <motion.header className="nl-hero" variants={fadeUp}>
-      <div className="nl-hero-copy">
-        <p className="nl-eyebrow">
-          <span className="nl-eyebrow-pulse" aria-hidden="true" />
-          Crescent Index · Notes Archive
-        </p>
-        <h1>
-          <span className="nl-hero-title-line">写下来的</span>
-          <span className="nl-hero-title-accent">思考</span>
-        </h1>
-        <p className="nl-hero-lead">
-          开发实践、产品判断、失败记录与最终结论。这里保留完整过程，不只展示结果。
-        </p>
-      </div>
-
-      <div className="nl-stats">
-        <StatCard label="笔记" value={String(total)} hint="篇已发布" />
-        <StatCard
-          label="阅读"
-          value={summary.views > 0 ? summary.views.toLocaleString("zh-CN") : "—"}
-          hint="累计浏览"
-        />
-        <StatCard label="时长" value={`${summary.minutes}`} hint="分钟可读" />
-        <StatCard label="精选" value={String(summary.pinned)} hint="置顶篇章" />
-      </div>
-    </motion.header>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  hint,
-}: {
-  label: string;
-  value: string;
-  hint: string;
-}) {
-  return (
-    <div className="nl-stat">
-      <span className="nl-stat-label">{label}</span>
-      <strong>{value}</strong>
-      <span className="nl-stat-hint">{hint}</span>
-    </div>
-  );
-}
-
-function FilterButton({
-  active,
-  children,
-  onClick,
-}: {
-  active: boolean;
-  children: ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      aria-pressed={active}
-      className={`nl-pill${active ? " is-active" : ""}`}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
-
-function ViewButton({
-  active,
-  children,
-  label,
-  onClick,
-}: {
-  active: boolean;
-  children: ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      aria-label={label}
-      aria-pressed={active}
-      className={`nl-icon-btn${active ? " is-active" : ""}`}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
-  );
-}
-
-function mosaicSize(index: number, hasCover: boolean): "regular" | "wide" | "tall" {
-  if (!hasCover) return "regular";
-  if (index % 7 === 0) return "wide";
-  if (index % 5 === 2) return "tall";
-  return "regular";
 }

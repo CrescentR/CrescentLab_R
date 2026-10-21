@@ -28,9 +28,13 @@ import {
   type Collection,
   type ArticleInput,
 } from "@/lib/api/articles";
+import { ProjectAssociationField } from "@/components/admin/projectAssociationField";
 import { highlightCodeBlocks } from "@/lib/codeHighlight";
 
 type ArticleFormState = {
+  project_id: number | null;
+  title_emphasis: string;
+  revisions: { date: string; summary: string }[];
   category_id: number | null;
   title: string;
   slug: string;
@@ -44,6 +48,7 @@ type SaveStatus = "idle" | "saving" | "saved";
 const ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 const NEW_ARTICLE_TEMPLATE: ArticleFormState = {
+  project_id: null, title_emphasis: "", revisions: [],
   category_id: null,
   title: "",
   slug: generateRandomSlug(),
@@ -106,6 +111,7 @@ export function ArticleEditorWorkspace({
         setArticleId(detail.id);
         setStatus(detail.status);
         setForm({
+          project_id: detail.project_id, title_emphasis: detail.title_emphasis, revisions: detail.revisions || [],
           category_id: detail.category_id,
           title: detail.title,
           slug: detail.slug,
@@ -132,6 +138,7 @@ export function ArticleEditorWorkspace({
 
   const buildApiInput = useCallback((): ArticleInput => {
     return {
+      project_id: form.project_id, title_emphasis: form.title_emphasis, revisions: form.revisions,
       category_id: form.category_id,
       title: form.title,
       slug: form.slug,
@@ -184,6 +191,7 @@ export function ArticleEditorWorkspace({
         setArticleId(created.id);
       }
       const result = await publishAdminArticle(targetId, {
+        project_id: form.project_id, title_emphasis: form.title_emphasis, revisions: form.revisions,
         category_id: form.category_id,
         title: form.title,
         slug: form.slug,
@@ -433,6 +441,9 @@ export function ArticleEditorWorkspace({
               </span>
               <span className="article-meta-slug">{form.slug}</span>
             </div>
+            <ProjectAssociationField value={form.project_id} onChange={(value) => updateField("project_id", value)} />
+            <Field label="标题划重点" placeholder="从标题中原样复制要强调的短语，可留空" value={form.title_emphasis} onChange={(value) => updateField("title_emphasis", value)} />
+            <section className="article-meta-field"><h3>修订记录</h3>{form.revisions.map((revision, index) => <div key={index} className="grid gap-2 py-3"><label>日期<input aria-label={`修订日期 ${index + 1}`} className="article-meta-input" type="date" value={revision.date} onChange={(event) => updateField("revisions", form.revisions.map((item, position) => position === index ? {...item, date: event.target.value} : item))} /></label><Field label={`修订说明 ${index + 1}`} multiline value={revision.summary} onChange={(value) => updateField("revisions", form.revisions.map((item, position) => position === index ? {...item, summary: value} : item))} /><button type="button" onClick={() => updateField("revisions", form.revisions.filter((_, position) => position !== index))}>移除此条修订</button></div>)}<button type="button" onClick={() => updateField("revisions", [...form.revisions, {date: new Date().toLocaleDateString("en-CA", {timeZone: "Asia/Shanghai"}), summary: ""}])}>添加修订记录</button></section>
             <CoverImageField value={form.cover_url} onChange={(v) => updateField("cover_url", v)} />
             <label className="article-meta-field">
               <span className="article-meta-label-row"><span>分类集合</span></span>

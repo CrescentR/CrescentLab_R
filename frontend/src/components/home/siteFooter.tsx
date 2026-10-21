@@ -2,21 +2,10 @@ import Link from "next/link";
 
 export function SiteFooter() {
   return (
-    <footer className="lab-footer">
-      <div className="lab-shell lab-footer-inner">
-        <div className="lab-footer-brand">
-          <svg aria-hidden="true" className="lab-crescent-mark" width="26" height="26" viewBox="0 0 26 26">
-            <path d="M17 2.5A11 11 0 1 0 23.5 17 8.5 8.5 0 0 1 17 2.5Z" />
-          </svg>
-          <div>
-            <strong>CRESCENT INDEX</strong>
-            <p>独立的数字创作与技术记录。</p>
-          </div>
-        </div>
-        <Link className="lab-footer-link" href="/about">
-          关于这个站点
-        </Link>
-      </div>
-    </footer>
+    <footer className="j-footer"><div className="j-wrap">
+      <div><h2>CRESCENT INDEX</h2><p>一个自托管的个人索引：记录进展、整理方法、分享成果。<br />每条内容优先给出事实、状态和结论；失效时补修订说明，而不是悄悄删除。</p><a className="j-btn j-footer-subscribe" href="/rss.xml">通过 RSS 订阅新文章 ↗</a></div>
+      <div><h2>栏目</h2><ul><li><Link href="/notes">笔记 · 长文与札记</Link></li><li><Link href="/projects">项目 · 月相索引</Link></li><li><Link href="/about">关于这个站点</Link></li></ul></div>
+      <div><h2>其他</h2><ul><li><a href="/rss.xml">RSS</a></li><li><a href="https://github.com/CrescentR" target="_blank" rel="noreferrer">GitHub ↗</a></li><li><Link href="/notes#archive">归档</Link></li></ul></div>
+    </div></footer>
   );
 }

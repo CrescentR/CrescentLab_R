@@ -12,6 +12,7 @@ import {
   type BuildStage,
   type BuildStatus,
 } from "@/lib/api/builds";
+import { ProjectAssociationField } from "@/components/admin/projectAssociationField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -20,6 +21,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 type BuildFormData = {
+  project_id: number | null;
   name: string;
   slug: string;
   one_liner: string;
@@ -35,6 +37,7 @@ type BuildFormData = {
 };
 
 const emptyForm: BuildFormData = {
+  project_id: null,
   name: "",
   slug: "",
   one_liner: "",
@@ -116,6 +119,7 @@ export function BuildsPanel() {
     try {
       const detail = await getAdminBuild(id);
       setEditing({
+        project_id: detail.project_id,
         name: detail.name,
         slug: detail.slug,
         one_liner: detail.one_liner,
@@ -144,6 +148,7 @@ export function BuildsPanel() {
     setSaving(true);
     try {
       const input: BuildInput = {
+        project_id: editing.project_id,
         name: editing.name,
         slug: editing.slug,
         one_liner: editing.one_liner,
@@ -234,6 +239,7 @@ export function BuildsPanel() {
             </div>
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_280px]">
               <div className="space-y-4">
+                <ProjectAssociationField value={editing.project_id} onChange={(value) => setEditing({ ...editing, project_id: value })} />
                 <Field label="名称" placeholder="真实产品或项目名" value={editing.name} onChange={(value) => setEditing({ ...editing, name: value })} />
                 <Field label="一句话定义" placeholder="20–40 字，先写使用对象和用途" value={editing.one_liner} onChange={(value) => setEditing({ ...editing, one_liner: value })} />
                 <Field label="本轮目标" multiline placeholder="当前为什么投入，只写一个近期目标" value={editing.round_goal} onChange={(value) => setEditing({ ...editing, round_goal: value })} />

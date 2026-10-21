@@ -47,7 +47,10 @@ func (h *Handler) RegisterPublicRoutes(group *gin.RouterGroup) {
 }
 
 func (h *Handler) publicList(c *gin.Context) {
-	result, err := h.repo.List(c.Request.Context(), ListFilter{Status: ProjectStatusPublished, Page: 1, PageSize: 50})
+	filter := parseProjectListFilter(c)
+	filter.Public = true
+	filter.Status = ""
+	result, err := h.repo.List(c.Request.Context(), filter)
 	if err != nil {
 		platformhttp.WriteError(c, err)
 		return
@@ -57,7 +60,7 @@ func (h *Handler) publicList(c *gin.Context) {
 
 func (h *Handler) publicDetail(c *gin.Context) {
 	project, err := h.repo.GetBySlug(c.Request.Context(), c.Param("slug"))
-	if err != nil || project.Status != ProjectStatusPublished {
+	if err != nil || (project.Status != ProjectStatusPublished && project.Status != ProjectStatusArchived) {
 		platformhttp.WriteError(c, platformhttp.NotFound("project not found"))
 		return
 	}
@@ -304,6 +307,9 @@ func (h *Handler) writeArtifactFile(c *gin.Context, path string) {
 }
 
 func (h *Handler) renderContent(input CreateInput) (string, error) {
+	if err := input.Validate(); err != nil {
+		return "", platformhttp.ValidationError(err.Error())
+	}
 	if input.SourceFormat == "mdx" {
 		return "", nil
 	}

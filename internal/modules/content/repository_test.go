@@ -64,7 +64,7 @@ func TestBuildArticleListQueriesPostgresSearchUsesContinuousPlaceholders(t *test
 		t.Fatalf("count args = %#v, want %#v", countArgs, wantCountArgs)
 	}
 
-	wantListQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at FROM articles a LEFT JOIN post_categories c ON a.category_id = c.id WHERE a.deleted_at IS NULL AND (a.title LIKE $1 OR a.excerpt LIKE $2) ORDER BY a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC LIMIT $3 OFFSET $4"
+	wantListQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at, a.category_id, COALESCE(c.name, ''), a.project_id, a.title_emphasis FROM articles a LEFT JOIN post_categories c ON a.category_id = c.id WHERE a.deleted_at IS NULL AND (a.title LIKE $1 OR a.excerpt LIKE $2) ORDER BY a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC LIMIT $3 OFFSET $4"
 	if listQuery != wantListQuery {
 		t.Fatalf("list query = %q, want %q", listQuery, wantListQuery)
 	}
@@ -262,7 +262,7 @@ func TestCreateArticleQueryUsesPostgresReturningID(t *testing.T) {
 	if !returnsID {
 		t.Fatal("PostgreSQL create query should return the inserted id")
 	}
-	want := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, CURRENT_TIMESTAMP) RETURNING id"
+	want := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, project_id, revisions_json, title_emphasis, published_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, CURRENT_TIMESTAMP) RETURNING id"
 	if query != want {
 		t.Fatalf("PostgreSQL create query = %q, want %q", query, want)
 	}
@@ -273,7 +273,7 @@ func TestCreateArticleQueryKeepsSQLiteLastInsertIDPath(t *testing.T) {
 	if returnsID {
 		t.Fatal("SQLite create query should use LastInsertId")
 	}
-	want := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)"
+	want := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, project_id, revisions_json, title_emphasis, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)"
 	if query != want {
 		t.Fatalf("SQLite create query = %q, want %q", query, want)
 	}
@@ -484,6 +484,9 @@ CREATE TABLE post_categories (
 );
 
 CREATE TABLE articles (
+  project_id BIGINT,
+  revisions_json TEXT NOT NULL DEFAULT '[]',
+  title_emphasis TEXT NOT NULL DEFAULT '',
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   public_id TEXT UNIQUE,
   owner_id INTEGER,

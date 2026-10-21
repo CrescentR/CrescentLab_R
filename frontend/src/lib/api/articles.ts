@@ -5,6 +5,10 @@ export type ArticleStatus = "draft" | "published" | "archived" | "scheduled";
 export type ArticleListItem = {
   id: number;
   public_id: string;
+  category_id: number | null;
+  category_name: string;
+  project_id: number | null;
+  title_emphasis: string;
   title: string;
   slug: string;
   excerpt: string;
@@ -27,7 +31,10 @@ export type ArticleListResponse = {
   total_pages: number;
 };
 
+export type Revision = { date: string; summary: string };
+
 export type ArticleDetail = ArticleListItem & {
+  revisions: Revision[] | null;
   content_md: string;
   content_html: string;
   visibility: string;
@@ -64,3 +71,6 @@ function toQueryString(params: Omit<ArticleListParams, "status">) {
   const query = searchParams.toString();
   return query ? `?${query}` : "";
 }
+
+export type Collection = { id: number; name: string; slug: string; description: string; sort_order: number; article_count: number };
+export function listPublicCollections() { return apiJson<{items: Collection[]}>("/api/collections", { cache: "no-store" }); }

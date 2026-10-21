@@ -29,22 +29,20 @@ export function Providers({ children }: { children: ReactNode }) {
 }
 
 function PrototypeStateSync() {
-  const theme = useUiStore((state) => state.theme);
   const setTheme = useUiStore((state) => state.setTheme);
 
   useEffect(() => {
     const savedTheme = window.localStorage.getItem("crescentlab-theme") as ThemeMode | null;
 
-    if (savedTheme === "dark" || savedTheme === "light") {
-      setTheme(savedTheme);
-    }
-
+    const initialTheme = savedTheme === "dark" ? "dark" : "light";
+    setTheme(initialTheme);
+    document.documentElement.dataset.theme = initialTheme;
+    return useUiStore.subscribe((state, previous) => {
+      if (state.theme === previous.theme) return;
+      document.documentElement.dataset.theme = state.theme;
+      window.localStorage.setItem("crescentlab-theme", state.theme);
+    });
   }, [setTheme]);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    window.localStorage.setItem("crescentlab-theme", theme);
-  }, [theme]);
 
   return null;
 }

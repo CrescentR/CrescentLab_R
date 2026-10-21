@@ -1,6 +1,7 @@
 package observatory
 
 import (
+	"CrescentLab_R/internal/shared/projectref"
 	"context"
 	"database/sql"
 	"encoding/json"
@@ -26,8 +27,8 @@ func NewRepository(db *sql.DB, driver ...string) *Repository {
 	return &Repository{db: db, driver: d}
 }
 
-const noteListColumns = `id, title, question, observation, conclusion, next_step, tags, note_type, status, visibility, is_featured, created_at, updated_at`
-const noteDetailColumns = `id, public_id, title, content_md, content_html, question, observation, conclusion, next_step, tags, note_type, status, visibility, is_featured, created_at, updated_at`
+const noteListColumns = `id, title, question, observation, conclusion, next_step, tags, note_type, status, visibility, is_featured, created_at, updated_at, project_id`
+const noteDetailColumns = `id, public_id, title, content_md, content_html, question, observation, conclusion, next_step, tags, note_type, status, visibility, is_featured, created_at, updated_at, project_id`
 
 func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, error) {
 	if r == nil || r.db == nil {
@@ -132,6 +133,9 @@ func (r *Repository) Create(ctx context.Context, input CreateInput, renderedHTML
 	if err := input.Validate(); err != nil {
 		return Note{}, err
 	}
+	if err := projectref.Validate(ctx, r.db, r.driver, input.ProjectID); err != nil {
+		return Note{}, err
+	}
 
 	tagsJSON, err := json.Marshal(input.Tags)
 	if err != nil {
@@ -142,7 +146,7 @@ func (r *Repository) Create(ctx context.Context, input CreateInput, renderedHTML
 	args := []any{
 		input.Title, input.ContentMD, renderedHTML,
 		input.Question, input.Observation, input.Conclusion, input.NextStep,
-		string(tagsJSON), input.NoteType, input.Status, input.Visibility, input.IsFeatured,
+		string(tagsJSON), input.NoteType, input.Status, input.Visibility, input.IsFeatured, input.ProjectID,
 	}
 
 	var id int64
@@ -171,6 +175,9 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput, re
 	if err := input.Validate(); err != nil {
 		return Note{}, err
 	}
+	if err := projectref.Validate(ctx, r.db, r.driver, input.ProjectID); err != nil {
+		return Note{}, err
+	}
 
 	tagsJSON, err := json.Marshal(input.Tags)
 	if err != nil {
@@ -180,7 +187,7 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput, re
 	query := `UPDATE observatory_notes
 SET title = ?, content_md = ?, content_html = ?,
     question = ?, observation = ?, conclusion = ?, next_step = ?,
-    tags = ?, note_type = ?, status = ?, visibility = ?, is_featured = ?,
+    tags = ?, note_type = ?, status = ?, visibility = ?, is_featured = ?, project_id = ?,
     updated_at = CURRENT_TIMESTAMP
 WHERE id = ? AND deleted_at IS NULL`
 	if r.driver == "postgres" {
@@ -190,7 +197,7 @@ WHERE id = ? AND deleted_at IS NULL`
 	result, err := r.db.ExecContext(ctx, query,
 		input.Title, input.ContentMD, renderedHTML,
 		input.Question, input.Observation, input.Conclusion, input.NextStep,
-		string(tagsJSON), input.NoteType, input.Status, input.Visibility, input.IsFeatured, id)
+		string(tagsJSON), input.NoteType, input.Status, input.Visibility, input.IsFeatured, input.ProjectID, id)
 	if err != nil {
 		return Note{}, normalizeNoteWriteError("update observatory note", err)
 	}
@@ -232,8 +239,8 @@ func (r *Repository) SoftDelete(ctx context.Context, id int64) error {
 func createNoteQuery(driver string) string {
 	query := `INSERT INTO observatory_notes (
   title, content_md, content_html, question, observation, conclusion, next_step,
-  tags, note_type, status, visibility, is_featured
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  tags, note_type, status, visibility, is_featured, project_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	if driver == "postgres" {
 		return convertPlaceholders(query) + " RETURNING id"
 	}
@@ -252,7 +259,7 @@ func scanNoteRow(row *sql.Row) (Note, error) {
 		&note.ContentMD, &note.ContentHTML,
 		&note.Question, &note.Observation, &note.Conclusion, &note.NextStep,
 		&tagsRaw, &noteType, &status, &visibility, &featured,
-		&note.CreatedAt, &note.UpdatedAt,
+		&note.CreatedAt, &note.UpdatedAt, &note.ProjectID,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Note{}, err
@@ -284,7 +291,7 @@ func scanNoteListItem(scanner interface{ Scan(dest ...any) error }) (NoteListIte
 		&item.ID, &item.Title,
 		&item.Question, &item.Observation, &item.Conclusion, &item.NextStep,
 		&tagsRaw, &item.NoteType, &item.Status, &item.Visibility, &featured,
-		&item.CreatedAt, &item.UpdatedAt,
+		&item.CreatedAt, &item.UpdatedAt, &item.ProjectID,
 	); err != nil {
 		return NoteListItem{}, err
 	}
