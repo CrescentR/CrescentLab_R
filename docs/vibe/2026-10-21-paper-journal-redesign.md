@@ -33,7 +33,7 @@
 - [x] 数据字段、API、后台录入、手动 SQL 完成。
 - [x] 单元及接口回归、前后台类型检查、Lint、生产构建通过。
 - [ ] 桌面／移动／夜间浏览器与关键交互验证。
-- [ ] 提交、推送与 PR。
+- [x] 提交、推送与 PR：https://github.com/CrescentR/CrescentLab_R/pull/2 （草稿）。
 
 ## 当前环境
 
