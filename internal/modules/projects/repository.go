@@ -61,7 +61,7 @@ func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, e
 	where, args := buildProjectWhereClause(filter)
 
 	countQuery := "SELECT COUNT(*) FROM projects" + where
-	listQuery := "SELECT id, name, slug, tagline, status, cover_url, repo_url, demo_url, tech_stack, view_count, published_at, created_at, updated_at FROM projects" + where + " ORDER BY sort_order DESC, COALESCE(published_at, created_at) DESC LIMIT ? OFFSET ?"
+	listQuery := "SELECT id, name, slug, tagline, status, cover_url, repo_url, demo_url, tech_stack, view_count, published_at, created_at, updated_at, phase, goal, boundary, current_work, progress_percent, closure_kind, closure_reason FROM projects" + where + " ORDER BY sort_order DESC, COALESCE(published_at, created_at) DESC LIMIT ? OFFSET ?"
 
 	if r.driver == "postgres" {
 		countQuery = convertPlaceholders(countQuery)
@@ -109,7 +109,9 @@ func buildProjectWhereClause(filter ListFilter) (string, []any) {
 	where := []string{"deleted_at IS NULL"}
 	args := []any{}
 
-	if filter.Status != "" {
+	if filter.Public {
+		where = append(where, "status IN ('published', 'archived')")
+	} else if filter.Status != "" {
 		where = append(where, "status = ?")
 		args = append(args, string(filter.Status))
 	}
@@ -127,7 +129,7 @@ func (r *Repository) GetBySlug(ctx context.Context, slug string) (Project, error
 		return Project{}, errors.New("projects repository database is nil")
 	}
 
-	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at FROM projects WHERE slug = ? AND deleted_at IS NULL"
+	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at, phase, goal, boundary, current_work, progress_percent, closure_kind, closure_reason FROM projects WHERE slug = ? AND deleted_at IS NULL"
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
 	}
@@ -140,7 +142,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (Project, error) {
 		return Project{}, errors.New("projects repository database is nil")
 	}
 
-	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at FROM projects WHERE id = ? AND deleted_at IS NULL"
+	query := "SELECT id, public_id, owner_id, name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, sort_order, view_count, published_at, created_at, updated_at, phase, goal, boundary, current_work, progress_percent, closure_kind, closure_reason FROM projects WHERE id = ? AND deleted_at IS NULL"
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
 	}
@@ -174,7 +176,7 @@ func (r *Repository) Create(ctx context.Context, input CreateInput, renderedHTML
 	args := []any{
 		input.Name, input.Slug, input.Tagline, input.Description,
 		input.ContentMD, renderedHTML, sourceFormat, input.CoverURL, input.RepoURL, input.DemoURL,
-		status, string(techJSON),
+		status, string(techJSON), input.Phase, input.Goal, input.Boundary, input.CurrentWork, input.ProgressPercent, input.ClosureKind, input.ClosureReason,
 	}
 
 	var id int64
@@ -220,7 +222,7 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput, re
 
 	query := `UPDATE projects
 SET name = ?, slug = ?, tagline = ?, description = ?, content_md = ?, content_html = ?, source_format = ?,
-    cover_url = ?, repo_url = ?, demo_url = ?, status = ?, tech_stack = ?,
+    cover_url = ?, repo_url = ?, demo_url = ?, status = ?, tech_stack = ?, phase = ?, goal = ?, boundary = ?, current_work = ?, progress_percent = ?, closure_kind = ?, closure_reason = ?,
     published_at = CASE
         WHEN ? = 'published' THEN COALESCE(published_at, CURRENT_TIMESTAMP)
         ELSE NULL
@@ -234,7 +236,7 @@ WHERE id = ? AND deleted_at IS NULL`
 	result, err := r.db.ExecContext(ctx, query,
 		input.Name, input.Slug, input.Tagline, input.Description,
 		input.ContentMD, renderedHTML, sourceFormat, input.CoverURL, input.RepoURL, input.DemoURL,
-		status, string(techJSON), status, id)
+		status, string(techJSON), input.Phase, input.Goal, input.Boundary, input.CurrentWork, input.ProgressPercent, input.ClosureKind, input.ClosureReason, status, id)
 	if err != nil {
 		return Project{}, normalizeProjectWriteError("update project", err)
 	}
@@ -279,7 +281,7 @@ func createProjectQuery(driver, status string) string {
 	if status == string(ProjectStatusPublished) {
 		publishedAtExpr = "CURRENT_TIMESTAMP"
 	}
-	query := "INSERT INTO projects (name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
+	query := "INSERT INTO projects (name, slug, tagline, description, content_md, content_html, source_format, cover_url, repo_url, demo_url, status, tech_stack, phase, goal, boundary, current_work, progress_percent, closure_kind, closure_reason, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
 	if driver == "postgres" {
 		return convertPlaceholders(query) + " RETURNING id"
 	}
@@ -301,6 +303,7 @@ func scanProjectRow(row *sql.Row) (Project, error) {
 		&status, &techStackRaw,
 		&project.SortOrder, &project.ViewCount,
 		&publishedAt, &project.CreatedAt, &project.UpdatedAt,
+		&project.Phase, &project.Goal, &project.Boundary, &project.CurrentWork, &project.ProgressPercent, &project.ClosureKind, &project.ClosureReason,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Project{}, err
@@ -339,6 +342,7 @@ func scanProjectListItem(scanner interface{ Scan(dest ...any) error }) (ProjectL
 		&repoURL, &demoURL, &techStackRaw,
 		&item.ViewCount, &publishedAt,
 		&item.CreatedAt, &item.UpdatedAt,
+		&item.Phase, &item.Goal, &item.Boundary, &item.CurrentWork, &item.ProgressPercent, &item.ClosureKind, &item.ClosureReason,
 	); err != nil {
 		return ProjectListItem{}, err
 	}

@@ -22,7 +22,15 @@ const (
 	StatusScheduled ArticleStatus = "scheduled"
 )
 
+type Revision struct {
+	Date    string `json:"date"`
+	Summary string `json:"summary"`
+}
+
 type Article struct {
+	TitleEmphasis      string
+	ProjectID          *int64
+	Revisions          []Revision
 	ID                 int64
 	PublicID           string
 	OwnerID            sql.NullInt64
@@ -51,6 +59,10 @@ type Article struct {
 }
 
 type ArticleListItem struct {
+	TitleEmphasis      string     `json:"title_emphasis"`
+	CategoryID         *int64     `json:"category_id"`
+	CategoryName       string     `json:"category_name"`
+	ProjectID          *int64     `json:"project_id"`
 	ID                 int64      `json:"id"`
 	PublicID           string     `json:"public_id"`
 	Title              string     `json:"title"`
@@ -71,6 +83,7 @@ type ArticleListItem struct {
 }
 
 type ListFilter struct {
+	Public   bool
 	Status   ArticleStatus
 	Category string
 	Search   string
@@ -101,6 +114,9 @@ func (f ListFilter) normalizedPageSize() int {
 }
 
 type ArticleDetail struct {
+	TitleEmphasis      string     `json:"title_emphasis"`
+	ProjectID          *int64     `json:"project_id"`
+	Revisions          []Revision `json:"revisions"`
 	ID                 int64      `json:"id"`
 	PublicID           string     `json:"public_id"`
 	Title              string     `json:"title"`
@@ -126,6 +142,8 @@ type ArticleDetail struct {
 
 func (a Article) Detail() ArticleDetail {
 	detail := ArticleDetail{
+		TitleEmphasis: a.TitleEmphasis,
+		ProjectID:     a.ProjectID, Revisions: a.Revisions,
 		ID:                 a.ID,
 		PublicID:           a.PublicID,
 		Title:              a.Title,
@@ -155,17 +173,20 @@ func (a Article) Detail() ArticleDetail {
 }
 
 type CreateInput struct {
-	Title              string `json:"title"`
-	Slug               string `json:"slug"`
-	CategoryID         *int64 `json:"category_id"`
-	Excerpt            string `json:"excerpt"`
-	ContentMD          string `json:"content_md"`
-	CoverURL           string `json:"cover_url"`
-	Status             string `json:"status"`
-	SourceFormat       string `json:"source_format"`
-	ContentHTML        string `json:"content_html"`
-	WordCount          int    `json:"-"`
-	ReadingTimeMinutes int    `json:"-"`
+	TitleEmphasis      string     `json:"title_emphasis"`
+	ProjectID          *int64     `json:"project_id"`
+	Revisions          []Revision `json:"revisions"`
+	Title              string     `json:"title"`
+	Slug               string     `json:"slug"`
+	CategoryID         *int64     `json:"category_id"`
+	Excerpt            string     `json:"excerpt"`
+	ContentMD          string     `json:"content_md"`
+	CoverURL           string     `json:"cover_url"`
+	Status             string     `json:"status"`
+	SourceFormat       string     `json:"source_format"`
+	ContentHTML        string     `json:"content_html"`
+	WordCount          int        `json:"-"`
+	ReadingTimeMinutes int        `json:"-"`
 }
 
 func nullableInt64(value sql.NullInt64) *int64 {
@@ -176,6 +197,21 @@ func nullableInt64(value sql.NullInt64) *int64 {
 }
 
 func (i CreateInput) Validate() error {
+	if i.TitleEmphasis != "" && !strings.Contains(i.Title, i.TitleEmphasis) {
+		return errors.New("title_emphasis must be an exact phrase from title")
+	}
+	if i.ProjectID != nil && *i.ProjectID < 1 {
+		return errors.New("invalid project_id")
+	}
+	for _, revision := range i.Revisions {
+		if _, err := time.Parse("2006-01-02", revision.Date); err != nil {
+			return errors.New("revision date must use YYYY-MM-DD")
+		}
+		if strings.TrimSpace(revision.Summary) == "" || utf8.RuneCountInString(revision.Summary) > 1000 {
+			return errors.New("revision summary is required and must not exceed 1000 characters")
+		}
+	}
+
 	title := strings.TrimSpace(i.Title)
 	if title == "" {
 		return errors.New("title is required")

@@ -31,6 +31,7 @@ const (
 )
 
 type Build struct {
+	ProjectID      *int64 `json:"project_id"`
 	ID             int64
 	Name           string
 	Slug           string
@@ -51,6 +52,7 @@ type Build struct {
 }
 
 type BuildListItem struct {
+	ProjectID      *int64     `json:"project_id"`
 	ID             int64      `json:"id"`
 	Name           string     `json:"name"`
 	Slug           string     `json:"slug"`
@@ -86,6 +88,7 @@ type ListResult struct {
 }
 
 type CreateInput struct {
+	ProjectID      *int64 `json:"project_id"`
 	Name           string `json:"name"`
 	Slug           string `json:"slug"`
 	OneLiner       string `json:"one_liner"`
@@ -116,6 +119,7 @@ func (f ListFilter) normalizedPageSize() int {
 
 func (b Build) ListItem() BuildListItem {
 	return BuildListItem{
+		ProjectID:      b.ProjectID,
 		ID:             b.ID,
 		Name:           b.Name,
 		Slug:           b.Slug,

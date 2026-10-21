@@ -23,6 +23,7 @@ import {
   type NoteVisibility,
   type ObservatoryListParams,
 } from "@/lib/api/observatory";
+import { ProjectAssociationField } from "@/components/admin/projectAssociationField";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
@@ -31,6 +32,7 @@ import { useToast } from "@/components/ui/toast";
 import { cn } from "@/lib/utils";
 
 type NoteFormData = {
+  project_id: number | null;
   title: string;
   question: string;
   observation: string;
@@ -45,6 +47,7 @@ type NoteFormData = {
 };
 
 const emptyForm: NoteFormData = {
+  project_id: null,
   title: "",
   question: "",
   observation: "",
@@ -130,6 +133,7 @@ export function ObservatoryPanel() {
     try {
       const detail = await getObservatoryNote(note.id);
       setEditing({
+        project_id: detail.project_id,
         title: detail.title,
         question: detail.question || "",
         observation: detail.observation || "",
@@ -159,6 +163,7 @@ export function ObservatoryPanel() {
     setSaving(true);
     try {
       const input = {
+        project_id: editing.project_id,
         title: editing.title,
         question: editing.question,
         observation: editing.observation,
@@ -274,6 +279,7 @@ export function ObservatoryPanel() {
             </p>
             <div className="mt-4 grid gap-4 md:grid-cols-[1fr_280px]">
               <div className="space-y-4">
+                <ProjectAssociationField value={editing.project_id} onChange={(value) => setEditing({ ...editing, project_id: value })} />
                 <Field label="标题" placeholder="直接写问题或观察" value={editing.title} onChange={(value) => setEditing({ ...editing, title: value })} />
                 <Field label="问题 / 背景" multiline placeholder="为什么会出现这个问题？" value={editing.question} onChange={(value) => setEditing({ ...editing, question: value })} />
                 <Field label="关键观察" multiline placeholder="实际发生了什么，有什么证据？" value={editing.observation} onChange={(value) => setEditing({ ...editing, observation: value })} />

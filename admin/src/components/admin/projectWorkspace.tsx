@@ -47,6 +47,14 @@ import {
 } from "@/lib/api/projects";
 
 type ProjectFormState = {
+  phase: "" | "research" | "building" | "live" | "waning";
+  goal: string;
+  boundary: string;
+  current_work: string;
+  progress_percent: string;
+  closure_kind: "" | "archived" | "abandoned";
+  closure_reason: string;
+
   name: string;
   slug: string;
   tagline: string;
@@ -73,6 +81,9 @@ function generateSlug(): string {
 }
 
 const emptyForm: ProjectFormState = {
+  phase: "research",
+  goal: "", boundary: "", current_work: "", progress_percent: "", closure_kind: "", closure_reason: "",
+
   name: "",
   slug: generateSlug(),
   tagline: "",
@@ -146,6 +157,8 @@ export function ProjectWorkspace() {
     try {
       const detail = await getAdminProject(project.id);
       setForm({
+        phase: detail.phase, goal: detail.goal, boundary: detail.boundary, current_work: detail.current_work,
+        progress_percent: detail.progress_percent === null ? "" : String(detail.progress_percent), closure_kind: detail.closure_kind, closure_reason: detail.closure_reason,
         name: detail.name,
         slug: detail.slug,
         tagline: detail.tagline,
@@ -176,6 +189,8 @@ export function ProjectWorkspace() {
 
   function buildApiInput(): ProjectInput {
     return {
+      phase: form.phase, goal: form.goal, boundary: form.boundary, current_work: form.current_work,
+      progress_percent: form.progress_percent === "" ? null : Number(form.progress_percent), closure_kind: form.closure_kind, closure_reason: form.closure_reason,
       name: form.name,
       slug: form.slug,
       tagline: form.tagline,
@@ -233,6 +248,8 @@ export function ProjectWorkspace() {
         setProjectId(created.id);
       }
       const result = await publishAdminProject(targetId, {
+        phase: form.phase, goal: form.goal, boundary: form.boundary, current_work: form.current_work,
+        progress_percent: form.progress_percent === "" ? null : Number(form.progress_percent), closure_kind: form.closure_kind, closure_reason: form.closure_reason,
         name: form.name,
         slug: form.slug,
         tagline: form.tagline,
@@ -395,6 +412,12 @@ export function ProjectWorkspace() {
                           <span><span>站点标识</span><button onClick={() => updateField("slug", generateSlug())} type="button">重新生成</button></span>
                           <code>/{form.slug}</code>
                         </div>
+                        <label className="grid gap-2 text-sm">项目月相<select className="field-surface rounded-[var(--radius)] p-3" value={form.phase} onChange={(event) => setForm({...form, phase: event.target.value as ProjectFormState["phase"], closure_kind: "", closure_reason: ""})}><option value="">阶段待补充</option><option value="research">新月 · 研究中</option><option value="building">上弦 · 构建中</option><option value="live">满月 · 已上线</option><option value="waning">下弦 · 收尾、归档或放弃</option></select></label>
+                        <Field label="目标" multiline value={form.goal} onChange={(value) => updateField("goal", value)} />
+                        <Field label="边界 · 不做" multiline value={form.boundary} onChange={(value) => updateField("boundary", value)} />
+                        <Field label="现在" multiline value={form.current_work} onChange={(value) => updateField("current_work", value)} />
+                        <label className="grid gap-2 text-sm">路线进度（0–100，留空表示未填写）<input className="field-surface rounded-[var(--radius)] p-3" type="number" min="0" max="100" step="1" value={form.progress_percent} onChange={(event) => updateField("progress_percent", event.target.value)} /></label>
+                        {form.phase === "waning" && <><label className="grid gap-2 text-sm">退出类型<select className="field-surface rounded-[var(--radius)] p-3" value={form.closure_kind} onChange={(event) => updateField("closure_kind", event.target.value as ProjectFormState["closure_kind"])}><option value="">请选择</option><option value="archived">归档</option><option value="abandoned">放弃</option></select></label><Field label="归档／放弃原因" multiline value={form.closure_reason} onChange={(value) => updateField("closure_reason", value)} /></>}
                         <Field label="技术栈" meta={<span>英文逗号分隔</span>} placeholder="Next.js, Go, PostgreSQL" value={form.tech_stack} onChange={(value) => updateField("tech_stack", value)} />
                       </div>
                     </section>

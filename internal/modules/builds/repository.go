@@ -1,6 +1,7 @@
 package builds
 
 import (
+	"CrescentLab_R/internal/shared/projectref"
 	"context"
 	"database/sql"
 	"errors"
@@ -28,7 +29,7 @@ func NewRepository(db *sql.DB, driver ...string) *Repository {
 	return &Repository{db: db, driver: d}
 }
 
-const buildColumns = `id, name, slug, one_liner, stage, round_goal, latest_progress, next_step, detail_url, demo_url, repo_url, status, sort_order, progressed_at, published_at, created_at, updated_at`
+const buildColumns = `id, name, slug, one_liner, stage, round_goal, latest_progress, next_step, detail_url, demo_url, repo_url, status, sort_order, progressed_at, published_at, created_at, updated_at, project_id`
 
 func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, error) {
 	if r == nil || r.db == nil {
@@ -115,6 +116,9 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Build, erro
 	if err := input.Validate(); err != nil {
 		return Build{}, err
 	}
+	if err := projectref.Validate(ctx, r.db, r.driver, input.ProjectID); err != nil {
+		return Build{}, err
+	}
 
 	now := time.Now().UTC()
 	progressedAt := now
@@ -125,8 +129,8 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Build, erro
 
 	query := `INSERT INTO builds (
   name, slug, one_liner, stage, round_goal, latest_progress, next_step,
-  detail_url, demo_url, repo_url, status, sort_order, progressed_at, published_at
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+  detail_url, demo_url, repo_url, status, sort_order, progressed_at, published_at, project_id
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query) + " RETURNING id"
 	}
@@ -134,7 +138,7 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Build, erro
 	args := []any{
 		input.Name, input.Slug, input.OneLiner, input.Stage, input.RoundGoal, input.LatestProgress, input.NextStep,
 		nullString(input.DetailURL), nullString(input.DemoURL), nullString(input.RepoURL),
-		input.Status, input.SortOrder, progressedAt, publishedAt,
+		input.Status, input.SortOrder, progressedAt, publishedAt, input.ProjectID,
 	}
 
 	var id int64
@@ -162,6 +166,9 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (B
 	if err := input.Validate(); err != nil {
 		return Build{}, err
 	}
+	if err := projectref.Validate(ctx, r.db, r.driver, input.ProjectID); err != nil {
+		return Build{}, err
+	}
 	current, err := r.GetByID(ctx, id)
 	if err != nil {
 		return Build{}, err
@@ -180,7 +187,7 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (B
 	query := `UPDATE builds
 SET name = ?, slug = ?, one_liner = ?, stage = ?, round_goal = ?, latest_progress = ?, next_step = ?,
     detail_url = ?, demo_url = ?, repo_url = ?, status = ?, sort_order = ?,
-    progressed_at = ?, published_at = ?, updated_at = CURRENT_TIMESTAMP
+    progressed_at = ?, published_at = ?, project_id = ?, updated_at = CURRENT_TIMESTAMP
 WHERE id = ? AND deleted_at IS NULL`
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
@@ -189,7 +196,7 @@ WHERE id = ? AND deleted_at IS NULL`
 	result, err := r.db.ExecContext(ctx, query,
 		input.Name, input.Slug, input.OneLiner, input.Stage, input.RoundGoal, input.LatestProgress, input.NextStep,
 		nullString(input.DetailURL), nullString(input.DemoURL), nullString(input.RepoURL),
-		input.Status, input.SortOrder, progressedAt, timePointer(publishedAt), id)
+		input.Status, input.SortOrder, progressedAt, timePointer(publishedAt), input.ProjectID, id)
 	if err != nil {
 		return Build{}, normalizeWriteError("update build", err)
 	}
@@ -243,7 +250,7 @@ func scanBuild(scanner interface{ Scan(dest ...any) error }) (Build, error) {
 	var progressedAt, publishedAt sql.NullTime
 	if err := scanner.Scan(
 		&item.ID, &item.Name, &item.Slug, &item.OneLiner, &stage, &item.RoundGoal, &item.LatestProgress, &item.NextStep,
-		&detail, &demo, &repo, &status, &item.SortOrder, &progressedAt, &publishedAt, &item.CreatedAt, &item.UpdatedAt,
+		&detail, &demo, &repo, &status, &item.SortOrder, &progressedAt, &publishedAt, &item.CreatedAt, &item.UpdatedAt, &item.ProjectID,
 	); err != nil {
 		return Build{}, err
 	}

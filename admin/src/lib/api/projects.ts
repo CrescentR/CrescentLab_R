@@ -3,6 +3,14 @@ import { apiFetch, apiJson } from "@/lib/api/client";
 export type ProjectStatus = "draft" | "published" | "archived";
 
 export type ProjectListItem = {
+  phase: "" | "research" | "building" | "live" | "waning";
+  goal: string;
+  boundary: string;
+  current_work: string;
+  progress_percent: number | null;
+  closure_kind: "" | "archived" | "abandoned";
+  closure_reason: string;
+
   id: number;
   name: string;
   slug: string;
@@ -49,6 +57,14 @@ export type ProjectArtifact = {
 };
 
 export type ProjectInput = {
+  phase?: "" | "research" | "building" | "live" | "waning";
+  goal?: string;
+  boundary?: string;
+  current_work?: string;
+  progress_percent?: number | null;
+  closure_kind?: "" | "archived" | "abandoned";
+  closure_reason?: string;
+
   name: string;
   slug: string;
   tagline?: string;

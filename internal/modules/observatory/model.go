@@ -34,6 +34,7 @@ const (
 )
 
 type Note struct {
+	ProjectID   *int64 `json:"project_id"`
 	ID          int64
 	PublicID    string
 	Title       string
@@ -53,6 +54,7 @@ type Note struct {
 }
 
 type NoteListItem struct {
+	ProjectID   *int64    `json:"project_id"`
 	ID          int64     `json:"id"`
 	Title       string    `json:"title"`
 	Question    string    `json:"question"`
@@ -92,6 +94,7 @@ type ListResult struct {
 }
 
 type CreateInput struct {
+	ProjectID   *int64   `json:"project_id"`
 	Title       string   `json:"title"`
 	ContentMD   string   `json:"content_md"`
 	Question    string   `json:"question"`
@@ -121,6 +124,7 @@ func (f ListFilter) normalizedPageSize() int {
 
 func (n Note) ListItem() NoteListItem {
 	return NoteListItem{
+		ProjectID:   n.ProjectID,
 		ID:          n.ID,
 		Title:       n.Title,
 		Question:    n.Question,

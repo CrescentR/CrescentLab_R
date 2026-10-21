@@ -44,6 +44,7 @@ func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 func (h *Handler) list(c *gin.Context) {
 	filter := parseListFilter(c)
 	filter.Status = StatusPublished
+	filter.Public = true
 
 	result, err := h.repo.List(c.Request.Context(), filter)
 	if err != nil {
@@ -83,7 +84,7 @@ func (h *Handler) detail(c *gin.Context) {
 		return
 	}
 
-	if article.Status != StatusPublished {
+	if article.Status != StatusPublished || article.Visibility != "public" {
 		platformhttp.WriteError(c, platformhttp.NotFound("article not found"))
 		return
 	}

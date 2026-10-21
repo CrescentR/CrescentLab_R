@@ -2,7 +2,11 @@ import { apiJson } from "@/lib/api/client";
 
 export type ArticleStatus = "draft" | "published" | "archived" | "scheduled";
 
+export type Revision = { date: string; summary: string };
+
 export type ArticleListItem = {
+  project_id: number | null;
+  title_emphasis: string;
   id: number;
   public_id: string;
   title: string;
@@ -28,6 +32,7 @@ export type ArticleListResponse = {
 };
 
 export type ArticleDetail = ArticleListItem & {
+  revisions: Revision[] | null;
   category_id: number | null;
   content_md: string;
   content_html: string;
@@ -38,6 +43,9 @@ export type ArticleDetail = ArticleListItem & {
 };
 
 export type ArticleInput = {
+  project_id?: number | null;
+  title_emphasis?: string;
+  revisions?: Revision[];
   title: string;
   slug: string;
   category_id?: number | null;

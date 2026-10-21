@@ -31,16 +31,20 @@ type collectionInput struct {
 }
 
 func (h *Handler) RegisterCollectionRoutes(public, admin *gin.RouterGroup) {
-	public.GET("/collections", h.listCollections)
+	public.GET("/collections", h.listPublicCollections)
 	admin.GET("/collections", h.listCollections)
 	admin.POST("/collections", h.createCollection)
 	admin.POST("/collections/update", h.updateCollection)
 	admin.POST("/collections/delete", h.deleteCollection)
 }
 
-func (r *Repository) ListCollections(ctx context.Context) ([]Collection, error) {
+func (r *Repository) ListCollections(ctx context.Context, publicOnly ...bool) ([]Collection, error) {
+	articleWhere := ""
+	if len(publicOnly) > 0 && publicOnly[0] {
+		articleWhere = " AND a.status = 'published' AND a.visibility = 'public'"
+	}
 	query := `SELECT c.id, c.name, c.slug, COALESCE(c.description, ''), c.sort_order,
-		(SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id AND a.deleted_at IS NULL)
+		(SELECT COUNT(*) FROM articles a WHERE a.category_id = c.id AND a.deleted_at IS NULL` + articleWhere + `)
 		FROM post_categories c ORDER BY c.sort_order ASC, c.name ASC`
 	if r.driver == "postgres" {
 		query = convertPlaceholders(query)
@@ -197,4 +201,13 @@ func (h *Handler) deleteCollection(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *Handler) listPublicCollections(c *gin.Context) {
+	items, err := h.repo.ListCollections(c.Request.Context(), true)
+	if err != nil {
+		platformhttp.WriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"items": items})
 }

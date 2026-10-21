@@ -5,6 +5,7 @@ export type NoteStatus = "active" | "resolved" | "abandoned";
 export type NoteVisibility = "public" | "private";
 
 export type ObservatoryNoteItem = {
+  project_id: number | null;
   id: number;
   title: string;
   question: string;

@@ -140,6 +140,9 @@ CREATE TABLE IF NOT EXISTS post_categories (
 );
 
 CREATE TABLE IF NOT EXISTS articles (
+  project_id BIGINT,
+  revisions_json TEXT NOT NULL DEFAULT '[]',
+  title_emphasis TEXT NOT NULL DEFAULT '',
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   public_id TEXT UNIQUE,
   owner_id INTEGER,
@@ -179,6 +182,13 @@ CREATE TABLE IF NOT EXISTS articles (
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS projects (
+  phase TEXT NOT NULL DEFAULT '' CHECK (phase IN ('', 'research', 'building', 'live', 'waning')),
+  goal TEXT NOT NULL DEFAULT '',
+  boundary TEXT NOT NULL DEFAULT '',
+  current_work TEXT NOT NULL DEFAULT '',
+  progress_percent INTEGER CHECK (progress_percent BETWEEN 0 AND 100),
+  closure_kind TEXT NOT NULL DEFAULT '' CHECK (closure_kind IN ('', 'archived', 'abandoned')),
+  closure_reason TEXT NOT NULL DEFAULT '',
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   public_id TEXT UNIQUE,
   owner_id INTEGER,
@@ -228,6 +238,7 @@ CREATE TABLE IF NOT EXISTS project_artifacts (
 -- =========================================================
 
 CREATE TABLE IF NOT EXISTS observatory_notes (
+  project_id BIGINT,
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   public_id TEXT UNIQUE,
   title TEXT NOT NULL,
@@ -251,6 +262,7 @@ CREATE TABLE IF NOT EXISTS observatory_notes (
 );
 
 CREATE TABLE IF NOT EXISTS builds (
+  project_id BIGINT,
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   public_id TEXT UNIQUE,
   name TEXT NOT NULL,

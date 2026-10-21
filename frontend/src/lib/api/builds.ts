@@ -4,6 +4,7 @@ export type BuildStage = "prototype" | "development" | "validating" | "beta" | "
 export type BuildStatus = "draft" | "published" | "archived";
 
 export type BuildItem = {
+  project_id: number | null;
   id: number;
   name: string;
   slug: string;

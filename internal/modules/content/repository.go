@@ -1,8 +1,10 @@
 package content
 
 import (
+	"CrescentLab_R/internal/shared/projectref"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -78,6 +80,9 @@ func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, e
 func buildArticleListQueries(driver string, filter ListFilter, page, pageSize int) (string, []any, string, []any) {
 	where := []string{"a.deleted_at IS NULL"}
 	args := []any{}
+	if filter.Public {
+		where = append(where, "a.visibility = 'public'")
+	}
 
 	if filter.Status != "" {
 		where = append(where, "a.status = ?")
@@ -96,7 +101,7 @@ func buildArticleListQueries(driver string, filter ListFilter, page, pageSize in
 	whereClause := strings.Join(where, " AND ")
 	from := " FROM articles a LEFT JOIN post_categories c ON a.category_id = c.id WHERE "
 	countQuery := "SELECT COUNT(*)" + from + whereClause
-	listQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at" + from + whereClause + " ORDER BY a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC LIMIT ? OFFSET ?"
+	listQuery := "SELECT a.id, a.public_id, a.title, a.slug, a.excerpt, a.cover_url, a.status, a.is_pinned, a.view_count, a.comment_count, a.reading_time_minutes, a.published_at, a.created_at, a.updated_at, a.category_id, COALESCE(c.name, ''), a.project_id, a.title_emphasis" + from + whereClause + " ORDER BY a.is_pinned DESC, a.pin_sort DESC, COALESCE(a.published_at, a.created_at) DESC LIMIT ? OFFSET ?"
 
 	if driver == "postgres" {
 		countQuery = convertPlaceholders(countQuery)
@@ -137,6 +142,7 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (Article, error) {
 func scanArticleRow(row *sql.Row, op string) (Article, error) {
 	var article Article
 	var status string
+	var revisionsJSON string
 	if err := row.Scan(
 		&article.ID, &article.PublicID, &article.OwnerID, &article.CategoryID,
 		&article.Title, &article.Slug, &article.Excerpt, &article.ContentMD, &article.ContentHTML,
@@ -144,7 +150,7 @@ func scanArticleRow(row *sql.Row, op string) (Article, error) {
 		&article.AllowComment, &article.IsPinned, &article.PinSort, &article.HomeSort,
 		&article.ViewCount, &article.CommentCount, &article.WordCount, &article.ReadingTimeMinutes,
 		&article.PublishedAt,
-		&article.CreatedAt, &article.UpdatedAt, &article.DeletedAt,
+		&article.CreatedAt, &article.UpdatedAt, &article.DeletedAt, &article.ProjectID, &revisionsJSON, &article.TitleEmphasis,
 	); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Article{}, err
@@ -152,6 +158,9 @@ func scanArticleRow(row *sql.Row, op string) (Article, error) {
 		return Article{}, fmt.Errorf("%s: %w", op, err)
 	}
 
+	if err := json.Unmarshal([]byte(revisionsJSON), &article.Revisions); err != nil {
+		return Article{}, fmt.Errorf("decode article revisions: %w", err)
+	}
 	article.Status = ArticleStatus(status)
 	return article, nil
 }
@@ -160,7 +169,7 @@ func articleDetailQuery(key string) string {
 	return `SELECT id, COALESCE(public_id, ''), owner_id, category_id, title, slug, excerpt,
 		content_md, content_html, cover_url, status, visibility, source_format,
 		allow_comment, is_pinned, pin_sort, home_sort, view_count, comment_count,
-		word_count, reading_time_minutes, published_at, created_at, updated_at, deleted_at
+		word_count, reading_time_minutes, published_at, created_at, updated_at, deleted_at, project_id, revisions_json, title_emphasis
 		FROM articles WHERE ` + key + ` = ? AND deleted_at IS NULL`
 }
 
@@ -169,6 +178,9 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, er
 		return Article{}, errors.New("content repository database is nil")
 	}
 	if err := input.Validate(); err != nil {
+		return Article{}, err
+	}
+	if err := projectref.Validate(ctx, r.db, r.driver, input.ProjectID); err != nil {
 		return Article{}, err
 	}
 
@@ -181,10 +193,14 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Article, er
 		sourceFormat = "markdown"
 	}
 
+	revisionsJSON, err := json.Marshal(append([]Revision{}, input.Revisions...))
+	if err != nil {
+		return Article{}, err
+	}
 	query, returnsID := createArticleQuery(r.driver, ArticleStatus(status))
 	args := []any{
 		input.CategoryID, input.Title, input.Slug, input.Excerpt, input.ContentMD, input.ContentHTML,
-		input.CoverURL, status, sourceFormat, input.WordCount, input.ReadingTimeMinutes,
+		input.CoverURL, status, sourceFormat, input.WordCount, input.ReadingTimeMinutes, input.ProjectID, string(revisionsJSON), input.TitleEmphasis,
 	}
 
 	var id int64
@@ -217,7 +233,7 @@ func createArticleQuery(driver string, status ArticleStatus) (string, bool) {
 		publishedAtExpr = "CURRENT_TIMESTAMP"
 	}
 
-	query := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
+	query := "INSERT INTO articles (category_id, title, slug, excerpt, content_md, content_html, cover_url, status, source_format, word_count, reading_time_minutes, project_id, revisions_json, title_emphasis, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, " + publishedAtExpr + ")"
 	if driver == "postgres" {
 		return convertPlaceholders(query) + " RETURNING id", true
 	}
@@ -231,6 +247,9 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (A
 	if err := input.Validate(); err != nil {
 		return Article{}, err
 	}
+	if err := projectref.Validate(ctx, r.db, r.driver, input.ProjectID); err != nil {
+		return Article{}, err
+	}
 
 	status := input.Status
 	if status == "" {
@@ -241,9 +260,13 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (A
 		sourceFormat = "markdown"
 	}
 
+	revisionsJSON, err := json.Marshal(append([]Revision{}, input.Revisions...))
+	if err != nil {
+		return Article{}, err
+	}
 	query := `UPDATE articles
 SET category_id = ?, title = ?, slug = ?, excerpt = ?, content_md = ?, cover_url = ?, status = ?, source_format = ?,
-	content_html = ?, word_count = ?, reading_time_minutes = ?,
+	content_html = ?, word_count = ?, reading_time_minutes = ?, project_id = ?, revisions_json = ?, title_emphasis = ?,
     published_at = CASE
         WHEN ? = 'published' THEN COALESCE(published_at, CURRENT_TIMESTAMP)
         ELSE NULL
@@ -257,7 +280,7 @@ WHERE id = ? AND deleted_at IS NULL`
 	result, err := r.db.ExecContext(ctx, query,
 		input.CategoryID, input.Title, input.Slug, input.Excerpt, input.ContentMD,
 		input.CoverURL, status, sourceFormat,
-		input.ContentHTML, input.WordCount, input.ReadingTimeMinutes,
+		input.ContentHTML, input.WordCount, input.ReadingTimeMinutes, input.ProjectID, string(revisionsJSON), input.TitleEmphasis,
 		status, id)
 	if err != nil {
 		return Article{}, normalizeArticleWriteError("update article", err)
@@ -331,7 +354,7 @@ func scanArticleListItem(scanner articleScanner) (ArticleListItem, error) {
 		&item.ID, &publicID, &item.Title, &item.Slug, &excerpt, &coverURL, &status,
 		&item.IsPinned, &item.ViewCount, &item.CommentCount, &item.ReadingTimeMinutes,
 		&publishedAt,
-		&item.CreatedAt, &item.UpdatedAt,
+		&item.CreatedAt, &item.UpdatedAt, &item.CategoryID, &item.CategoryName, &item.ProjectID, &item.TitleEmphasis,
 	); err != nil {
 		return ArticleListItem{}, err
 	}
