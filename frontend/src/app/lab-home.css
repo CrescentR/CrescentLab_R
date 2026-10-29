@@ -41,9 +41,11 @@
 .j-peek{position:fixed;z-index:30;width:240px;aspect-ratio:4/3;border-radius:6px;overflow:hidden;pointer-events:none;opacity:0;transform:translate(-50%,-110%) rotate(-3deg) scale(.9);transition:opacity .25s,transform .35s var(--ease);box-shadow:0 18px 40px rgba(0,0,0,.18)}
 .j-peek.is-visible{opacity:1;transform:translate(-50%,-110%) rotate(-3deg) scale(1)}
 .j-peek img{width:100%;height:100%;object-fit:cover}
-.j-collections{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.j-collection{padding:24px;border:1px solid var(--line);border-radius:8px;background:var(--surface);display:grid;gap:10px;transition:border-color .2s,transform .35s var(--ease)}
-.j-collection:hover{border-color:var(--ink);transform:translateY(-3px)}
+.j-collections{display:grid;grid-template-columns:repeat(3,1fr);border-top:2px solid var(--ink)}
+.j-collection{padding:22px 24px 22px 0;display:grid;gap:8px;align-content:start;border-bottom:1px solid var(--line)}
+.j-collection:not(:nth-child(3n+1)){padding-left:24px;border-left:1px solid var(--line)}
+.j-collection h3{transition:color .2s}
+.j-collection:hover h3{color:var(--cobalt)}
 .j-collection .j-count{font-family:var(--serif-en);font-style:italic;font-size:44px;line-height:1}
 .j-collection h3{font-size:18px}
 .j-collection p{font-size:14px;color:var(--ink-2)}
@@ -61,7 +63,7 @@
   .j-featured p.j-excerpt{font-size:16px}
   .j-featured-cover{aspect-ratio:16/9;margin-top:28px}
   .j-section{padding-top:56px}
-  .j-section-heading{flex-direction:column;align-items:flex-start}
+  .j-section-heading{flex-wrap:wrap;align-items:baseline;gap:12px 24px}
   .j-index a{grid-template-columns:44px minmax(0,1fr) 20px;gap:4px 12px;padding:18px 0}
   .j-index .j-number{font-size:22px;grid-row:span 2}
   .j-index h3{font-size:18px}
@@ -69,7 +71,7 @@
   .j-index .j-date,.j-index .j-duration{display:none}
   .j-index .j-arrow{grid-column:3;grid-row:1}
   .j-collections,.j-project-strip{grid-template-columns:1fr}
-  .j-project-strip a+a{padding-left:0;border-left:0}
+  .j-project-strip a+a,.j-collection:not(:nth-child(3n+1)){padding-left:0;border-left:0}
 }
 
 /* notes — adapted from supplied mockup */
@@ -268,7 +270,7 @@
 }
 
 /* Live data, accessible controls and empty states. */
-.j-logs h2 { font-family: var(--serif-zh); font-weight: 400; }
+.j-logs h2 { font-family: var(--serif-zh); font-weight: 700; font-size: 30px; }
 .j-empty-inline { padding-block: 20px; color: var(--ink-3); font-size: 14px; line-height: 1.8; }
 .j-logs li p, .j-short-entry p { white-space: pre-line; }
 .j-long-entry a { grid-template-columns: minmax(0,1fr); }
