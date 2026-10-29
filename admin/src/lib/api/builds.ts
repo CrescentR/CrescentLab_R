@@ -46,9 +46,12 @@ export type BuildInput = {
   repo_url?: string;
   status?: BuildStatus;
   sort_order?: number;
+  progressed_at?: string | null;
 };
 
 export type BuildListParams = {
+  project_id?: number;
+  unassigned?: boolean;
   page?: number;
   page_size?: number;
   status?: BuildStatus;
@@ -65,10 +68,6 @@ export function listAdminBuilds(params: BuildListParams = {}) {
   return apiJson<BuildListResponse>(`/api/admin/builds${toQueryString(params)}`);
 }
 
-export function getAdminBuild(id: number) {
-  return apiJson<BuildItem>(`/api/admin/builds/detail?id=${id}`);
-}
-
 export function createAdminBuild(input: BuildInput) {
   return apiJson<BuildItem>("/api/admin/builds", {
     body: JSON.stringify(input),
@@ -80,6 +79,14 @@ export function createAdminBuild(input: BuildInput) {
 export function updateAdminBuild(id: number, input: BuildInput) {
   return apiJson<BuildItem>("/api/admin/builds/update", {
     body: JSON.stringify({ id, ...input }),
+    headers: { "Content-Type": "application/json" },
+    method: "POST",
+  });
+}
+
+export function assignAdminBuild(id: number, projectId: number) {
+  return apiJson<BuildItem>("/api/admin/builds/assign", {
+    body: JSON.stringify({ id, project_id: projectId }),
     headers: { "Content-Type": "application/json" },
     method: "POST",
   });

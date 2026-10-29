@@ -3,7 +3,7 @@ import { apiJson } from "@/lib/api/client";
 export type ProjectPhase = "" | "research" | "building" | "live" | "waning";
 export type Project = {
   id: number; name: string; slug: string; tagline: string;
-  status: "draft" | "published" | "archived";
+  status: "draft" | "published";
   phase: ProjectPhase; goal: string; boundary: string; current_work: string;
   progress_percent: number | null; closure_kind: "" | "archived" | "abandoned"; closure_reason: string;
   cover_url: string; repo_url: string; demo_url: string; tech_stack: string[] | null;

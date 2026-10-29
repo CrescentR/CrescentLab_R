@@ -8,6 +8,7 @@ import {
   Clock,
   ExternalLink,
   FileText,
+  Footprints,
   GitFork,
   Globe,
   History,
@@ -16,20 +17,24 @@ import {
   Loader2,
   MonitorUp,
   PackageOpen,
+  Pencil,
   Plus,
   Rocket,
   Save,
   Send,
   Settings2,
+  Target,
   Upload,
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Panel } from "@/components/ui/panel";
 import { Field } from "@/components/ui/field";
 import { useToast } from "@/components/ui/toast";
 import { TipTapEditor } from "@/components/admin/tiptapEditor";
+import { MoonGlyph, projectPhases } from "@/components/admin/projectPhase";
+import { ProjectProcessPanel } from "@/components/admin/projectProcessPanel";
+import { UnassignedProgress } from "@/components/admin/unassignedProgress";
 import {
   createAdminProject,
   deleteAdminProject,
@@ -70,6 +75,8 @@ type ProjectFormState = {
 
 type SaveStatus = "idle" | "saving" | "saved";
 
+const publicSiteUrl = process.env.NEXT_PUBLIC_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
 const ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyz0123456789";
 
 function generateSlug(): string {
@@ -107,7 +114,7 @@ export function ProjectWorkspace() {
   const [status, setStatus] = useState<ProjectStatus>("draft");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [saving, setSaving] = useState(false);
-  const [editorTab, setEditorTab] = useState<"overview" | "content" | "releases">("overview");
+  const [editorTab, setEditorTab] = useState<"overview" | "content" | "process" | "releases">("overview");
   const [artifacts, setArtifacts] = useState<ProjectArtifact[]>([]);
   const [artifactFile, setArtifactFile] = useState<File | null>(null);
   const [artifactLabel, setArtifactLabel] = useState("");
@@ -182,6 +189,8 @@ export function ProjectWorkspace() {
       push(extractErrorMessage(err, "加载项目详情失败"), "error");
     }
   }
+
+  const currentPhase = projectPhases.find((phase) => phase.value === form.phase);
 
   function updateField<K extends keyof ProjectFormState>(key: K, value: ProjectFormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -356,19 +365,23 @@ export function ProjectWorkspace() {
         <section className="project-cms-workspace">
           <aside className="project-cms-sidebar">
             <div className="project-cms-sidebar-intro">
-              <span>PROJECT WORKSPACE</span>
-              <strong>项目发布中心</strong>
-              <p>管理公开资料、项目介绍与静态站点版本。</p>
+              <span>PROJECT THREAD</span>
+              <strong>项目线索</strong>
+              <p>月相标记阶段，进展、长文与札记记录它怎么走到这里。</p>
             </div>
 
             <nav aria-label="项目编辑模块" className="project-cms-nav">
               <button className={editorTab === "overview" ? "is-active" : ""} onClick={() => setEditorTab("overview")} type="button">
                 <span><LayoutDashboard size={17} /></span>
-                <span><strong>项目概览</strong><small>资料与展示信息</small></span>
+                <span><strong>档案</strong><small>阶段、目标与边界</small></span>
               </button>
               <button className={editorTab === "content" ? "is-active" : ""} onClick={() => setEditorTab("content")} type="button">
                 <span><FileText size={17} /></span>
-                <span><strong>展示内容</strong><small>项目介绍正文</small></span>
+                <span><strong>README</strong><small>项目介绍正文</small></span>
+              </button>
+              <button className={editorTab === "process" ? "is-active" : ""} onClick={() => setEditorTab("process")} type="button">
+                <span><Footprints size={17} /></span>
+                <span><strong>过程</strong><small>进展与关联记录</small></span>
               </button>
               <button className={editorTab === "releases" ? "is-active" : ""} onClick={() => setEditorTab("releases")} type="button">
                 <span><Rocket size={17} /></span>
@@ -382,6 +395,7 @@ export function ProjectWorkspace() {
                 <strong>{projectStatusLabel(status)}</strong>
               </div>
               <dl>
+                <div><dt>月相</dt><dd>{currentPhase ? `${currentPhase.name} · ${currentPhase.label}` : "待补充"}</dd></div>
                 <div><dt>站点标识</dt><dd>/{form.slug}</dd></div>
                 <div><dt>部署版本</dt><dd>{artifacts.length}</dd></div>
               </dl>
@@ -397,8 +411,8 @@ export function ProjectWorkspace() {
             {editorTab === "overview" && (
               <>
                 <header className="project-cms-page-heading">
-                  <div><span>01 / OVERVIEW</span><h1>项目概览</h1><p>配置项目在内容库中的身份、摘要与外部入口。</p></div>
-                  <Badge tone={status === "published" ? "green" : status === "archived" ? "neutral" : "amber"}>{projectStatusLabel(status)}</Badge>
+                  <div><span>01 / PROFILE</span><h1>档案</h1><p>项目是什么、处在哪个阶段、做与不做的边界。</p></div>
+                  <Badge tone={status === "published" ? "green" : "amber"}>{projectStatusLabel(status)}</Badge>
                 </header>
 
                 <div className="project-cms-overview-grid">
@@ -412,13 +426,37 @@ export function ProjectWorkspace() {
                           <span><span>站点标识</span><button onClick={() => updateField("slug", generateSlug())} type="button">重新生成</button></span>
                           <code>/{form.slug}</code>
                         </div>
-                        <label className="grid gap-2 text-sm">项目月相<select className="field-surface rounded-[var(--radius)] p-3" value={form.phase} onChange={(event) => setForm({...form, phase: event.target.value as ProjectFormState["phase"], closure_kind: "", closure_reason: ""})}><option value="">阶段待补充</option><option value="research">新月 · 研究中</option><option value="building">上弦 · 构建中</option><option value="live">满月 · 已上线</option><option value="waning">下弦 · 收尾、归档或放弃</option></select></label>
+                        <Field label="技术栈" meta={<span>英文逗号分隔</span>} placeholder="Next.js, Go, PostgreSQL" value={form.tech_stack} onChange={(value) => updateField("tech_stack", value)} />
+                      </div>
+                    </section>
+
+                    <section className="project-cms-panel">
+                      <div className="project-cms-panel-heading"><span><MoonGlyph phase={currentPhase?.moon ?? 0} size={18} /></span><div><h2>月相阶段</h2><p>阶段决定项目出现在前台的哪个分组；公开项目必须选择阶段。</p></div></div>
+                      <div aria-label="项目月相" className="project-cms-phase-picker" role="radiogroup">
+                        {projectPhases.map((phase) => (
+                          <button aria-checked={form.phase === phase.value} key={phase.value} onClick={() => setForm({ ...form, phase: phase.value, closure_kind: phase.value === "waning" ? form.closure_kind : "", closure_reason: phase.value === "waning" ? form.closure_reason : "" })} role="radio" type="button">
+                            <MoonGlyph phase={phase.moon} size={22} />
+                            <strong>{phase.name} · {phase.label}</strong>
+                            <small>{phase.hint}</small>
+                          </button>
+                        ))}
+                      </div>
+                      {form.phase === "waning" && (
+                        <div className="project-cms-closure">
+                          <div aria-label="退出类型" className="project-cms-segment" role="radiogroup">
+                            {(["archived", "abandoned"] as const).map((kind) => <button aria-checked={form.closure_kind === kind} key={kind} onClick={() => updateField("closure_kind", kind)} role="radio" type="button">{kind === "archived" ? "归档 · 完成使命" : "放弃 · 不再投入"}</button>)}
+                          </div>
+                          <Field label="归档／放弃原因" multiline placeholder="写清楚为什么结束，前台会原样展示" value={form.closure_reason} onChange={(value) => updateField("closure_reason", value)} />
+                        </div>
+                      )}
+                    </section>
+
+                    <section className="project-cms-panel">
+                      <div className="project-cms-panel-heading"><span><Target size={17} /></span><div><h2>目标与边界</h2><p>前台项目页的三栏事实：为什么做、不做什么、现在在做什么。</p></div></div>
+                      <div className="project-cms-form-grid">
                         <Field label="目标" multiline value={form.goal} onChange={(value) => updateField("goal", value)} />
                         <Field label="边界 · 不做" multiline value={form.boundary} onChange={(value) => updateField("boundary", value)} />
-                        <Field label="现在" multiline value={form.current_work} onChange={(value) => updateField("current_work", value)} />
-                        <label className="grid gap-2 text-sm">路线进度（0–100，留空表示未填写）<input className="field-surface rounded-[var(--radius)] p-3" type="number" min="0" max="100" step="1" value={form.progress_percent} onChange={(event) => updateField("progress_percent", event.target.value)} /></label>
-                        {form.phase === "waning" && <><label className="grid gap-2 text-sm">退出类型<select className="field-surface rounded-[var(--radius)] p-3" value={form.closure_kind} onChange={(event) => updateField("closure_kind", event.target.value as ProjectFormState["closure_kind"])}><option value="">请选择</option><option value="archived">归档</option><option value="abandoned">放弃</option></select></label><Field label="归档／放弃原因" multiline value={form.closure_reason} onChange={(value) => updateField("closure_reason", value)} /></>}
-                        <Field label="技术栈" meta={<span>英文逗号分隔</span>} placeholder="Next.js, Go, PostgreSQL" value={form.tech_stack} onChange={(value) => updateField("tech_stack", value)} />
+                        <Field className="project-cms-span-2" label="现在" multiline placeholder="当前这一轮在推进什么" value={form.current_work} onChange={(value) => updateField("current_work", value)} />
                       </div>
                     </section>
 
@@ -445,7 +483,7 @@ export function ProjectWorkspace() {
                       ) : (
                         <AppWindow size={32} />
                       )}
-                      <span>LIVE PROFILE</span>
+                      <span>{currentPhase ? `${currentPhase.name} · ${currentPhase.label}` : "阶段待补充"}</span>
                     </div>
                     <div className="project-cms-preview-copy">
                       <div><Badge tone={status === "published" ? "green" : "amber"}>{projectStatusLabel(status)}</Badge><span>/{form.slug}</span></div>
@@ -467,9 +505,9 @@ export function ProjectWorkspace() {
             {editorTab === "content" && (
               <>
                 <header className="project-cms-page-heading">
-                  <div><span>02 / CONTENT</span><h1>展示内容</h1><p>编排项目背景、能力说明与使用方式，形成完整的项目介绍。</p></div>
+                  <div><span>02 / README</span><h1>README</h1><p>编排项目背景、能力说明与使用方式，形成完整的项目介绍。</p></div>
                 </header>
-                <div className="project-cms-content-note"><FileText size={16} /><span>此处内容用于项目介绍；静态站点文件与发布版本请前往“部署版本”。</span></div>
+                <div className="project-cms-content-note"><FileText size={16} /><span>此处内容用于项目介绍；进展请记在“过程”，静态站点文件请前往“部署版本”。</span></div>
                 <div className="project-cms-format-picker"><label>内容格式<select value={form.source_format} onChange={(event) => updateField("source_format", event.target.value as ProjectFormState["source_format"])}><option value="mdx">MDX（支持 React 组件）</option><option value="markdown">Markdown</option><option value="tiptap">TipTap</option></select></label></div>
                 <div className="project-cms-editor-frame">
                   {form.source_format === "mdx" || form.source_format === "markdown" ? <textarea className="project-cms-mdx-editor" value={form.content_md} onChange={(event) => updateField("content_md", event.target.value)} placeholder="# 项目概览\n\n支持 Markdown 和白名单 MDX 组件" /> : <TipTapEditor content={form.content_html} onChange={(html) => updateField("content_html", html)} onSave={handleSave} />}
@@ -477,10 +515,19 @@ export function ProjectWorkspace() {
               </>
             )}
 
+            {editorTab === "process" && (
+              <>
+                <header className="project-cms-page-heading">
+                  <div><span>03 / PROCESS</span><h1>过程</h1><p>项目怎么走到这里：带日期的进展，以及关联到它的长文和札记。</p></div>
+                </header>
+                {projectId ? <ProjectProcessPanel projectId={projectId} /> : <div className="project-cms-inline-notice">请先保存项目，再记录进展。</div>}
+              </>
+            )}
+
             {editorTab === "releases" && (
               <>
                 <header className="project-cms-page-heading">
-                  <div><span>03 / DEPLOYMENTS</span><h1>部署版本</h1><p>上传静态站点产物，隔离预览后选择一个版本发布到线上。</p></div>
+                  <div><span>04 / DEPLOYMENTS</span><h1>部署版本</h1><p>上传静态站点产物，隔离预览后选择一个版本发布到线上。</p></div>
                   {artifacts.some((artifact) => artifact.is_published) && <Badge tone="green">线上运行中</Badge>}
                 </header>
 
@@ -544,116 +591,54 @@ export function ProjectWorkspace() {
     );
   }
 
+  const groups = [...projectPhases, { value: "" as const, moon: 0, name: "阶段待补充", label: "", hint: "" }]
+    .map((phase) => ({ phase, items: projects.filter((project) => project.phase === phase.value) }))
+    .filter((group) => group.items.length > 0);
+
   return (
-    <main className="flex-1 overflow-auto px-4 py-6 md:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="grid gap-5 lg:grid-cols-[1fr_360px]">
-          <Panel className="lab-card p-6">
-            <Badge tone="purple">Projects</Badge>
-            <h1 className="mt-4 font-lab-display text-3xl font-semibold text-[var(--text-strong)]">
-              项目发布
-            </h1>
-            <p className="mt-3 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-              每一个项目就是一份精心排版的 README，介绍它是什么、解决什么问题、用了什么技术。
-            </p>
-            <Button className="mt-4" icon={<Plus size={15} />} variant="primary" onClick={handleNew}>
-              新建项目
-            </Button>
-          </Panel>
+    <main className="project-cms-list">
+      <header className="project-cms-list-header">
+        <div>
+          <span>PROJECTS</span>
+          <h1>项目</h1>
+          <p>每个项目是一条长期线索：月相标记阶段，进展、长文与札记记录它怎么走到这里。</p>
+        </div>
+        <Button icon={<Plus size={15} />} variant="primary" onClick={handleNew}>新建项目</Button>
+      </header>
 
-          <Panel className="lab-card p-5">
-            <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">概览</h2>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-              <div className="rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] p-4">
-                <span className="font-lab-mono text-xs text-[var(--muted)]">总计</span>
-                <strong className="mt-2 block font-lab-display text-2xl font-semibold text-[var(--text-strong)]">{projects.length}</strong>
-              </div>
-              <div className="rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] p-4">
-                <span className="font-lab-mono text-xs text-[var(--muted)]">已发布</span>
-                <strong className="mt-2 block font-lab-display text-2xl font-semibold text-[var(--success)]">
-                  {projects.filter((p) => p.status === "published").length}
-                </strong>
-              </div>
-            </div>
-          </Panel>
-        </header>
+      {!loading && <UnassignedProgress projects={projects} />}
 
-        <Panel className="overflow-hidden">
-          <div className="flex items-center justify-between border-b border-[var(--border-soft)] px-5 py-4">
-            <h2 className="font-lab-display text-lg font-semibold text-[var(--text-strong)]">项目列表</h2>
-          </div>
-          {loading ? (
-            <div className="p-8 text-center font-lab-mono text-sm text-[var(--muted)]">加载中...</div>
-          ) : projects.length === 0 ? (
-            <div className="p-8 text-center font-lab-mono text-sm text-[var(--muted)]">
-              还没有项目，点击上方按钮创建第一个。
-            </div>
-          ) : (
-            <div className="divide-y divide-[var(--border-soft)]">
-              {projects.map((project) => (
-                <div className="group flex items-center gap-4 px-5 py-4 transition-colors hover:bg-[var(--surface-field)]" key={project.id}>
-                  {project.cover_url ? (
-                    <img alt={project.name} className="size-12 shrink-0 rounded-[var(--radius)] border border-[var(--border-soft)] object-cover" src={project.cover_url} />
-                  ) : (
-                    <span className="grid size-12 shrink-0 place-items-center rounded-[var(--radius)] border border-[var(--border-soft)] bg-[var(--surface-field)] font-lab-mono text-sm font-bold text-[var(--muted)]">
-                      {project.name.slice(0, 2).toUpperCase()}
-                    </span>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="truncate text-sm font-medium text-[var(--text-strong)]">{project.name}</h3>
-                      <Badge tone={project.status === "published" ? "green" : project.status === "draft" ? "amber" : "neutral"}>
-                        {project.status === "published" ? "Published" : project.status === "draft" ? "Draft" : "Archived"}
-                      </Badge>
-                    </div>
-                    {project.tagline && (
-                      <p className="mt-1 truncate font-lab-mono text-xs text-[var(--muted-low)]">{project.tagline}</p>
-                    )}
-                    {project.tech_stack.length > 0 && (
-                      <div className="mt-1.5 flex flex-wrap gap-1">
-                        {project.tech_stack.slice(0, 4).map((tech) => (
-                          <span className="rounded bg-[var(--surface-field)] px-1.5 py-0.5 font-lab-mono text-[10px] text-[var(--muted)]" key={tech}>{tech}</span>
-                        ))}
-                        {project.tech_stack.length > 4 && (
-                          <span className="font-lab-mono text-[10px] text-[var(--muted-low)]">+{project.tech_stack.length - 4}</span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {project.repo_url && (
-                      <a className="text-[var(--muted)] hover:text-[var(--text)]" href={project.repo_url} rel="noopener noreferrer" target="_blank">
-                        <GitFork size={16} />
-                      </a>
-                    )}
-                    {project.demo_url && (
-                      <a className="text-[var(--muted)] hover:text-[var(--text)]" href={project.demo_url} rel="noopener noreferrer" target="_blank">
-                        <Globe size={16} />
-                      </a>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button className="w-8 px-0" variant="ghost" onClick={() => handleEdit(project)}>
-                      <ExternalLink size={14} />
-                    </Button>
-                    <Button className="w-8 px-0" variant="ghost" onClick={() => handleDelete(project.id)}>
-                      <Trash2 size={14} className="text-[var(--rose)]" />
-                    </Button>
-                  </div>
+      {loading ? (
+        <p className="project-cms-empty-line">加载中…</p>
+      ) : projects.length === 0 ? (
+        <div className="project-cms-panel project-cms-list-empty"><strong>还没有项目</strong><p>先写下它想解决的问题和边界，从「新月 · 研究中」开始。</p></div>
+      ) : groups.map(({ phase, items }) => (
+        <section className="project-cms-phase-group" key={phase.value || "unset"}>
+          <h2>{phase.value && <MoonGlyph phase={phase.moon} size={18} />}{phase.name}{phase.label && <small>{phase.label}</small>}<span>{items.length}</span></h2>
+          <ul>
+            {items.map((project) => (
+              <li className="project-cms-row" key={project.id}>
+                <button className="project-cms-row-main" onClick={() => handleEdit(project)} type="button">
+                  <span className="project-cms-row-title"><strong>{project.name}</strong>{project.status !== "published" && <Badge tone="amber">草稿</Badge>}{project.phase === "waning" && project.closure_kind && <Badge tone={project.closure_kind === "abandoned" ? "rose" : "neutral"}>{project.closure_kind === "abandoned" ? "放弃" : "归档"}</Badge>}</span>
+                  <span className="project-cms-row-now">{project.phase === "waning" ? project.closure_reason || "退出原因待补充" : project.current_work || project.tagline || "还没有写「现在」在做什么"}</span>
+                </button>
+                <time dateTime={project.updated_at}>{new Date(project.updated_at).toLocaleDateString("zh-CN")} 更新</time>
+                <div className="project-cms-row-actions">
+                  {project.status === "published" && <a aria-label={`在前台查看 ${project.name}`} href={`${publicSiteUrl}/projects/${project.slug}`} rel="noopener noreferrer" target="_blank"><ExternalLink size={14} /></a>}
+                  <button aria-label={`编辑 ${project.name}`} onClick={() => handleEdit(project)} type="button"><Pencil size={14} /></button>
+                  <button aria-label={`删除 ${project.name}`} className="is-danger" onClick={() => handleDelete(project.id)} type="button"><Trash2 size={14} /></button>
                 </div>
-              ))}
-            </div>
-          )}
-        </Panel>
-      </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
     </main>
   );
 }
 
 function projectStatusLabel(status: ProjectStatus): string {
-  if (status === "published") return "已发布";
-  if (status === "archived") return "已归档";
-  return "草稿";
+  return status === "published" ? "公开" : "草稿";
 }
 
 function extractErrorMessage(err: unknown, fallback: string): string {

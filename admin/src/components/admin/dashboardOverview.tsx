@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  Construction,
   Eye,
   FileText,
   Flame,
@@ -25,7 +24,6 @@ const quickActions = [
   { label: "文章", href: "/admin/postManagement", icon: FileText },
   { label: "项目", href: "/admin/projects", icon: Flame },
   { label: "观测台", href: "/admin/observatory", icon: Eye },
-  { label: "构建中", href: "/admin/builds", icon: Construction },
   { label: "评论", href: "/admin/comments", icon: MessageSquare },
   { label: "媒体", href: "/admin/media", icon: Image },
   { label: "存储", href: "/admin/storage", icon: HardDrive },

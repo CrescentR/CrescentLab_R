@@ -58,5 +58,5 @@ export function entryText(entry: JournalEntry) {
 export function entryLabel(entry: JournalEntry) {
   if (entry.kind === "article") return "长文";
   if (entry.kind === "note") return entry.item.status === "abandoned" ? "放弃" : entry.item.tags[0] || "札记";
-  return { prototype: "原型", development: "开发", validating: "验证", beta: "内测", paused: "暂停" }[entry.item.stage];
+  return "进展";
 }

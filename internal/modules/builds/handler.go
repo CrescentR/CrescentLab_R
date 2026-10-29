@@ -29,6 +29,7 @@ func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/builds/detail", h.adminDetail)
 	group.POST("/builds", h.create)
 	group.POST("/builds/update", h.update)
+	group.POST("/builds/assign", h.assign)
 	group.POST("/builds/delete", h.delete)
 }
 
@@ -118,6 +119,31 @@ func (h *Handler) update(c *gin.Context) {
 	c.JSON(http.StatusOK, item.ListItem())
 }
 
+func (h *Handler) assign(c *gin.Context) {
+	var input struct {
+		ID        int64 `json:"id"`
+		ProjectID int64 `json:"project_id"`
+	}
+	if err := json.NewDecoder(c.Request.Body).Decode(&input); err != nil {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid request body"))
+		return
+	}
+	if input.ID < 1 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid build id"))
+		return
+	}
+	item, err := h.repo.AssignProject(c.Request.Context(), input.ID, input.ProjectID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			platformhttp.WriteError(c, platformhttp.NotFound("build not found"))
+			return
+		}
+		platformhttp.WriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, item.ListItem())
+}
+
 func (h *Handler) delete(c *gin.Context) {
 	var input struct {
 		ID int64 `json:"id"`
@@ -152,10 +178,16 @@ func writeMutationError(c *gin.Context, err error) {
 func parseListFilter(c *gin.Context) ListFilter {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(c.DefaultQuery("page_size", "20"))
+	var projectID *int64
+	if id, err := strconv.ParseInt(c.Query("project_id"), 10, 64); err == nil {
+		projectID = &id
+	}
 	return ListFilter{
-		Status:   Status(c.Query("status")),
-		Search:   c.Query("search"),
-		Page:     page,
-		PageSize: pageSize,
+		ProjectID:  projectID,
+		Unassigned: c.Query("unassigned") == "true",
+		Status:     Status(c.Query("status")),
+		Search:     c.Query("search"),
+		Page:       page,
+		PageSize:   pageSize,
 	}
 }

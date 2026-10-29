@@ -12,7 +12,7 @@ def seed(connection):
         closure = "archived" if index == 4 else "abandoned" if index == 5 else ""
         connection.execute(
             "INSERT INTO projects (id,name,slug,tagline,status,phase,goal,boundary,current_work,progress_percent,closure_kind,closure_reason) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)",
-            (index, f"验收项目 {index}", f"editorial-test-{index}", "隔离环境的项目说明", "archived" if closure else "published", phase,
+            (index, f"验收项目 {index}", f"editorial-test-{index}", "隔离环境的项目说明", "published", phase,
              "验证真实目标", "保持范围清楚", "正在验证主路径", 37, closure, "验证结束，归档保留" if index == 4 else "投入成本超过收益，停止开发" if index == 5 else ""),
         )
     connection.execute("INSERT INTO post_categories (id,name,slug,description) VALUES (1,'验收合集','editorial-test-collection','连续阅读的验收合集')")
@@ -31,6 +31,7 @@ def seed(connection):
              '["验证"]', "2026-09-01 10:00:00" if index == 23 else f"2026-10-{min(index,21):02d} 09:00:00"),
         )
     connection.execute("INSERT INTO builds (name,slug,stage,status,project_id,latest_progress,progressed_at) VALUES ('验收构建','editorial-test-build','development','published',2,'主链路已接通','2026-10-18 08:00:00')")
+    connection.execute("INSERT INTO builds (name,slug,stage,status,one_liner) VALUES ('验收旧进展','editorial-test-legacy-build','prototype','draft','改版前没有关联项目的进展')")
     connection.commit()
 
 

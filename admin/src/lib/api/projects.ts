@@ -1,6 +1,6 @@
 import { apiFetch, apiJson } from "@/lib/api/client";
 
-export type ProjectStatus = "draft" | "published" | "archived";
+export type ProjectStatus = "draft" | "published";
 
 export type ProjectListItem = {
   phase: "" | "research" | "building" | "live" | "waning";
@@ -39,6 +39,20 @@ export type ProjectDetail = ProjectListItem & {
   content_md: string;
   content_html: string;
   source_format: "markdown" | "mdx" | "tiptap" | "html";
+};
+
+export type ProjectRelatedRecord = {
+  id: number;
+  title: string;
+  slug: string;
+  status: string;
+  visibility: string;
+  date: string;
+};
+
+export type ProjectRelated = {
+  articles: ProjectRelatedRecord[];
+  notes: ProjectRelatedRecord[];
 };
 
 export type ProjectArtifact = {
@@ -92,6 +106,10 @@ export function listAdminProjects(params: ProjectListParams = {}) {
 
 export function getAdminProject(id: number) {
   return apiJson<ProjectDetail>(`/api/admin/projects/detail?id=${id}`);
+}
+
+export function getAdminProjectRelated(id: number) {
+  return apiJson<ProjectRelated>(`/api/admin/projects/related?id=${id}`);
 }
 
 export function createAdminProject(input: ProjectInput) {
