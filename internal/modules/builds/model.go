@@ -73,10 +73,12 @@ type BuildListItem struct {
 }
 
 type ListFilter struct {
-	Status   Status
-	Search   string
-	Page     int
-	PageSize int
+	ProjectID  *int64
+	Unassigned bool
+	Status     Status
+	Search     string
+	Page       int
+	PageSize   int
 }
 
 type ListResult struct {
@@ -88,19 +90,20 @@ type ListResult struct {
 }
 
 type CreateInput struct {
-	ProjectID      *int64 `json:"project_id"`
-	Name           string `json:"name"`
-	Slug           string `json:"slug"`
-	OneLiner       string `json:"one_liner"`
-	Stage          string `json:"stage"`
-	RoundGoal      string `json:"round_goal"`
-	LatestProgress string `json:"latest_progress"`
-	NextStep       string `json:"next_step"`
-	DetailURL      string `json:"detail_url"`
-	DemoURL        string `json:"demo_url"`
-	RepoURL        string `json:"repo_url"`
-	Status         string `json:"status"`
-	SortOrder      int    `json:"sort_order"`
+	ProjectID      *int64     `json:"project_id"`
+	ProgressedAt   *time.Time `json:"progressed_at"`
+	Name           string     `json:"name"`
+	Slug           string     `json:"slug"`
+	OneLiner       string     `json:"one_liner"`
+	Stage          string     `json:"stage"`
+	RoundGoal      string     `json:"round_goal"`
+	LatestProgress string     `json:"latest_progress"`
+	NextStep       string     `json:"next_step"`
+	DetailURL      string     `json:"detail_url"`
+	DemoURL        string     `json:"demo_url"`
+	RepoURL        string     `json:"repo_url"`
+	Status         string     `json:"status"`
+	SortOrder      int        `json:"sort_order"`
 }
 
 func (f ListFilter) normalizedPage() int {
@@ -165,6 +168,9 @@ func (i *CreateInput) Validate() error {
 		return errors.New("name is required")
 	}
 	i.normalize()
+	if i.ProjectID == nil {
+		return errors.New("project_id is required")
+	}
 	if i.Name == "" {
 		return errors.New("name is required")
 	}
@@ -202,13 +208,8 @@ func (i *CreateInput) Validate() error {
 	default:
 		return fmt.Errorf("invalid status %q", i.Status)
 	}
-	if i.Status == string(StatusPublished) {
-		if i.OneLiner == "" {
-			return errors.New("published builds require a one-liner")
-		}
-		if i.LatestProgress == "" && i.NextStep == "" {
-			return errors.New("published builds require latest progress or next step")
-		}
+	if i.Status == string(StatusPublished) && i.LatestProgress == "" {
+		return errors.New("published progress requires latest_progress")
 	}
 	for _, field := range []struct {
 		name  string

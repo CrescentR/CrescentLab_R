@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/lib/pq"
@@ -110,7 +111,7 @@ func buildProjectWhereClause(filter ListFilter) (string, []any) {
 	args := []any{}
 
 	if filter.Public {
-		where = append(where, "status IN ('published', 'archived')")
+		where = append(where, "status = 'published'")
 	} else if filter.Status != "" {
 		where = append(where, "status = ?")
 		args = append(args, string(filter.Status))
@@ -122,6 +123,50 @@ func buildProjectWhereClause(filter ListFilter) (string, []any) {
 	}
 
 	return " WHERE " + strings.Join(where, " AND "), args
+}
+
+// Related lists every article and note linked to a project, including drafts and private items.
+func (r *Repository) Related(ctx context.Context, projectID int64) (RelatedRecords, error) {
+	if r == nil || r.db == nil {
+		return RelatedRecords{}, errors.New("projects repository database is nil")
+	}
+	articles, err := r.relatedRecords(ctx, "SELECT id, title, slug, status, visibility, published_at, created_at FROM articles WHERE project_id = ? AND deleted_at IS NULL", projectID)
+	if err != nil {
+		return RelatedRecords{}, fmt.Errorf("list related articles: %w", err)
+	}
+	notes, err := r.relatedRecords(ctx, "SELECT id, title, '', status, visibility, NULL, created_at FROM observatory_notes WHERE project_id = ? AND deleted_at IS NULL", projectID)
+	if err != nil {
+		return RelatedRecords{}, fmt.Errorf("list related notes: %w", err)
+	}
+	return RelatedRecords{Articles: articles, Notes: notes}, nil
+}
+
+func (r *Repository) relatedRecords(ctx context.Context, query string, projectID int64) ([]RelatedRecord, error) {
+	if r.driver == "postgres" {
+		query = convertPlaceholders(query)
+	}
+	rows, err := r.db.QueryContext(ctx, query, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	records := make([]RelatedRecord, 0)
+	for rows.Next() {
+		var record RelatedRecord
+		var publishedAt sql.NullTime
+		if err := rows.Scan(&record.ID, &record.Title, &record.Slug, &record.Status, &record.Visibility, &publishedAt, &record.Date); err != nil {
+			return nil, err
+		}
+		if publishedAt.Valid {
+			record.Date = publishedAt.Time
+		}
+		records = append(records, record)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	sort.Slice(records, func(a, b int) bool { return records[a].Date.After(records[b].Date) })
+	return records, nil
 }
 
 func (r *Repository) GetBySlug(ctx context.Context, slug string) (Project, error) {

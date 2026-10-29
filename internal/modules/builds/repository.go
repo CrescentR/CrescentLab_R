@@ -86,6 +86,13 @@ func (r *Repository) List(ctx context.Context, filter ListFilter) (ListResult, e
 func buildWhereClause(filter ListFilter) (string, []any) {
 	where := []string{"deleted_at IS NULL"}
 	args := []any{}
+	if filter.ProjectID != nil {
+		where = append(where, "project_id = ?")
+		args = append(args, *filter.ProjectID)
+	}
+	if filter.Unassigned {
+		where = append(where, "project_id IS NULL")
+	}
 	if filter.Status != "" {
 		where = append(where, "status = ?")
 		args = append(args, string(filter.Status))
@@ -122,6 +129,9 @@ func (r *Repository) Create(ctx context.Context, input CreateInput) (Build, erro
 
 	now := time.Now().UTC()
 	progressedAt := now
+	if input.ProgressedAt != nil {
+		progressedAt = input.ProgressedAt.UTC()
+	}
 	var publishedAt any
 	if input.Status == string(StatusPublished) {
 		publishedAt = now
@@ -176,6 +186,11 @@ func (r *Repository) Update(ctx context.Context, id int64, input CreateInput) (B
 
 	now := time.Now().UTC()
 	progressedAt := now
+	if input.ProgressedAt != nil {
+		progressedAt = input.ProgressedAt.UTC()
+	} else if current.ProgressedAt != nil {
+		progressedAt = *current.ProgressedAt
+	}
 	publishedAt := current.PublishedAt
 	if input.Status == string(StatusPublished) && publishedAt == nil {
 		publishedAt = &now
@@ -203,6 +218,32 @@ WHERE id = ? AND deleted_at IS NULL`
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
 		return Build{}, fmt.Errorf("update build rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return Build{}, sql.ErrNoRows
+	}
+	return r.GetByID(ctx, id)
+}
+
+// AssignProject links a legacy progress record to a project without touching its other fields.
+func (r *Repository) AssignProject(ctx context.Context, id, projectID int64) (Build, error) {
+	if r == nil || r.db == nil {
+		return Build{}, errors.New("builds repository database is nil")
+	}
+	if err := projectref.Validate(ctx, r.db, r.driver, &projectID); err != nil {
+		return Build{}, err
+	}
+	query := "UPDATE builds SET project_id = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND deleted_at IS NULL"
+	if r.driver == "postgres" {
+		query = convertPlaceholders(query)
+	}
+	result, err := r.db.ExecContext(ctx, query, projectID, id)
+	if err != nil {
+		return Build{}, fmt.Errorf("assign build project: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return Build{}, fmt.Errorf("assign build project rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
 		return Build{}, sql.ErrNoRows

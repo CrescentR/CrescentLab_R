@@ -18,7 +18,6 @@ type ProjectStatus string
 const (
 	ProjectStatusDraft     ProjectStatus = "draft"
 	ProjectStatusPublished ProjectStatus = "published"
-	ProjectStatusArchived  ProjectStatus = "archived"
 )
 
 type EditorialFields struct {
@@ -79,6 +78,21 @@ type ProjectDetail struct {
 	ContentMD    string `json:"content_md"`
 	ContentHTML  string `json:"content_html"`
 	SourceFormat string `json:"source_format"`
+}
+
+// RelatedRecord is a compact view of an article or note linked to a project.
+type RelatedRecord struct {
+	ID         int64     `json:"id"`
+	Title      string    `json:"title"`
+	Slug       string    `json:"slug"`
+	Status     string    `json:"status"`
+	Visibility string    `json:"visibility"`
+	Date       time.Time `json:"date"`
+}
+
+type RelatedRecords struct {
+	Articles []RelatedRecord `json:"articles"`
+	Notes    []RelatedRecord `json:"notes"`
 }
 
 type ListFilter struct {
@@ -169,11 +183,8 @@ func (p Project) ListItem() ProjectListItem {
 }
 
 func (i CreateInput) Validate() error {
-	if (i.Status == "published" || i.Status == "archived") && i.Phase == "" {
+	if i.Status == "published" && i.Phase == "" {
 		return errors.New("公开项目必须填写月相阶段")
-	}
-	if i.Status == "archived" && i.Phase != "waning" {
-		return errors.New("归档项目必须处于下弦阶段")
 	}
 
 	switch i.Phase {
@@ -232,7 +243,7 @@ func (i CreateInput) Validate() error {
 	}
 	if i.Status != "" {
 		switch ProjectStatus(i.Status) {
-		case ProjectStatusDraft, ProjectStatusPublished, ProjectStatusArchived:
+		case ProjectStatusDraft, ProjectStatusPublished:
 		default:
 			return fmt.Errorf("invalid status %q", i.Status)
 		}

@@ -26,6 +26,7 @@ func NewHandler(repo *Repository) *Handler {
 func (h *Handler) RegisterAdminRoutes(group *gin.RouterGroup) {
 	group.GET("/projects", h.adminList)
 	group.GET("/projects/detail", h.adminDetail)
+	group.GET("/projects/related", h.adminRelated)
 	group.POST("/projects", h.create)
 	group.POST("/projects/preview", h.preview)
 	group.POST("/projects/update", h.update)
@@ -60,7 +61,7 @@ func (h *Handler) publicList(c *gin.Context) {
 
 func (h *Handler) publicDetail(c *gin.Context) {
 	project, err := h.repo.GetBySlug(c.Request.Context(), c.Param("slug"))
-	if err != nil || (project.Status != ProjectStatusPublished && project.Status != ProjectStatusArchived) {
+	if err != nil || project.Status != ProjectStatusPublished {
 		platformhttp.WriteError(c, platformhttp.NotFound("project not found"))
 		return
 	}
@@ -93,6 +94,20 @@ func (h *Handler) adminDetail(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, project.Detail())
+}
+
+func (h *Handler) adminRelated(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Query("id"), 10, 64)
+	if err != nil || id < 1 {
+		platformhttp.WriteError(c, platformhttp.ValidationError("invalid project id"))
+		return
+	}
+	related, err := h.repo.Related(c.Request.Context(), id)
+	if err != nil {
+		platformhttp.WriteError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, related)
 }
 
 func (h *Handler) create(c *gin.Context) {
