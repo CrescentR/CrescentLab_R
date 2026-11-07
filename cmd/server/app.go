@@ -20,6 +20,7 @@ import (
 	"CrescentLab_R/internal/platform/config"
 	"CrescentLab_R/internal/platform/database"
 	platformhttp "CrescentLab_R/internal/platform/http"
+	"CrescentLab_R/internal/platform/http/handler"
 	"CrescentLab_R/internal/platform/http/middleware"
 	"CrescentLab_R/internal/platform/logger"
 	"CrescentLab_R/internal/shared/auth"
@@ -79,7 +80,7 @@ func (a *App) Run() error {
 		return err
 	}
 
-	a.httpServer.RegisterHealthRoutes(db)
+	handler.NewHealthHandler(db).RegisterRoutes(engine.Group(""))
 
 	// 认证接口（公开）
 	userRepo := usersmodule.NewRepository(db.SQL(), db.Driver())

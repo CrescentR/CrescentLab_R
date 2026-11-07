@@ -55,3 +55,6 @@ docs/swagger.json
 docs/swagger.yaml
 
 .nextvibe
+
+# Stray Next.js build output
+frontend/static/
