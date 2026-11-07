@@ -1,15 +1,12 @@
 package auth
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
-	"regexp"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -60,57 +57,6 @@ type userInfo struct {
 	Username string `json:"username"`
 	Nickname string `json:"nickname"`
 	IsAdmin  bool   `json:"is_admin"`
-}
-
-var usernamePattern = regexp.MustCompile(`^[a-zA-Z0-9_]{3,32}$`)
-
-type registerRequest struct {
-	Username string `json:"username"`
-	Nickname string `json:"nickname"`
-	Password string `json:"password"`
-}
-
-func (h *Handler) register(c *gin.Context) {
-	var req registerRequest
-	if err := json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
-		platformhttp.WriteError(c, platformhttp.ValidationError("请求格式错误"))
-		return
-	}
-	username := strings.TrimSpace(req.Username)
-	nickname := strings.TrimSpace(req.Nickname)
-	if !usernamePattern.MatchString(username) {
-		platformhttp.WriteError(c, platformhttp.ValidationError("用户名须为 3-32 位字母、数字或下划线"))
-		return
-	}
-	if nickname == "" || utf8.RuneCountInString(nickname) > 32 {
-		platformhttp.WriteError(c, platformhttp.ValidationError("昵称须为 1-32 个字符"))
-		return
-	}
-	if len(req.Password) < 8 || len(req.Password) > 72 {
-		platformhttp.WriteError(c, platformhttp.ValidationError("密码长度须为 8-72 位"))
-		return
-	}
-	if _, err := h.userRepo.GetByUsernameKey(c.Request.Context(), strings.ToLower(username)); err == nil {
-		platformhttp.WriteError(c, platformhttp.Conflict("用户名已存在"))
-		return
-	} else if !errors.Is(err, sql.ErrNoRows) {
-		platformhttp.WriteError(c, platformhttp.InternalError(""))
-		return
-	}
-	passwordHash, err := auth.HashPassword(req.Password)
-	if err != nil {
-		platformhttp.WriteError(c, platformhttp.InternalError(""))
-		return
-	}
-	user, err := h.userRepo.Create(c.Request.Context(), users.CreateInput{
-		Username: username, UsernameKey: strings.ToLower(username), PasswordHash: passwordHash,
-		Nickname: nickname, Status: users.StatusActive,
-	})
-	if err != nil {
-		platformhttp.WriteError(c, platformhttp.InternalError(""))
-		return
-	}
-	h.writeTokens(c, http.StatusCreated, user)
 }
 
 // login 处理普通用户和管理员登录请求。

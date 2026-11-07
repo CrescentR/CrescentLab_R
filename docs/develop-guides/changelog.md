@@ -4,6 +4,8 @@
 
 - 健康检查统一为 `GET /healthz/live`（存活）与 `GET /healthz/ready`（数据库 + 核心表就绪）：原先 README 承诺的这两个接口实现了但从未挂载，实际只有 `/api/health` 生效；现挂载前者并移除 `/api/health`。`docker-compose.yml` 为后端增加基于 `/healthz/ready` 的 healthcheck，前台与后台等后端就绪后再启动。移除误提交的 `frontend/static` 构建产物并加入 `.gitignore`。
 
+- 清理无用代码：按 knip 结果删除前台 29 个、后台 12 个未被引用的文件（旧首页区块、未用 UI 组件、mock/人设数据、占位面板等），移除未使用的依赖（前台 `@gsap/react`、`axios`、`clsx`、`gsap`、`tailwind-merge`，后台 `@gsap/react`、`@tiptap/extension-color`、`axios`、`gsap`）。删除关闭公开评论与注册后残留的后端代码（评论公开读取／提交 handler、`/auth/register` handler）及后台 API 中对应的前台函数，评论审核不受影响。删除与项目无关的遗留目录和文件：`blog-site/`、`cms-admin-design/`、根目录 `design-qa.md`、`AGENTS/docs/DEVELOPMENT_PLAN.md`。
+
 ## 2026-10-29
 
 - 项目改为「长期线索」：进展（builds）必须关联项目，在项目编辑页新增「过程」分区按日期记录、编辑和删除，并列出关联的长文与札记（含草稿／私有）；独立的「构建中」后台入口移除，`/admin/builds` 跳转到项目。项目发布状态只保留草稿／公开，结束统一用下弦 + 归档／放弃表示，旧 `archived` 项目需人工执行 `database/{sqlite,postgres}/2026-10-29-projects.sql`。没有关联项目的旧进展集中显示在后台项目列表顶部「未归属的进展」区，可直接指定项目或删除。后台项目列表按月相分组、操作常驻，月相与退出类型改为单选卡片，百分比进度不再录入和展示（数据列保留）。前台项目详情页新增月相轨迹、「下一步」和完整过程时间线，列表页去掉进度条并链接到全部过程。修复编辑进展时日期被重置为当天的问题。详情及验收见 `docs/vibe/2026-10-29-projects-as-threads.md`。

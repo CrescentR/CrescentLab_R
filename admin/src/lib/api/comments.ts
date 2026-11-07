@@ -9,18 +9,6 @@ export type CommentItem = {
   created_at: string;
 };
 
-export function listComments(articleId: number) {
-  return apiJson<{ items: CommentItem[] }>(`/api/comments?article_id=${articleId}`);
-}
-
-export function createComment(articleId: number, content: string) {
-  return apiJson<CommentItem>("/api/comments", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ article_id: articleId, content }),
-  });
-}
-
 export function listPendingComments() {
   return apiJson<{ items: CommentItem[] }>("/api/admin/comments");
 }
