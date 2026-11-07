@@ -171,7 +171,7 @@ go run main.go
 3. 另开终端验证健康检查：
 
 ```bash
-curl http://localhost:8091/api/health
+curl http://localhost:8091/healthz/ready
 ```
 
 4. 另开终端启动前端：
