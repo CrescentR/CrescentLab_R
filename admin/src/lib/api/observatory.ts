@@ -58,12 +58,6 @@ export type ObservatoryListParams = {
   search?: string;
 };
 
-export function listPublicObservatoryNotes(params: ObservatoryListParams = {}) {
-  return apiJson<ObservatoryListResponse>(`/api/observatory${toQueryString(params)}`, {
-    cache: "no-store",
-  });
-}
-
 export function listObservatoryNotes(params: ObservatoryListParams = {}) {
   return apiJson<ObservatoryListResponse>(`/api/admin/observatory${toQueryString(params)}`);
 }

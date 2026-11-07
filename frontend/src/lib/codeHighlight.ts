@@ -65,14 +65,6 @@ if (lowlight.registered("xml") && !lowlight.registered("vue")) {
   lowlight.registerAlias({ xml: ["vue"] });
 }
 
-/** Highlight code blocks inside a live DOM tree (preview windows, etc.). */
-export function highlightCodeBlocks(root: ParentNode) {
-  const document = root.ownerDocument ?? (root as Document);
-  ensureArticleCodeStyles(document);
-  decorateCodeBlocks(document, root);
-  bindArticleCodeCopy(document, root);
-}
-
 /**
  * Return HTML with code cards already decorated.
  * Prefer this for React pages so re-renders do not wipe DOM mutations.

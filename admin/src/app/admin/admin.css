@@ -1276,7 +1276,7 @@
   transform: translateX(-50%);
   border: 1px solid var(--border-soft);
   border-radius: 16px;
-  background: #fff;
+  background: var(--surface);
   box-shadow: 0 18px 44px rgba(35, 48, 39, 0.16);
   padding: 12px;
   pointer-events: auto;
@@ -1460,7 +1460,7 @@
 .tiptap-menu-clear {
   width: 100%;
   margin-top: 10px;
-  background: #f3f4f1;
+  background: var(--surface-field);
   color: var(--muted);
   padding: 9px 10px;
   font-weight: 600;
@@ -1554,7 +1554,7 @@
   border: 1px solid rgba(57, 120, 100, 0.22);
   border-radius: 6px;
   background: rgba(57, 120, 100, 0.12);
-  color: #1f5c4a;
+  color: var(--teal);
   font-family: "JetBrains Mono", Consolas, monospace;
   font-size: 0.9em;
   padding: 0.12em 0.42em;
@@ -2172,8 +2172,8 @@
 }
 
 .insert-image-btn-primary {
-  background: #3d4a45;
-  color: #f7faf7;
+  background: var(--text-strong);
+  color: var(--surface);
 }
 
 .insert-image-btn-primary:hover {

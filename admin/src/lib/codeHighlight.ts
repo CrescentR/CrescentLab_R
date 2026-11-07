@@ -73,24 +73,8 @@ export function highlightCodeBlocks(root: ParentNode) {
   bindArticleCodeCopy(document, root);
 }
 
-/**
- * Return HTML with code cards already decorated.
- * Prefer this for React pages so re-renders do not wipe DOM mutations.
- */
-export function highlightArticleHtml(html: string): string {
-  if (typeof DOMParser === "undefined") return html;
-  const document = new DOMParser().parseFromString(
-    `<div id="crescent-hl-root">${html}</div>`,
-    "text/html",
-  );
-  const root = document.getElementById("crescent-hl-root");
-  if (!root) return html;
-  decorateCodeBlocks(document, root);
-  return root.innerHTML;
-}
-
 /** Event delegation for copy buttons inside decorated article HTML. */
-export function bindArticleCodeCopy(document: Document, root: ParentNode) {
+function bindArticleCodeCopy(document: Document, root: ParentNode) {
   ensureArticleCodeStyles(document);
   bindCopyDelegation(document, root);
 }

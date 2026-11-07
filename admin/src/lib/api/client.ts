@@ -11,7 +11,7 @@ export type AuthUser = {
   is_admin: boolean;
 };
 
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(
     public readonly code: string,
     message: string,
@@ -25,12 +25,12 @@ export class ApiError extends Error {
 
 // ---- token 存取 ----
 
-export function getAccessToken(): string | null {
+function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(ACCESS_TOKEN_KEY);
 }
 
-export function getRefreshToken(): string | null {
+function getRefreshToken(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem(REFRESH_TOKEN_KEY);
 }
@@ -56,7 +56,7 @@ function setTokens(accessToken: string, refreshToken: string, user: AuthUser) {
   localStorage.setItem(USER_KEY, JSON.stringify(user));
 }
 
-export function clearTokens() {
+function clearTokens() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
@@ -95,7 +95,7 @@ export async function getCurrentUser(): Promise<AuthUser> {
 
 let refreshPromise: Promise<string> | null = null;
 
-export async function refreshAccessToken(): Promise<string> {
+async function refreshAccessToken(): Promise<string> {
   const refreshToken = getRefreshToken();
   if (!refreshToken) {
     throw new ApiError("UNAUTHORIZED", "无 refresh token", 401);

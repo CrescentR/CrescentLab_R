@@ -144,14 +144,6 @@ export function publishAdminProject(id: number, input: ProjectInput) {
   });
 }
 
-export function previewProject(content_md: string) {
-  return apiJson<{ content_html: string }>("/api/admin/projects/preview", {
-    body: JSON.stringify({ content_md }),
-    headers: { "Content-Type": "application/json" },
-    method: "POST",
-  });
-}
-
 export function listProjectArtifacts(projectId: number) {
   return apiJson<{ items: ProjectArtifact[] }>(`/api/admin/projects/artifacts?project_id=${projectId}`);
 }

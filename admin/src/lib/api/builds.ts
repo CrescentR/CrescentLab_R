@@ -58,12 +58,6 @@ export type BuildListParams = {
   search?: string;
 };
 
-export function listPublicBuilds(params: BuildListParams = {}) {
-  return apiJson<BuildListResponse>(`/api/builds${toQueryString(params)}`, {
-    cache: "no-store",
-  });
-}
-
 export function listAdminBuilds(params: BuildListParams = {}) {
   return apiJson<BuildListResponse>(`/api/admin/builds${toQueryString(params)}`);
 }

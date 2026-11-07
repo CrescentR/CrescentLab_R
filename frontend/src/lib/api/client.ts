@@ -22,7 +22,7 @@ function resolveApiUrl(path: string): string {
   return `${BACKEND_URL}${path}`;
 }
 
-export async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
+async function apiFetch(path: string, init: RequestInit = {}): Promise<Response> {
   const url = resolveApiUrl(path);
 
   const headers = new Headers(init.headers);

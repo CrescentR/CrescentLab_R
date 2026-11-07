@@ -19,7 +19,7 @@ Go 测试文件与被测包放在同一目录下（遵循 Go 惯例），文件�
 
 ## 当前项目命令
 
-- Go 测试：`go test ./...`
+- Go 测试：`go test . ./cmd/... ./internal/...`
 - 前端 Lint：在 `frontend` 目录执行 `pnpm lint`
 - 前端类型检查：在 `frontend` 目录执行 `pnpm typecheck`
 - 前端生产构建：在 `frontend` 目录执行 `pnpm build`

@@ -1,9 +1,7 @@
-import type { CSSProperties } from "react";
+const SITE_SETTINGS_SCOPE = "site";
+const BRANDING_SETTINGS_GROUP_KEY = "branding";
 
-export const SITE_SETTINGS_SCOPE = "site";
-export const BRANDING_SETTINGS_GROUP_KEY = "branding";
-
-export const brandingSettingKeys = [
+const brandingSettingKeys = [
   "siteLogoUrl",
   "adminLogoUrl",
   "defaultAvatarUrl",
@@ -24,7 +22,7 @@ export type SiteSettingRow = {
 
 export type SiteBranding = Record<BrandingSettingKey, string>;
 
-export const brandingSettingRows: SiteSettingRow[] = [
+const brandingSettingRows: SiteSettingRow[] = [
   {
     scope: SITE_SETTINGS_SCOPE,
     group_key: BRANDING_SETTINGS_GROUP_KEY,
@@ -69,7 +67,7 @@ export const brandingSettingRows: SiteSettingRow[] = [
 
 export const siteBranding = resolveSiteBranding(brandingSettingRows);
 
-export function resolveSiteBranding(rows: SiteSettingRow[]): SiteBranding {
+function resolveSiteBranding(rows: SiteSettingRow[]): SiteBranding {
   const branding = {} as SiteBranding;
 
   for (const key of brandingSettingKeys) {
@@ -78,12 +76,4 @@ export function resolveSiteBranding(rows: SiteSettingRow[]): SiteBranding {
   }
 
   return branding;
-}
-
-export function imageUrlStyle(url: string) {
-  return { "--hero-image": `url("${url}")` } as CSSProperties;
-}
-
-export function backgroundImageStyle(url: string) {
-  return { backgroundImage: `url("${url}")` } as CSSProperties;
 }

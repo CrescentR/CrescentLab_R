@@ -31,6 +31,7 @@ ARG ADMIN_URL=http://localhost:3001
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV BACKEND_URL=${BACKEND_URL}
 ENV NEXT_PUBLIC_ADMIN_URL=${ADMIN_URL}
+# pnpm 版本须与 package.json 的 packageManager 保持一致
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
 RUN pnpm config set registry "${NPM_REGISTRY}" \
@@ -57,6 +58,7 @@ ARG PUBLIC_SITE_URL=http://localhost:3000
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV BACKEND_URL=${BACKEND_URL}
 ENV NEXT_PUBLIC_PUBLIC_SITE_URL=${PUBLIC_SITE_URL}
+# pnpm 版本须与 package.json 的 packageManager 保持一致
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 COPY admin/package.json admin/pnpm-lock.yaml ./
 RUN pnpm config set registry "${NPM_REGISTRY}" \

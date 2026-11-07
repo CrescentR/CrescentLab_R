@@ -15,16 +15,16 @@ var errorLog = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Leve
 type ErrorCode string
 
 const (
-	CodeUnauthorized      ErrorCode = "UNAUTHORIZED"
-	CodeTokenExpired      ErrorCode = "TOKEN_EXPIRED"
-	CodeInvalidToken      ErrorCode = "INVALID_TOKEN"
-	CodeForbidden         ErrorCode = "FORBIDDEN"
-	CodeNotFound          ErrorCode = "NOT_FOUND"
-	CodeValidationError   ErrorCode = "VALIDATION_ERROR"
-	CodeConflict          ErrorCode = "CONFLICT"
-	CodeRateLimited       ErrorCode = "RATE_LIMITED"
-	CodePayloadTooLarge   ErrorCode = "PAYLOAD_TOO_LARGE"
-	CodeInternalError     ErrorCode = "INTERNAL_ERROR"
+	CodeUnauthorized       ErrorCode = "UNAUTHORIZED"
+	CodeTokenExpired       ErrorCode = "TOKEN_EXPIRED"
+	CodeInvalidToken       ErrorCode = "INVALID_TOKEN"
+	CodeForbidden          ErrorCode = "FORBIDDEN"
+	CodeNotFound           ErrorCode = "NOT_FOUND"
+	CodeValidationError    ErrorCode = "VALIDATION_ERROR"
+	CodeConflict           ErrorCode = "CONFLICT"
+	CodeRateLimited        ErrorCode = "RATE_LIMITED"
+	CodePayloadTooLarge    ErrorCode = "PAYLOAD_TOO_LARGE"
+	CodeInternalError      ErrorCode = "INTERNAL_ERROR"
 	CodeServiceUnavailable ErrorCode = "SERVICE_UNAVAILABLE"
 )
 

@@ -182,7 +182,7 @@ export function ColorPickerMenu({ colors, initialHex, mode, onPick, onClear }: C
   );
 }
 
-export function normalizeHex(value: string): string {
+function normalizeHex(value: string): string {
   const trimmed = value.trim();
   if (/^[0-9a-fA-F]{6}$/.test(trimmed)) return `#${trimmed}`;
   if (/^#[0-9a-fA-F]{3}$/.test(trimmed)) {

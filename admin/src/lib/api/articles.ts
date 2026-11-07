@@ -77,16 +77,6 @@ export type ArticleListParams = {
   search?: string;
 };
 
-export function listPublicArticles(params: Omit<ArticleListParams, "status"> = {}) {
-  return apiJson<ArticleListResponse>(`/api/articles${toQueryString(params)}`, {
-    cache: "no-store",
-  });
-}
-
-export function getPublicArticle(slug: string) {
-  return apiJson<ArticleDetail>(`/api/articles/${encodeURIComponent(slug)}`);
-}
-
 export function listAdminArticles(params: ArticleListParams = {}) {
   return apiJson<ArticleListResponse>(`/api/admin/articles${toQueryString(params)}`);
 }

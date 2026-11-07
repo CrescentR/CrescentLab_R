@@ -23,16 +23,6 @@ export const fadeUp: Variants = {
   visible: { opacity: 1, y: 0, transition: { duration: duration.slow, ease: easing.enter } },
 };
 
-export const fadeRight: Variants = {
-  hidden: { opacity: 0, x: -24 },
-  visible: { opacity: 1, x: 0, transition: { duration: duration.slow, ease: easing.enter } },
-};
-
-export const fadeIn: Variants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: duration.slow, ease: easing.enter } },
-};
-
 export const scaleIn: Variants = {
   hidden: { opacity: 0, scale: 0.96 },
   visible: { opacity: 1, scale: 1, transition: { duration: duration.normal, ease: easing.enter } },
@@ -43,9 +33,6 @@ export const stagger: Variants = {
   visible: { transition: { staggerChildren: 0.08, delayChildren: 0.04 } },
 };
 
-// ── 视口配置 ──
-export const viewport = { once: true, amount: 0.2 } as const;
-
 // ── 微交互 ──
 export const buttonPress = {
   whileHover: { y: -2 },
@@ -53,12 +40,6 @@ export const buttonPress = {
   transition: { duration: duration.fast, ease: easing.standard },
 } as const;
 
-export const cardHover = {
-  whileHover: { y: -4 },
-  transition: { duration: duration.fast, ease: easing.standard },
-} as const;
-
 // ── 过渡快捷方式 ──
 export const transitionFast = { duration: duration.fast, ease: easing.standard } as const;
 export const transitionNormal = { duration: duration.normal, ease: easing.standard } as const;
-export const transitionSlow = { duration: duration.slow, ease: easing.enter } as const;

@@ -69,7 +69,7 @@ export const brandingSettingRows: SiteSettingRow[] = [
 
 export const siteBranding = resolveSiteBranding(brandingSettingRows);
 
-export function resolveSiteBranding(rows: SiteSettingRow[]): SiteBranding {
+function resolveSiteBranding(rows: SiteSettingRow[]): SiteBranding {
   const branding = {} as SiteBranding;
 
   for (const key of brandingSettingKeys) {
@@ -78,10 +78,6 @@ export function resolveSiteBranding(rows: SiteSettingRow[]): SiteBranding {
   }
 
   return branding;
-}
-
-export function imageUrlStyle(url: string) {
-  return { "--hero-image": `url("${url}")` } as CSSProperties;
 }
 
 export function backgroundImageStyle(url: string) {

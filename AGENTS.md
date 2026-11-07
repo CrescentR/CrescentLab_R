@@ -83,7 +83,7 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 3. 检查是否存在过度设计、过度防御或过度嵌套：过度设计通常表现为加入无关功能；过度防御通常表现为用非预期的回退或保底掩盖设计问题；过度嵌套通常表现为 helper 过多、调用链绕、没有遵循从上到下的阅读顺序。
 4. 认真评估测试脚本和测试用例的价值。对繁琐但只是在“给出靶子后评估靶子”的低价值测试，应建议清理或合并；保留能验证真实行为、关键路径和回归风险的测试。
 2. 开发完成之后必须按改动范围进行 检查 -> 测试 -> Lint：相关单元测试必跑；涉及接口时跑集成测试；涉及关键主链路时补跑端到端测试。测试脚本不完善时应完善脚本。
-3. 测试规范务必遵守 [testing-guidelines.md](docs/develop-guides/testing-guidelines.md) 中的规范，测试脚本务必放在 backend/test/unit、backend/test/integration 或 backend/test/e2e 对应目录下，并且在提交前确保测试通过。
+3. 测试规范务必遵守 [testing-guidelines.md](docs/develop-guides/testing-guidelines.md) 中的规范，Go 测试与被测包同目录（`*_test.go`），前端单元／集成／浏览器测试放在 backend/test/unit、backend/test/integration 或 backend/test/e2e 对应目录下，并且在提交前确保测试通过。
 4. 非常重要！千万不要使用过度的防御/回退机制来掩盖设计上的缺陷，良好的软件应该在预设的条件下运行，其余情况均应该及时发现问题/错误并修复，而不是通过增加冗余代码来掩盖问题。
 
 ### 需求沟通规范
@@ -94,10 +94,11 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - 该需求文档中，还应该包括本次任务的目标以及 checklist（简要）
 
 ### 前端开发规范
-- 使用 pnpm 管理
-- API 接口规范：所有的 API 接口都应该定义在 web/src/apis 下面
-- Icon 应该优先从 lucide-vue-next （推荐，但是需要注意尺寸）
-- 样式使用 less，非特殊情况必须使用 [base.css](web/src/assets/css/base.css) 中的颜色变量
+- 前端为两个独立的 Next.js（App Router）+ React + TypeScript 工程：`frontend/` 公开站，`admin/` 管理后台
+- 使用 pnpm 管理，版本以各自 `package.json` 的 `packageManager` 为准（与 Dockerfile 一致）
+- API 接口规范：公开站接口定义在 `frontend/src/lib/api` 下，后台接口定义在 `admin/src/lib/api` 下
+- Icon 优先使用 lucide-react（注意尺寸）
+- 样式使用 Tailwind CSS 与全局 CSS，非特殊情况必须使用 CSS 变量：公开站见 [frontend globals.css](frontend/src/app/globals.css)，后台见 [admin globals.css](admin/src/app/globals.css)
 - UI 设计规范详见 [design](docs/develop-guides/design.md)
 - 更新 [changelog.md](docs/develop-guides/changelog.md) 文档记录本次修改，多个类似的功能更新已经补充在一起
 - 开发完成后务必在 docker 中进行测试，可以读取 .env 获取管理员账户和密码；敏感值仅用于本地测试命令，不要输出到回复、日志摘录、测试文件或文档中
@@ -109,8 +110,8 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 **其他**：
 
 - 如果需要新建说明文档（仅开发者可见，非必要不创建），则保存在 `docs/vibe` 文件夹下面
-- 代码更新后要检查文档部分是否有需要更新的地方，文档的目录定义在 `docs/.vitepress/config.mts` 中
-- 如果新增面向用户的正式文档，除了补正文档内容外，还需要同步更新 `docs/.vitepress/config.mts` 的导航；Langfuse 集成说明归档在 `docs/agents` 分组下维护，并同步更新 `docs/develop-guides/changelog.md`
+- 代码更新后要检查 `README.md` 与 `docs/` 下的文档是否有需要更新的地方，`docs/vibe` 的索引见 [docs/vibe/README.md](docs/vibe/README.md)
+- 如果新增面向用户的正式文档，需同步更新 `docs/develop-guides/changelog.md`
 
 ## 提交规范
 

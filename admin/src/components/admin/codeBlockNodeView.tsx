@@ -4,7 +4,7 @@ import { NodeViewContent, NodeViewWrapper, type NodeViewProps } from "@tiptap/re
 import { Check, Copy, MoreHorizontal } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
-export const CODE_LANGUAGES = [
+const CODE_LANGUAGES = [
   { value: "plaintext", label: "Plaintext" },
   { value: "javascript", label: "Javascript" },
   { value: "typescript", label: "Typescript" },
