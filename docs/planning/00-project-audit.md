@@ -9,7 +9,7 @@
 | 项目项 | 当前结论 | 证据 |
 | --- | --- | --- |
 | 项目名称 | CrescentLab_R / CrescentLab | `go.mod`、`README.md`、前后端界面文案 |
-| 项目定位 | 自托管的个人技术实验室博客与内容管理系统，将文章、项目、实验记录和后台工作台收束在同一站点 | `README.md`、`AGENTS/docs/DEVELOPMENT_PLAN.md`、`frontend/src/lib/mockData.ts` |
+| 项目定位 | 自托管的个人技术实验室博客与内容管理系统，将文章、项目、实验记录和后台工作台收束在同一站点 | `README.md`、`frontend/src/lib/mockData.ts` |
 | 目标用户 | 当前可确认访客与站点管理员；“读者成员”只存在于前端原型，真实账号能力待实现 | `frontend/src/lib/personas.ts`、`frontend/src/store/uiStore.ts` |
 | 主要场景 | 公开展示实验室内容；管理员维护文章和站点设置；后续扩展媒体与评论 | 首页组件、后台路由、content/settings 模块 |
 | 当前技术栈 | Go 1.26、Gin、`database/sql`、Viper、SQLite/PostgreSQL；Next.js 16、React 19、TypeScript、Zustand、TanStack Query、Motion、R3F | `go.mod`、`frontend/package.json` |

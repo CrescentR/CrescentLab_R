@@ -86,7 +86,7 @@ func (a *App) Run() error {
 	tokenRepo := authmodule.NewRepository(db.SQL(), db.Driver())
 	authHandler := authmodule.NewHandler(authService, userRepo, tokenRepo, a.log)
 	authHandler.RegisterRoutes(engine.Group("/api"))
-	commentsHandler := commentsmodule.NewHandler(commentsmodule.NewRepository(db.SQL(), db.Driver()), userRepo)
+	commentsHandler := commentsmodule.NewHandler(commentsmodule.NewRepository(db.SQL(), db.Driver()))
 
 	// 公开文章接口（不需认证）
 	contentRepo := contentmodule.NewRepository(db.SQL(), db.Driver())
