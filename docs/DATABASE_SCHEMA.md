@@ -3,11 +3,14 @@
 本文档说明 PostgreSQL 首版数据库边界。完整 SQL 不写在 Markdown 中，位于：
 
 - `database/postgres/schema.sql`
-- `database/sqlite/schema.sql`（本地开发用，当前覆盖后台设置表）
+- `database/sqlite/schema.sql`（本地开发用，覆盖当前已挂载模块的全部表）
+- `database/{postgres,sqlite}/YYYY-MM-DD-*.sql`：已有库的手动升级 SQL，按日期顺序人工执行
 
 ## 执行方式
 
-数据库由人工创建，SQL 由人工导入，不做自动 migration，不做应用启动时自动建表。
+数据库由人工创建，SQL 由人工导入，不做自动 migration，不做应用启动时自动建表或补列。`schema.sql` 是表结构的唯一来源；新增表或字段时必须同时更新两个 `schema.sql`，并为已有库提供同日期的升级 SQL。
+
+应用启动不检查表结构；`GET /healthz/ready` 会检查已挂载模块依赖的全部表，缺表时返回 503，Docker Compose 中前台与后台会因此等待后端就绪。
 
 示例：
 

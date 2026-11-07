@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -119,10 +120,14 @@ func newObservatoryTestRouter(t *testing.T) (*gin.Engine, *Repository) {
 	}
 	t.Cleanup(func() { _ = db.Close() })
 
-	repo := NewRepository(db, "sqlite")
-	if err := repo.EnsureSchema(context.Background()); err != nil {
+	schema, err := os.ReadFile("../../../database/sqlite/schema.sql")
+	if err != nil {
 		t.Fatal(err)
 	}
+	if _, err := db.Exec(string(schema)); err != nil {
+		t.Fatal(err)
+	}
+	repo := NewRepository(db, "sqlite")
 	router := gin.New()
 	handler := NewHandler(repo)
 	handler.RegisterPublicRoutes(router.Group("/api"))

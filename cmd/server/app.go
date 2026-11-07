@@ -94,24 +94,12 @@ func (a *App) Run() error {
 	contentHandler := contentmodule.NewHandler(contentRepo)
 	contentHandler.RegisterPublicRoutes(engine.Group("/api"))
 	observatoryRepo := observatorymodule.NewRepository(db.SQL(), db.Driver())
-	if err := observatoryRepo.EnsureSchema(context.Background()); err != nil {
-		return err
-	}
 	observatoryHandler := observatorymodule.NewHandler(observatoryRepo)
 	observatoryHandler.RegisterPublicRoutes(engine.Group("/api"))
 	buildsRepo := buildsmodule.NewRepository(db.SQL(), db.Driver())
-	if err := buildsRepo.EnsureSchema(context.Background()); err != nil {
-		return err
-	}
 	buildsHandler := buildsmodule.NewHandler(buildsRepo)
 	buildsHandler.RegisterPublicRoutes(engine.Group("/api"))
 	projectsRepo := projectsmodule.NewRepository(db.SQL(), db.Driver())
-	if err := projectsRepo.EnsureContentSchema(context.Background()); err != nil {
-		return err
-	}
-	if err := projectsRepo.EnsureArtifactSchema(context.Background()); err != nil {
-		return err
-	}
 	projectsHandler := projectsmodule.NewHandler(projectsRepo)
 	projectsHandler.RegisterArtifactRoutes(engine.Group("/api"))
 	projectsHandler.RegisterPublicRoutes(engine.Group("/api"))
@@ -120,9 +108,6 @@ func (a *App) Run() error {
 		return err
 	}
 	storageRepo := storagemodule.NewRepository(db.SQL(), db.Driver(), storageKey)
-	if err := storageRepo.EnsureSchema(context.Background()); err != nil {
-		return err
-	}
 	storageHandler := storagemodule.NewHandler(storageRepo)
 	storageHandler.RegisterPublicRoutes(engine.Group(""))
 

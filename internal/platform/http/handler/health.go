@@ -80,9 +80,15 @@ func (h *HealthHandler) ready(c *gin.Context) {
 	})
 }
 
+// coreTables 是已挂载模块依赖的全部表。schema 只由 database/*/schema.sql 维护，启动时不再补建，缺表即视为未就绪。
+var coreTables = []string{
+	"users", "auth_tokens", "settings", "articles", "post_categories", "comments",
+	"projects", "project_artifacts", "builds", "observatory_notes", "storage_policies", "files",
+}
+
 // checkCoreTables 检查当前已实现模块依赖的核心表是否存在。
 func (h *HealthHandler) checkCoreTables(ctx context.Context) map[string]bool {
-	tables := []string{"users", "settings", "articles", "post_categories"}
+	tables := coreTables
 	checks := make(map[string]bool, len(tables))
 
 	sqlDB := h.db.SQL()

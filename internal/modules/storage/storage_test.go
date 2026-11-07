@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -58,9 +59,7 @@ func TestRepositoryMaintainsSingleDefaultPolicy(t *testing.T) {
 	}
 	defer db.Close()
 	repo := NewRepository(db, "sqlite")
-	if err := repo.EnsureSchema(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	applySQLiteSchema(t, db)
 	first, err := repo.Create(context.Background(), testPolicy("first", true))
 	if err != nil {
 		t.Fatal(err)
@@ -126,9 +125,7 @@ func TestCreatePolicyBindsSecretsWithoutReturningThem(t *testing.T) {
 	db.SetMaxOpenConns(1)
 
 	repo := NewRepository(db, "sqlite")
-	if err := repo.EnsureSchema(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	applySQLiteSchema(t, db)
 
 	router := gin.New()
 	NewHandler(repo).RegisterAdminRoutes(router.Group("/api/admin"))
@@ -169,9 +166,7 @@ func TestCreatePolicyRejectsLocalType(t *testing.T) {
 	defer db.Close()
 	db.SetMaxOpenConns(1)
 	repo := NewRepository(db, "sqlite")
-	if err := repo.EnsureSchema(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	applySQLiteSchema(t, db)
 	router := gin.New()
 	NewHandler(repo).RegisterAdminRoutes(router.Group("/api/admin"))
 	body, err := json.Marshal(map[string]any{
@@ -204,9 +199,7 @@ func TestRepositoryListsUploadedImageFiles(t *testing.T) {
 	}
 	defer db.Close()
 	repo := NewRepository(db, "sqlite")
-	if err := repo.EnsureSchema(context.Background()); err != nil {
-		t.Fatal(err)
-	}
+	applySQLiteSchema(t, db)
 	policy, err := repo.Create(context.Background(), testPolicy("default", true))
 	if err != nil {
 		t.Fatal(err)
@@ -249,5 +242,16 @@ func testPolicy(name string, isDefault bool) Policy {
 		AccessKeyID:     "key",
 		SecretAccessKey: "secret",
 		IsDefault:       isDefault,
+	}
+}
+
+func applySQLiteSchema(t *testing.T, db *sql.DB) {
+	t.Helper()
+	schema, err := os.ReadFile("../../../database/sqlite/schema.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(string(schema)); err != nil {
+		t.Fatal(err)
 	}
 }

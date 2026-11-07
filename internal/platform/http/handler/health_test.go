@@ -35,7 +35,7 @@ func TestReadyReportsMissingCoreTables(t *testing.T) {
 
 func TestReadyReturnsOKWhenCoreTablesExist(t *testing.T) {
 	db := openTestDB(t)
-	for _, table := range []string{"users", "settings", "articles", "post_categories"} {
+	for _, table := range coreTables {
 		if _, err := db.SQL().Exec("CREATE TABLE " + table + " (id INTEGER PRIMARY KEY)"); err != nil {
 			t.Fatalf("create %s: %v", table, err)
 		}

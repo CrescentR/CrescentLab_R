@@ -2,6 +2,8 @@
 
 ## 2026-11-08
 
+- 数据库表结构统一以 `database/{sqlite,postgres}/schema.sql` 为唯一来源：移除 builds、observatory、storage、projects 模块在应用启动时执行的建表／补列（`EnsureSchema` 等），与 `docs/DATABASE_SCHEMA.md` 中「不做启动时自动建表」的约定一致；相关测试改为导入 `schema.sql`。经比对，全新 SQLite 库仅导入 `schema.sql` 与再经旧版启动补建后的结构完全一致，PostgreSQL `schema.sql` 也已覆盖全部补建内容，已运行过旧版本的库无需额外升级。`/healthz/ready` 的核心表检查扩展为已挂载模块依赖的全部 12 张表，缺表时返回 503。
+
 - 健康检查统一为 `GET /healthz/live`（存活）与 `GET /healthz/ready`（数据库 + 核心表就绪）：原先 README 承诺的这两个接口实现了但从未挂载，实际只有 `/api/health` 生效；现挂载前者并移除 `/api/health`。`docker-compose.yml` 为后端增加基于 `/healthz/ready` 的 healthcheck，前台与后台等后端就绪后再启动。移除误提交的 `frontend/static` 构建产物并加入 `.gitignore`。
 
 - 清理无用代码：按 knip 结果删除前台 29 个、后台 12 个未被引用的文件（旧首页区块、未用 UI 组件、mock/人设数据、占位面板等），移除未使用的依赖（前台 `@gsap/react`、`axios`、`clsx`、`gsap`、`tailwind-merge`，后台 `@gsap/react`、`@tiptap/extension-color`、`axios`、`gsap`）。删除关闭公开评论与注册后残留的后端代码（评论公开读取／提交 handler、`/auth/register` handler）及后台 API 中对应的前台函数，评论审核不受影响。删除与项目无关的遗留目录和文件：`blog-site/`、`cms-admin-design/`、根目录 `design-qa.md`、`AGENTS/docs/DEVELOPMENT_PLAN.md`。

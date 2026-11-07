@@ -70,21 +70,11 @@ func TestArtifactVersionsPublishAndRollback(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer db.Close()
-	if _, err := db.Exec(`CREATE TABLE projects (
-  phase TEXT NOT NULL DEFAULT '' CHECK (phase IN ('', 'research', 'building', 'live', 'waning')),
-  goal TEXT NOT NULL DEFAULT '',
-  boundary TEXT NOT NULL DEFAULT '',
-  current_work TEXT NOT NULL DEFAULT '',
-  progress_percent INTEGER CHECK (progress_percent BETWEEN 0 AND 100),
-  closure_kind TEXT NOT NULL DEFAULT '' CHECK (closure_kind IN ('', 'archived', 'abandoned')),
-  closure_reason TEXT NOT NULL DEFAULT '',
-		id INTEGER PRIMARY KEY, public_id TEXT, owner_id INTEGER, name TEXT NOT NULL, slug TEXT NOT NULL,
-		tagline TEXT, description TEXT NOT NULL DEFAULT '', content_md TEXT NOT NULL DEFAULT '', content_html TEXT NOT NULL DEFAULT '', source_format TEXT NOT NULL DEFAULT 'markdown',
-		cover_url TEXT, repo_url TEXT, demo_url TEXT, status TEXT NOT NULL DEFAULT 'draft',
-		tech_stack TEXT NOT NULL DEFAULT '[]', sort_order INTEGER NOT NULL DEFAULT 0,
-		view_count INTEGER NOT NULL DEFAULT 0, published_at DATETIME, created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-		updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, deleted_at DATETIME
-	)`); err != nil {
+	schema, err := os.ReadFile("../../../database/sqlite/schema.sql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(string(schema)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.Exec("INSERT INTO projects (id, name, slug) VALUES (1, 'Demo', 'demo')"); err != nil {
@@ -92,9 +82,6 @@ func TestArtifactVersionsPublishAndRollback(t *testing.T) {
 	}
 
 	repository := NewRepository(db, "sqlite")
-	if err := repository.EnsureArtifactSchema(context.Background()); err != nil {
-		t.Fatal(err)
-	}
 	root := t.TempDir()
 	first, err := repository.CreateArtifact(context.Background(), 1, "first", "index.html", strings.NewReader("<h1>first</h1>"), root)
 	if err != nil {
