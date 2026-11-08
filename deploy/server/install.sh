@@ -19,14 +19,14 @@ install -m 755 "$REPO_ROOT/deploy/server/crescentlab-release-dispatch" /usr/loca
 
 install -d -o "$DEPLOY_USER" -g "$DEPLOY_USER" -m 700 "/home/$DEPLOY_USER/.ssh"
 {
-  printf 'restrict,command="/usr/bin/sudo -n /usr/local/sbin/crescentlab-release-dispatch" '
+  printf 'restrict,command="/usr/local/sbin/crescentlab-release-dispatch" '
   cat "$1"
 } > "/home/$DEPLOY_USER/.ssh/authorized_keys"
 chown "$DEPLOY_USER:$DEPLOY_USER" "/home/$DEPLOY_USER/.ssh/authorized_keys"
 chmod 600 "/home/$DEPLOY_USER/.ssh/authorized_keys"
 
 cat > /etc/sudoers.d/crescentlab-deploy <<EOF
-$DEPLOY_USER ALL=(root) NOPASSWD: /usr/local/sbin/crescentlab-release-dispatch
+$DEPLOY_USER ALL=(root) NOPASSWD: /usr/local/sbin/crescentlab-release
 EOF
 chmod 440 /etc/sudoers.d/crescentlab-deploy
 visudo -cf /etc/sudoers.d/crescentlab-deploy >/dev/null
