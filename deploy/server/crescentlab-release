@@ -1,0 +1,152 @@
+#!/usr/bin/env bash
+set -euo pipefail
+umask 077
+
+readonly PROJECT_NAME=crescentlab_r
+readonly PROJECT_DIR=/home/app/CrescentLab_R
+readonly BASE_COMPOSE="$PROJECT_DIR/docker-compose.yml"
+readonly ACTIONS_COMPOSE=/etc/crescentlab/compose.actions.yml
+readonly STATE_DIR=/var/lib/crescentlab-actions
+readonly LOCK_FILE=/run/lock/crescentlab-actions.lock
+readonly PUBLIC_SITE_URL=https://me.crescentr.cn
+readonly ADMIN_URL=https://isme.crescentr.cn
+
+exec 9>"$LOCK_FILE"
+flock -n 9 || { echo "another production operation is running" >&2; exit 75; }
+
+compose() {
+  docker compose --project-name "$PROJECT_NAME" --project-directory "$PROJECT_DIR" "$@"
+}
+
+wait_for_http() {
+  local url=$1
+  local attempts=${2:-30}
+  local i
+  for ((i = 1; i <= attempts; i++)); do
+    if curl --fail --silent --show-error --location --max-time 10 --output /dev/null "$url"; then
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+
+verify_release() {
+  docker exec "${PROJECT_NAME}-backend-1" wget -qO- http://127.0.0.1:8091/healthz/ready >/dev/null
+  docker exec "${PROJECT_NAME}-backend-1" wget -qO- 'http://127.0.0.1:8091/api/articles?page=1&page_size=1' >/dev/null
+  wait_for_http http://127.0.0.1:3000/
+  wait_for_http http://127.0.0.1:3001/login
+  wait_for_http "$PUBLIC_SITE_URL/"
+  wait_for_http "$ADMIN_URL/login"
+}
+
+verify_rollback() {
+  if ! docker exec "${PROJECT_NAME}-backend-1" wget -qO- http://127.0.0.1:8091/healthz/ready >/dev/null 2>&1; then
+    docker exec "${PROJECT_NAME}-backend-1" wget -qO- http://127.0.0.1:8091/api/health >/dev/null
+  fi
+  wait_for_http http://127.0.0.1:3000/
+  wait_for_http http://127.0.0.1:3001/login
+}
+
+snapshot_current() {
+  local snapshot_dir=$1
+  local timestamp=$2
+  local -a source_files=(-f "$BASE_COMPOSE")
+  if [[ -s "$STATE_DIR/current.env" ]]; then
+    source_files+=(-f "$ACTIONS_COMPOSE" --env-file "$STATE_DIR/current.env")
+  fi
+
+  compose "${source_files[@]}" config > "$snapshot_dir/compose.yml"
+  {
+    echo 'services:'
+    local service container image_id rollback_tag
+    for service in backend frontend admin; do
+      container=$(compose "${source_files[@]}" ps -q "$service")
+      [[ -n "$container" ]] || { echo "missing running service: $service" >&2; return 1; }
+      image_id=$(docker inspect --format '{{.Image}}' "$container")
+      rollback_tag="crescentlab-r-${service}:rollback-${timestamp}"
+      docker image tag "$image_id" "$rollback_tag"
+      printf '  %s:\n    image: %s\n' "$service" "$rollback_tag"
+    done
+  } > "$snapshot_dir/images.yml"
+}
+
+restore_snapshot() {
+  local snapshot_dir=$1
+  compose -f "$snapshot_dir/compose.yml" -f "$snapshot_dir/images.yml" up -d --no-build --remove-orphans
+  verify_rollback
+}
+
+deploy_release() {
+  local commit=$1 backend_image=$2 frontend_image=$3 admin_image=$4
+  local registry_user token timestamp run_dir
+
+  [[ $commit =~ ^[0-9a-f]{40}$ ]] || { echo "invalid commit" >&2; exit 64; }
+  [[ $backend_image =~ ^ghcr\.io/crescentr/crescentlab_r-backend@sha256:[0-9a-f]{64}$ ]] || { echo "invalid backend image" >&2; exit 64; }
+  [[ $frontend_image =~ ^ghcr\.io/crescentr/crescentlab_r-frontend@sha256:[0-9a-f]{64}$ ]] || { echo "invalid frontend image" >&2; exit 64; }
+  [[ $admin_image =~ ^ghcr\.io/crescentr/crescentlab_r-admin@sha256:[0-9a-f]{64}$ ]] || { echo "invalid admin image" >&2; exit 64; }
+  IFS= read -r registry_user
+  IFS= read -r token
+  [[ $registry_user =~ ^[A-Za-z0-9-]+$ && -n $token ]] || { echo "missing registry credential" >&2; exit 64; }
+
+  timestamp=$(date -u +%Y%m%dT%H%M%SZ)
+  run_dir="$STATE_DIR/runs/${timestamp}-${commit:0:12}"
+  install -d -m 700 "$run_dir/docker" "$run_dir/previous"
+  snapshot_current "$run_dir/previous" "$timestamp"
+
+  cat > "$run_dir/release.env" <<EOF
+BACKEND_IMAGE=$backend_image
+FRONTEND_IMAGE=$frontend_image
+ADMIN_IMAGE=$admin_image
+PUBLIC_SITE_URL=$PUBLIC_SITE_URL
+ADMIN_URL=$ADMIN_URL
+RELEASE_SHA=$commit
+EOF
+
+  DOCKER_CONFIG="$run_dir/docker" docker login ghcr.io --username "$registry_user" --password-stdin <<< "$token" >/dev/null
+  unset token
+  compose -f "$BASE_COMPOSE" -f "$ACTIONS_COMPOSE" --env-file "$run_dir/release.env" config > "$run_dir/effective.yml"
+  DOCKER_CONFIG="$run_dir/docker" compose -f "$BASE_COMPOSE" -f "$ACTIONS_COMPOSE" --env-file "$run_dir/release.env" pull backend frontend admin
+
+  if compose -f "$BASE_COMPOSE" -f "$ACTIONS_COMPOSE" --env-file "$run_dir/release.env" up -d --no-build --remove-orphans --wait --wait-timeout 120 \
+    && verify_release; then
+    install -m 600 "$run_dir/release.env" "$STATE_DIR/current.env"
+    install -m 600 "$run_dir/previous/compose.yml" "$STATE_DIR/previous.compose.yml"
+    install -m 600 "$run_dir/previous/images.yml" "$STATE_DIR/previous.images.yml"
+    printf '%s\n' "$commit" > "$STATE_DIR/current.commit"
+    echo "deployed commit ${commit:0:12}"
+    return 0
+  fi
+
+  echo "release verification failed; restoring previous containers" >&2
+  restore_snapshot "$run_dir/previous"
+  echo "previous release restored" >&2
+  return 1
+}
+
+rollback_release() {
+  [[ -s "$STATE_DIR/previous.compose.yml" && -s "$STATE_DIR/previous.images.yml" ]] || {
+    echo "no rollback snapshot is available" >&2
+    exit 66
+  }
+  compose -f "$STATE_DIR/previous.compose.yml" -f "$STATE_DIR/previous.images.yml" up -d --no-build --remove-orphans
+  verify_rollback
+  [[ ! -e "$STATE_DIR/current.env" ]] || mv "$STATE_DIR/current.env" "$STATE_DIR/rolled-back.env"
+  printf '%s\n' rolled-back > "$STATE_DIR/current.commit"
+  echo "rollback completed"
+}
+
+install -d -m 700 "$STATE_DIR/runs"
+case "${1:-}" in
+  deploy)
+    [[ $# -eq 5 ]] || exit 64
+    deploy_release "$2" "$3" "$4" "$5"
+    ;;
+  rollback)
+    [[ $# -eq 1 ]] || exit 64
+    rollback_release
+    ;;
+  *)
+    exit 64
+    ;;
+esac

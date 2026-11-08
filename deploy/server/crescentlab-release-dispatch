@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly RELEASE_COMMAND=/usr/local/sbin/crescentlab-release
+read -r -a request <<< "${SSH_ORIGINAL_COMMAND:-}"
+
+case "${request[0]:-}" in
+  deploy)
+    [[ ${#request[@]} -eq 5 ]] || exit 64
+    exec "$RELEASE_COMMAND" "${request[@]}"
+    ;;
+  rollback)
+    [[ ${#request[@]} -eq 1 ]] || exit 64
+    exec "$RELEASE_COMMAND" rollback
+    ;;
+  *)
+    exit 64
+    ;;
+esac

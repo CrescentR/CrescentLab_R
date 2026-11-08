@@ -2,6 +2,8 @@
 
 ## 2026-11-08
 
+- 增加 GitHub Actions 生产发布：测试并构建 amd64 后端、公开站和管理后台镜像，推送 GHCR 后以 digest 经受限 SSH 入口更新现有 Compose 项目；发布串行执行，严格校验主机密钥，失败自动回滚，并提供手动回滚入口。
+
 - 工程规范整理：`AGENTS.md` 前端规范改为实际技术栈（Next.js + React + Tailwind、lucide-react、`src/lib/api`、CSS 变量来源），移除不存在的 VitePress／Langfuse 文档约定，测试位置说明与 `testing-guidelines.md` 对齐；前台与后台 `package.json` 增加 `packageManager: pnpm@10.28.2`，与 Dockerfile 一致；后台 `admin.css` 中颜色菜单、清除按钮、行内代码与插入图片主按钮的硬编码颜色改为主题变量，修正深色模式下的白底和低对比（代码块保持独立浅色配色）；新增鉴权中间件测试；`Makefile`、README 与测试规范中的 Go 命令限定为 `. ./cmd/... ./internal/...`，不再扫描 `node_modules`；新增 `docs/vibe/README.md` 索引，标注当前有效、部分过时与已被取代的记录；按 knip 清理前后台未使用的导出、mock 数据与类型文件；新增 `.gitattributes` 统一 LF 换行。
 
 - 数据库表结构统一以 `database/{sqlite,postgres}/schema.sql` 为唯一来源：移除 builds、observatory、storage、projects 模块在应用启动时执行的建表／补列（`EnsureSchema` 等），与 `docs/DATABASE_SCHEMA.md` 中「不做启动时自动建表」的约定一致；相关测试改为导入 `schema.sql`。经比对，全新 SQLite 库仅导入 `schema.sql` 与再经旧版启动补建后的结构完全一致，PostgreSQL `schema.sql` 也已覆盖全部补建内容，已运行过旧版本的库无需额外升级。`/healthz/ready` 的核心表检查扩展为已挂载模块依赖的全部 12 张表，缺表时返回 503。

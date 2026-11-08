@@ -71,14 +71,14 @@ jwt_secret = "your-secret-here"
 
 ### 生产部署（Docker Compose）
 
-复制 `.env.example` 为服务器上的 `.env`，至少设置前台/后台域名，并让 Compose 使用独立的后端配置文件：
+复制 `.env.example` 为服务器上的 `.env`，至少设置前台/后台域名和独立的后端配置文件：
 
 ```bash
 cp .env.example .env
 cp data/conf.ini.example data/conf.ini
 ```
 
-将 `.env` 中的 `ADMIN_URL`、`PUBLIC_SITE_URL` 改为实际 HTTPS 地址，并将 `BACKEND_CONFIG` 改为 `data/conf.ini`。随后编辑 `data/conf.ini`：
+将 `.env` 中的 `ADMIN_URL`、`PUBLIC_SITE_URL` 改为实际 HTTPS 地址。Compose 将 `data/conf.ini` 只读挂载到后端容器；随后编辑该文件：
 
 - `[auth] jwt_secret` 设置固定的长随机字符串；
 - `[database] dsn` 填写服务器数据库地址；
@@ -92,7 +92,9 @@ docker compose up -d
 docker compose exec backend /app/crescentlab admin init --username admin --password '你的管理员密码'
 ```
 
-公开前台默认监听 3000，管理后台监听 3001。生产环境应通过反向代理分别绑定两个域名，并且不要将 8091 或 5432 暴露到公网。`postgres` 服务首次启动会执行 `database/postgres/schema.sql`；已有数据请保留 Compose 数据卷，不要随意执行 `docker compose down -v`。
+公开前台默认监听 3000，管理后台监听 3001。生产环境应通过反向代理分别绑定两个域名，并且不要将 8091 或数据库端口暴露到公网。当前 Compose 不创建数据库，也不会执行 schema 或升级 SQL；数据库初始化与升级必须人工审阅、备份后执行。已有数据请保留 Compose 数据卷，不要随意执行 `docker compose down -v`。
+
+正式环境由 [GitHub Actions 工作流](.github/workflows/deploy.yml) 构建三个 GHCR 镜像并按 digest 发布；服务器配置、所需 Variables/Secrets、验证和回滚边界见 [自动发布记录](docs/vibe/2026-11-08-github-actions-deployment.md)。
 
 ### 4. 启动
 
