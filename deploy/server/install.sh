@@ -7,6 +7,10 @@ set -euo pipefail
 readonly DEPLOY_USER=crescent-deploy
 readonly REPO_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 
+if ! command -v skopeo >/dev/null 2>&1; then
+  apt-get install -y skopeo
+fi
+
 if ! id "$DEPLOY_USER" >/dev/null 2>&1; then
   useradd --create-home --shell /bin/bash "$DEPLOY_USER"
 fi

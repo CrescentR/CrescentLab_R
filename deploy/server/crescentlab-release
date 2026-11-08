@@ -8,8 +8,16 @@ readonly BASE_COMPOSE="$PROJECT_DIR/docker-compose.yml"
 readonly ACTIONS_COMPOSE=/etc/crescentlab/compose.actions.yml
 readonly STATE_DIR=/var/lib/crescentlab-actions
 readonly LOCK_FILE=/run/lock/crescentlab-actions.lock
+readonly PROXY_ENV=/etc/crescentlab/proxy.env
 readonly PUBLIC_SITE_URL=https://me.crescentr.cn
 readonly ADMIN_URL=https://isme.crescentr.cn
+
+if [[ -r "$PROXY_ENV" ]]; then
+  set -a
+  # shellcheck disable=SC1090
+  source "$PROXY_ENV"
+  set +a
+fi
 
 exec 9>"$LOCK_FILE"
 flock -n 9 || { echo "another production operation is running" >&2; exit 75; }
@@ -77,9 +85,23 @@ restore_snapshot() {
   verify_rollback
 }
 
+import_image() {
+  local auth_file=$1 source_ref=$2 destination_ref=$3 archive=$4
+  skopeo copy \
+    --authfile "$auth_file" \
+    --override-os linux \
+    --override-arch amd64 \
+    --format v2s2 \
+    "docker://$source_ref" \
+    "docker-archive:$archive:$destination_ref"
+  docker load --input "$archive" >/dev/null
+  [[ $(docker image inspect "$destination_ref" --format '{{.Architecture}}') == amd64 ]]
+  unlink "$archive"
+}
+
 deploy_release() {
   local commit=$1 backend_image=$2 frontend_image=$3 admin_image=$4
-  local registry_user token timestamp run_dir
+  local registry_user token timestamp run_dir backend_local frontend_local admin_local auth_file
 
   [[ $commit =~ ^[0-9a-f]{40}$ ]] || { echo "invalid commit" >&2; exit 64; }
   [[ $backend_image =~ ^ghcr\.io/crescentr/crescentlab_r-backend@sha256:[0-9a-f]{64}$ ]] || { echo "invalid backend image" >&2; exit 64; }
@@ -91,24 +113,39 @@ deploy_release() {
 
   timestamp=$(date -u +%Y%m%dT%H%M%SZ)
   run_dir="$STATE_DIR/runs/${timestamp}-${commit:0:12}"
-  install -d -m 700 "$run_dir/docker" "$run_dir/previous"
+  install -d -m 700 "$run_dir" "$run_dir/previous"
   snapshot_current "$run_dir/previous" "$timestamp"
 
+  backend_local="${backend_image%@*}:$commit"
+  frontend_local="${frontend_image%@*}:$commit"
+  admin_local="${admin_image%@*}:$commit"
+
   cat > "$run_dir/release.env" <<EOF
-BACKEND_IMAGE=$backend_image
-FRONTEND_IMAGE=$frontend_image
-ADMIN_IMAGE=$admin_image
+BACKEND_IMAGE=$backend_local
+FRONTEND_IMAGE=$frontend_local
+ADMIN_IMAGE=$admin_local
+BACKEND_DIGEST=$backend_image
+FRONTEND_DIGEST=$frontend_image
+ADMIN_DIGEST=$admin_image
 PUBLIC_SITE_URL=$PUBLIC_SITE_URL
 ADMIN_URL=$ADMIN_URL
 RELEASE_SHA=$commit
 EOF
 
-  DOCKER_CONFIG="$run_dir/docker" docker login ghcr.io --username "$registry_user" --password-stdin <<< "$token" >/dev/null
+  auth_file="$run_dir/auth.json"
+  printf '{}\n' > "$auth_file"
+  if ! skopeo login --authfile "$auth_file" --username "$registry_user" --password-stdin ghcr.io <<< "$token" >/dev/null; then
+    echo "registry login failed; continuing anonymously for public images" >&2
+    printf '{}\n' > "$auth_file"
+  fi
   unset token
+  import_image "$auth_file" "$backend_image" "$backend_local" "$run_dir/backend.tar"
+  import_image "$auth_file" "$frontend_image" "$frontend_local" "$run_dir/frontend.tar"
+  import_image "$auth_file" "$admin_image" "$admin_local" "$run_dir/admin.tar"
+  unlink "$auth_file"
   compose -f "$BASE_COMPOSE" -f "$ACTIONS_COMPOSE" --env-file "$run_dir/release.env" config > "$run_dir/effective.yml"
-  DOCKER_CONFIG="$run_dir/docker" compose -f "$BASE_COMPOSE" -f "$ACTIONS_COMPOSE" --env-file "$run_dir/release.env" pull backend frontend admin
 
-  if compose -f "$BASE_COMPOSE" -f "$ACTIONS_COMPOSE" --env-file "$run_dir/release.env" up -d --no-build --remove-orphans --wait --wait-timeout 120 \
+  if compose -f "$BASE_COMPOSE" -f "$ACTIONS_COMPOSE" --env-file "$run_dir/release.env" up -d --no-build --pull never --remove-orphans --wait --wait-timeout 120 \
     && verify_release; then
     install -m 600 "$run_dir/release.env" "$STATE_DIR/current.env"
     install -m 600 "$run_dir/previous/compose.yml" "$STATE_DIR/previous.compose.yml"
