@@ -3,11 +3,10 @@ services:
     build:
       context: .
       target: backend
-      provenance: false
-      sbom: false
       args:
         GO_IMAGE: ${GO_IMAGE:-m.daocloud.io/docker.io/library/golang:1.26-alpine}
         ALPINE_IMAGE: ${ALPINE_IMAGE:-m.daocloud.io/docker.io/library/alpine:3.22}
+        GOPROXY: ${GOPROXY:-https://goproxy.cn,direct}
     volumes:
       - ./data/conf.ini:/app/data/conf.ini:ro
       - project_artifacts:/app/data/project-artifacts
@@ -22,8 +21,6 @@ services:
     build:
       context: .
       target: frontend
-      provenance: false
-      sbom: false
       args:
         NODE_IMAGE: ${NODE_IMAGE:-m.daocloud.io/docker.io/library/node:24-slim}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}
@@ -42,8 +39,6 @@ services:
     build:
       context: .
       target: admin
-      provenance: false
-      sbom: false
       args:
         NODE_IMAGE: ${NODE_IMAGE:-m.daocloud.io/docker.io/library/node:24-slim}
         NPM_REGISTRY: ${NPM_REGISTRY:-https://registry.npmmirror.com}

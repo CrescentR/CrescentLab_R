@@ -6,6 +6,7 @@
 
 | 主题 | 记录 |
 |---|---|
+| GitHub Actions 自动发布 | [2026-11-08-github-actions-deployment](2026-11-08-github-actions-deployment.md) |
 | 公开站视觉（纸张刊物） | [2026-10-21-paper-journal-redesign](2026-10-21-paper-journal-redesign.md)、[2026-10-21-public-site-reference](2026-10-21-public-site-reference.md)、[2026-10-20-homepage-reference](2026-10-20-homepage-reference.md) |
 | 项目为长期线索、进展归入项目 | [2026-10-29-projects-as-threads](2026-10-29-projects-as-threads.md) |
 | 项目详情、MDX 与内容集合 | [2026-09-03-projects-collections-mdx](2026-09-03-projects-collections-mdx.md) |

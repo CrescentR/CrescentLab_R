@@ -6,6 +6,8 @@ ARG NODE_IMAGE=m.daocloud.io/docker.io/library/node:24-slim
 
 FROM ${GO_IMAGE} AS backend-build
 WORKDIR /src
+ARG GOPROXY=https://proxy.golang.org,direct
+ENV GOPROXY=${GOPROXY}
 COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
@@ -16,7 +18,7 @@ WORKDIR /app
 RUN apk add --no-cache ca-certificates \
   && addgroup -S crescentlab \
   && adduser -S crescentlab -G crescentlab \
-  && mkdir -p /app/data \
+  && mkdir -p /app/data/storage /app/data/project-artifacts \
   && chown -R crescentlab:crescentlab /app
 COPY --from=backend-build /out/crescentlab /app/crescentlab
 COPY default_files /app/default_files
@@ -28,9 +30,11 @@ FROM ${NODE_IMAGE} AS frontend-build
 WORKDIR /src/frontend
 ARG BACKEND_URL=http://backend:8091
 ARG ADMIN_URL=http://localhost:3001
+ARG PUBLIC_SITE_URL=http://localhost:3000
 ARG NPM_REGISTRY=https://registry.npmmirror.com
 ENV BACKEND_URL=${BACKEND_URL}
 ENV NEXT_PUBLIC_ADMIN_URL=${ADMIN_URL}
+ENV PUBLIC_SITE_URL=${PUBLIC_SITE_URL}
 # pnpm 版本须与 package.json 的 packageManager 保持一致
 RUN corepack enable && corepack prepare pnpm@10.28.2 --activate
 COPY frontend/package.json frontend/pnpm-lock.yaml ./
