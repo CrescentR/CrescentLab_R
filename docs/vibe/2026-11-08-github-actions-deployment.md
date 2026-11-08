@@ -39,4 +39,23 @@ GHCR 登录使用单次 Actions `GITHUB_TOKEN`，只在拉取期间置于隔离�
 - [x] Compose 项目名、回环端口、配置挂载和两个命名卷保持不变。
 - [x] 发布验证覆盖 `/healthz/ready`、只读文章 API、公开站首页和后台登录页。
 - [x] 失败自动回滚并验证旧版；手动回滚由 `workflow_dispatch` 提供。
-- [ ] 首次 Actions 生产发布。
+- [x] 首次 Actions 生产发布。
+
+## 首次发布
+
+2026-11-08 通过 `main` 推送触发，运行记录：[42457290267](https://github.com/CrescentR/CrescentLab_R/actions/runs/42457290267)，提交 `0c684df015cc6169378caf2812796f533fa05182`。
+
+上线的三个镜像：
+
+- `ghcr.io/crescentr/crescentlab_r-backend@sha256:2763a3754c43b8095200afa525c8ab4fb4ba3429016be9d4a00d752485004001`
+- `ghcr.io/crescentr/crescentlab_r-frontend@sha256:16ecad2efc616c475fd61ad66caed9f7945029473ae8219d001c37dc598b7987`
+- `ghcr.io/crescentr/crescentlab_r-admin@sha256:1dc7722872123ea5297804a852d80517815ed53e8d359b1d96a27fd25f7d4e7c`
+
+发布前已备份 PostgreSQL 并应用 `database/postgres/2026-10-29-projects.sql`；当前数据库 schema 的 7 个项目列与 3 个文章列均已存在。旧版三个镜像保留为 `crescentlab-r-{backend,frontend,admin}:rollback-20261108T070740Z`，回滚快照位于 `/var/lib/crescentlab-actions/previous.{compose,images}.yml`。
+
+验证结果：后端 `/healthz/ready` 返回正常；只读文章 API 返回 200；`https://me.crescentr.cn/` 与 `https://isme.crescentr.cn/login` 返回 200；三个容器均带同一提交 revision 标签，Compose 项目名、回环端口、配置文件挂载和两个命名卷保持不变。
+
+## 下次发布与回滚
+
+- 发布：合入 `main` 自动触发，或在 Actions 页面手动运行 `deploy`。
+- 回滚：手动运行工作流，选择 `rollback`。
